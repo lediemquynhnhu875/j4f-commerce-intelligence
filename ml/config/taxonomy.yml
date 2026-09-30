@@ -1,0 +1,135 @@
+# Ordered from specific to broad. Rules inspect product name + raw category.
+# Description matching is opt-in because seller descriptions often advertise unrelated products.
+product_types:
+  - label: phụ kiện vệ sinh giày
+    keywords: [vệ sinh giày, xi giày, xịt khử mùi giày, lót giày, miếng lót giày, miếng lót mũi giày, đón gót, phụ kiện cho giày, phụ kiện giày, làm sạch giày, tẩy trắng giày, đánh giày]
+  - label: tất vớ
+    keywords: [vớ cổ cao, vớ cổ ngắn, vớ ngắn, vớ dài, vớ thể thao, tất vớ, tất, vớ]
+  - label: khẩu trang
+    keywords: [khẩu trang]
+  - label: găng tay
+    keywords: [găng tay]
+  - label: khăn thời trang
+    keywords: [khăn choàng, khăn quàng, khăn tay, khăn - găng tay, khăn bandana, bandana, turban]
+  - label: kính áp tròng
+    keywords: [kính áp tròng, lens mắt, lens]
+  - label: gọng kính
+    keywords: [gọng kính]
+  - label: kính mắt
+    keywords: [kính mắt, kính mát, kính râm, mắt kính, kính thời trang, kính nữ, kính nam, sunglasses]
+  - label: phụ kiện vali du lịch
+    keywords: [phụ kiện vali, phụ kiện du lịch, ví passport, bao passport]
+  - label: vali
+    keywords: [vali nhựa, vali vải, vali trẻ em, vali-balo, va li, suitcase, vali]
+  - label: balo
+    keywords: [balo học sinh, balo laptop, balo du lịch, balo dây rút, balo nam, balo nữ, ba lô, backpack, balo]
+  - label: túi laptop công sở
+    keywords: [cặp đựng laptop, túi chống sốc, cặp laptop, túi laptop, cặp da, cặp công sở, túi xách công sở]
+  - label: túi tote
+    keywords: [túi tote, tote]
+  - label: túi bao tử
+    keywords: [túi bao tử, túi đeo bụng, túi đeo hông]
+  - label: túi du lịch
+    keywords: [túi trống, túi du lịch]
+  - label: túi đeo chéo
+    keywords: [túi đeo chéo, túi chéo, crossbody]
+  - label: túi xách nữ
+    keywords: [túi xách nữ, túi thời trang nữ, túi xách to bản, túi xách vừa và nhỏ, túi kẹp nách, túi đeo vai nữ, handbag]
+  - label: túi xách nam
+    keywords: [túi xách nam, túi thời trang nam, túi nam, cặp nam, briefcase]
+  - label: phụ kiện túi
+    keywords: [dây quai đeo túi, dây đeo túi, phụ kiện cài túi, phụ kiện túi]
+  - label: túi xách khác
+    keywords: [túi xách, cặp xách]
+  - label: túi đeo khác
+    keywords: [túi đeo]
+  - label: ví nữ
+    keywords: [ví nữ, bóp nữ, clutch nữ]
+  - label: ví nam
+    keywords: [ví nam, bóp nam, ví nam đứng, ví nam ngang, wallet nam]
+  - label: ví khác
+    keywords: [ví dài, ví ngắn, ví da, ví bóp, ví cầm tay, ví]
+  - label: boots nữ
+    keywords: [giày boots nữ, giày boot nữ, boots nữ, boot nữ, bốt nữ]
+  - label: boots nam
+    keywords: [giày boots nam, giày boot nam, boots nam, boot nam, bốt nam]
+  - label: giày cao gót
+    keywords: [giày cao gót, cao gót, giày gót]
+  - label: giày búp bê
+    keywords: [giày búp bê]
+  - label: giày đế xuồng
+    keywords: [giày đế xuồng, đế xuồng]
+  - label: giày tây nam
+    keywords: [giày tây nam, giày tây]
+  - label: giày lười nữ
+    keywords: [giày lười nữ, giày lười hở gót, giày lười mũi nhọn, giày lười mũi vuông]
+  - label: giày lười nam
+    keywords: [giày lười nam, giày lười nhựa nam, giày lười vải nam, giày lười da nam]
+  - label: sandal nữ
+    keywords: [sandal nữ, sandals đế bằng, sandals xỏ ngón, sandals chiến binh, sandals buộc dây, xăng đan nữ]
+  - label: sandal nam
+    keywords: [sandal nam, sandals nam, xăng đan nam]
+  - label: giày thể thao nữ
+    keywords: [giày thể thao nữ, sneaker nữ, giày sneaker nữ]
+  - label: giày thể thao nam
+    keywords: [giày thể thao nam, sneaker nam, giày sneaker nam]
+  - label: giày thể thao khác
+    keywords: [giày thể thao, sneaker]
+  - label: dép nữ
+    keywords: [dép nữ, dép guốc nữ, dép - guốc nữ]
+  - label: dép nam
+    keywords: [dép nam, dép nam xỏ ngón, dép nam quai ngang, dép nam đi trong nhà]
+  - label: dép unisex
+    keywords: [dép xỏ ngón, dép quai ngang, dép đi trong nhà, dép tổ ong]
+  - label: dép khác
+    keywords: [dép]
+  - label: giày nữ
+    keywords: [giày nữ, giày - dép nữ]
+  - label: giày nam
+    keywords: [giày nam, giày - dép nam]
+  - label: mũ nón
+    keywords: [nón lưỡi trai, nón tai bèo, nón snapback, nón nửa đầu, nón chống nắng, nón rộng vành, nón len, nón phớt, nón nam, nón nữ, mũ, nón, cap, bucket hat]
+  - label: thắt lưng
+    keywords: [thắt lưng, dây nịt, mặt thắt lưng, belt]
+  - label: đồng hồ
+    keywords: [đồng hồ, watch]
+  - label: hình xăm tạm thời
+    keywords: [hình xăm]
+  - label: trang sức
+    keywords: [vòng tay, vòng cổ, dây chuyền, chuỗi đeo cổ, ngọc trai, nhẫn, bông tai, khuyên tai]
+  - label: cà vạt
+    keywords: [cà vạt, caravat, cravat]
+  - label: phụ kiện tóc
+    keywords: [cài tóc, cột tóc, kẹp tóc, dây buộc tóc, băng đô, lược, dụng cụ uốn tóc, phụ kiện tóc]
+  - label: phụ kiện cài áo
+    keywords: [cài áo, ghim cài áo, pin cài áo]
+  - label: phụ kiện thời trang khác
+    keywords: [phụ kiện thời trang, móc khóa, phụ kiện cưới]
+
+# These labels mix multiple product families and should not override a clearer product name.
+generic_categories:
+  - Root
+  - Thời Trang
+  - Giày - Dép nam
+  - Giày - Dép nữ
+  - Khăn - Găng tay nam
+  - Khăn - Tất - Vớ nữ
+  - Phụ kiện thời trang
+  - Phụ kiện thời trang nữ
+  - Phụ kiện kính
+  - Phụ kiện du lịch khác
+  - Phụ kiện cưới
+  - Túi thời trang nam
+  - Túi thời trang nữ
+  - Balo và Vali
+  - Balo Học Sinh - Cặp học sinh
+
+# Low-confidence broad labels used only after keyword rules fail.
+# taxonomy_source keeps these assignments auditable during manual review.
+source_fallbacks:
+  fashion_accessories: phụ kiện thời trang khác
+  backpacks_suitcases: balo vali túi khác
+  men_bags: túi ví nam khác
+  women_bags: túi ví nữ khác
+  men_shoes: giày dép nam khác
+  women_shoes: giày dép nữ khác

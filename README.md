@@ -54,7 +54,7 @@ Raw CSV files
 4. Implement scoring and write `data/processed/product_scores.csv` according to the shared contract.
 5. Let the backend and frontend use sample data until the full model is ready.
 
-Runtime commands and dependencies will be added when the backend and frontend frameworks are initialized.
+The data and model pipeline is ready. See [ml/README.md](ml/README.md) for commands and checkpoints. Backend and frontend runtime commands will be added when those applications are initialized.
 
 ## Git workflow
 
@@ -63,4 +63,3 @@ Runtime commands and dependencies will be added when the backend and frontend fr
 - Request at least one review from the listed reviewer.
 - Never commit raw data, trained model binaries, local databases, `.env`, or generated build output.
 - Update the relevant contract or decision document when a shared interface changes.
-

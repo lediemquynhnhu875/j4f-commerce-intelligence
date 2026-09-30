@@ -25,6 +25,8 @@ Required fields:
 | `has_video` | boolean/null | Whether a product video is present |
 | `image_count` | integer/null | Number of product images |
 | `description_length` | integer/null | Normalized description length |
+| `data_quality_issue` | string | `none` or an auditable data issue |
+| `valid_for_model` | boolean | Whether essential fields are valid for peer/model logic |
 
 ## Product scores
 
@@ -37,6 +39,7 @@ Required fields:
 | `product_id` | string | Joins to the clean product table |
 | `peer_count` | integer | Number of valid comparable products |
 | `peer_ids` | JSON string | Ordered comparable-product identifiers |
+| `peer_quality_reason` | string | Empty when valid; otherwise explains insufficient peer evidence |
 | `observed_sales` | integer | Observed quantity sold |
 | `reference_sales` | number/null | Expected sales under the reference model |
 | `prediction_lower` | number/null | Lower reference interval bound |
@@ -65,4 +68,3 @@ The frontend may display Vietnamese labels, but storage and API values use these
 - `favourite_count` is excluded because it is zero throughout the supplied snapshot.
 - `date_created` is excluded until its unit and meaning are verified.
 - A recommendation must cite observable evidence and must not be phrased as a causal guarantee.
-

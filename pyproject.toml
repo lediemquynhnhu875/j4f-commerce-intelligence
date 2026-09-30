@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "j4f-commerce-intelligence"
+version = "0.1.0"
+description = "Reference-sales and product-opportunity pipeline for the AISC 2026 J4F project"
+requires-python = ">=3.11"
+dependencies = [
+  "joblib>=1.3,<2",
+  "numpy>=1.26,<3",
+  "pandas>=2.2,<4",
+  "PyYAML>=6,<7",
+  "scikit-learn>=1.4,<2",
+  "scipy>=1.11,<2",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<10", "ruff>=0.6,<1"]
+boosting = ["lightgbm>=4.3,<5"]
+
+[project.scripts]
+j4f-ml = "ml.src.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["ml*"]
+
+[tool.pytest.ini_options]
+testpaths = ["ml/tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
