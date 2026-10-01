@@ -15,6 +15,7 @@ from ml.src.taxonomy.rules import (
     assign_product_types,
     create_review_sample,
     evaluate_review_sample,
+    evaluate_taxonomy_predictions,
 )
 
 
@@ -191,6 +192,17 @@ def _parser() -> argparse.ArgumentParser:
         type=Path,
         default=DEFAULT_PROCESSED_DIR / "taxonomy_review_sample.csv",
     )
+    review_parser.add_argument(
+        "--products-file",
+        type=Path,
+        default=DEFAULT_PROCESSED_DIR / "clean_products.csv",
+        help="Current taxonomy predictions to compare with the reviewed gold labels",
+    )
+    review_parser.add_argument(
+        "--metrics-file",
+        type=Path,
+        default=DEFAULT_PROCESSED_DIR / "taxonomy_review_metrics.json",
+    )
     return parser
 
 
@@ -211,7 +223,10 @@ def main() -> None:
         train(args.processed_dir, args.artifact_dir, config)
         score(args.processed_dir, config)
     elif args.command == "validate-taxonomy":
-        metrics = evaluate_review_sample(args.review_file)
+        products = _read_csv(args.products_file)
+        metrics, _ = evaluate_taxonomy_predictions(
+            products, args.review_file, args.metrics_file
+        )
         passed = (
             metrics["reviewed_rows"] == metrics["sample_rows"]
             and metrics["coverage"] >= config.taxonomy_min_coverage

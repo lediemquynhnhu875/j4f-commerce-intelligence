@@ -1,6 +1,9 @@
 # Ordered from specific to broad. Rules inspect product name + raw category.
 # Description matching is opt-in because seller descriptions often advertise unrelated products.
 product_types:
+  - label: out_of_scope
+    priority_keywords: [máy sấy tóc, máy tạo kiểu tóc, dưỡng tóc, lập trình nhúng, bảng mạch, adapter typec, vôn kế, hộp đựng bàn chải, túi treo đồ, phụ kiện đan móc, khăn xô tròn, sách - giày, chỉ may bao]
+    keywords: [máy sấy tóc, máy tạo kiểu tóc, lập trình nhúng, bảng mạch, vôn kế]
   - label: phụ kiện vệ sinh giày
     keywords: [vệ sinh giày, xi giày, xịt khử mùi giày, lót giày, miếng lót giày, miếng lót mũi giày, đón gót, phụ kiện cho giày, phụ kiện giày, làm sạch giày, tẩy trắng giày, đánh giày]
   - label: tất vớ
@@ -8,7 +11,8 @@ product_types:
   - label: khẩu trang
     keywords: [khẩu trang]
   - label: găng tay
-    keywords: [găng tay]
+    priority_keywords: [bao tay]
+    keywords: [găng tay, bao tay]
   - label: khăn thời trang
     keywords: [khăn choàng, khăn quàng, khăn tay, khăn - găng tay, khăn bandana, bandana, turban]
   - label: kính áp tròng
@@ -18,35 +22,45 @@ product_types:
   - label: kính mắt
     keywords: [kính mắt, kính mát, kính râm, mắt kính, kính thời trang, kính nữ, kính nam, sunglasses]
   - label: phụ kiện vali du lịch
-    keywords: [phụ kiện vali, phụ kiện du lịch, ví passport, bao passport]
+    priority_keywords: [túi đựng giày, túi đựng giày dép]
+    keywords: [phụ kiện vali, phụ kiện du lịch, ví passport, bao passport, túi đựng giày, túi đựng giày dép]
   - label: vali
+    priority_keywords: [vali hợp kim, vali kéo, vali nhôm]
     keywords: [vali nhựa, vali vải, vali trẻ em, vali-balo, va li, suitcase, vali]
   - label: balo
+    priority_keywords: [balo laptop, cặp học sinh, cặp đẹp cho nữa]
     keywords: [balo học sinh, balo laptop, balo du lịch, balo dây rút, balo nam, balo nữ, ba lô, backpack, balo]
   - label: túi laptop công sở
-    keywords: [cặp đựng laptop, túi chống sốc, cặp laptop, túi laptop, cặp da, cặp công sở, túi xách công sở]
+    priority_keywords: [cặp xách laptop, macbook, cặp đựng laptop, túi laptop]
+    keywords: [cặp xách laptop, cặp đựng laptop, túi chống sốc, cặp laptop, túi laptop, macbook, cặp da, cặp công sở, túi xách công sở]
   - label: túi tote
     keywords: [túi tote, tote]
   - label: túi bao tử
+    priority_keywords: [túi phụ kiện đeo hông]
     keywords: [túi bao tử, túi đeo bụng, túi đeo hông]
   - label: túi du lịch
     keywords: [túi trống, túi du lịch]
   - label: túi đeo chéo
-    keywords: [túi đeo chéo, túi chéo, crossbody]
+    priority_keywords: [túi đeo chéo, cặp đeo chéo, túi đeo ngực, đeo đeo chéo, thổ cẩm đeo chéo, túi nam đeo chéo]
+    keywords: [túi đeo chéo, cặp đeo chéo, túi chéo, túi đeo ngực, crossbody]
   - label: túi xách nữ
+    priority_keywords: [túi xách nữ, túi xách da nữ, túi da nữ, túi nữ thời trang, túi vải nữ]
     keywords: [túi xách nữ, túi thời trang nữ, túi xách to bản, túi xách vừa và nhỏ, túi kẹp nách, túi đeo vai nữ, handbag]
   - label: túi xách nam
-    keywords: [túi xách nam, túi thời trang nam, túi nam, cặp nam, briefcase]
+    keywords: [túi xách nam, túi thời trang nam, túi nam, briefcase]
   - label: phụ kiện túi
     keywords: [dây quai đeo túi, dây đeo túi, phụ kiện cài túi, phụ kiện túi]
   - label: túi xách khác
+    priority_keywords: [túi xách hình âm nhạc, cặp đa năng]
     keywords: [túi xách, cặp xách]
   - label: túi đeo khác
     keywords: [túi đeo]
   - label: ví nữ
+    priority_keywords: [ví đựng tiền hình]
     keywords: [ví nữ, bóp nữ, clutch nữ]
   - label: ví nam
-    keywords: [ví nam, bóp nam, ví nam đứng, ví nam ngang, wallet nam]
+    priority_keywords: [ví da nam]
+    keywords: [ví nam, ví da nam, bóp nam, ví nam đứng, ví nam ngang, wallet nam]
   - label: ví khác
     keywords: [ví dài, ví ngắn, ví da, ví bóp, ví cầm tay, ví]
   - label: boots nữ
@@ -54,9 +68,11 @@ product_types:
   - label: boots nam
     keywords: [giày boots nam, giày boot nam, boots nam, boot nam, bốt nam]
   - label: giày cao gót
+    priority_keywords: [giày nữ cao cấp elly]
     keywords: [giày cao gót, cao gót, giày gót]
   - label: giày búp bê
-    keywords: [giày búp bê]
+    priority_keywords: [giày da cao cấp búp bê]
+    keywords: [giày búp bê, búp bê]
   - label: giày đế xuồng
     keywords: [giày đế xuồng, đế xuồng]
   - label: giày tây nam
@@ -68,22 +84,30 @@ product_types:
   - label: sandal nữ
     keywords: [sandal nữ, sandals đế bằng, sandals xỏ ngón, sandals chiến binh, sandals buộc dây, xăng đan nữ]
   - label: sandal nam
+    priority_keywords: [giày sandals vento nam, sandals vento nam]
     keywords: [sandal nam, sandals nam, xăng đan nam]
   - label: giày thể thao nữ
+    priority_keywords: [giày thể thao nữ, sneaker nữ]
     keywords: [giày thể thao nữ, sneaker nữ, giày sneaker nữ]
   - label: giày thể thao nam
+    priority_keywords: [giày nam giá rẻ]
     keywords: [giày thể thao nam, sneaker nam, giày sneaker nam]
   - label: giày thể thao khác
+    priority_keywords: [giày converse]
     keywords: [giày thể thao, sneaker]
   - label: dép nữ
-    keywords: [dép nữ, dép guốc nữ, dép - guốc nữ]
+    priority_keywords: [dép sỏ ngón nữ, dép xỏ ngón nữ, dép kẹp nữ, dép quai ngang nữ aldo]
+    keywords: [dép nữ, dép sỏ ngón nữ, dép xỏ ngón nữ, dép kẹp nữ, dép quai ngang nữ, dép guốc nữ, dép - guốc nữ]
   - label: dép nam
     keywords: [dép nam, dép nam xỏ ngón, dép nam quai ngang, dép nam đi trong nhà]
   - label: dép unisex
+    priority_keywords: [dép cặp nam và nữ]
     keywords: [dép xỏ ngón, dép quai ngang, dép đi trong nhà, dép tổ ong]
   - label: dép khác
+    priority_keywords: [dép đúc nguyên khối]
     keywords: [dép]
   - label: giày nữ
+    priority_keywords: [giày đi mưa]
     keywords: [giày nữ, giày - dép nữ]
   - label: giày nam
     keywords: [giày nam, giày - dép nam]
@@ -94,17 +118,20 @@ product_types:
   - label: đồng hồ
     keywords: [đồng hồ, watch]
   - label: hình xăm tạm thời
+    priority_keywords: [hình xăm]
     keywords: [hình xăm]
   - label: trang sức
     keywords: [vòng tay, vòng cổ, dây chuyền, chuỗi đeo cổ, ngọc trai, nhẫn, bông tai, khuyên tai]
   - label: cà vạt
     keywords: [cà vạt, caravat, cravat]
   - label: phụ kiện tóc
-    keywords: [cài tóc, cột tóc, kẹp tóc, dây buộc tóc, băng đô, lược, dụng cụ uốn tóc, phụ kiện tóc]
+    priority_keywords: [bờm tóc, băng đô, dây chun buộc tóc, dây buộc tóc, cột tóc đính, kẹp tóc]
+    keywords: [bờm tóc, cài tóc, cột tóc, kẹp tóc, dây buộc tóc, buộc tóc, băng đô, lược, dụng cụ uốn tóc, phụ kiện tóc]
   - label: phụ kiện cài áo
     keywords: [cài áo, ghim cài áo, pin cài áo]
   - label: phụ kiện thời trang khác
-    keywords: [phụ kiện thời trang, móc khóa, phụ kiện cưới]
+    priority_keywords: [dây nối áo ngực, khóa bư-ớm đồng hồ]
+    keywords: [phụ kiện thời trang, móc khóa, phụ kiện cưới, dây nối áo ngực]
 
 # These labels mix multiple product families and should not override a clearer product name.
 generic_categories:

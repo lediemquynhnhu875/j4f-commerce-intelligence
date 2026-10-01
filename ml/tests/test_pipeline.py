@@ -11,7 +11,7 @@ import pandas as pd
 from ml.src.cli import peers, prepare, score, train
 from ml.src.config import PipelineConfig
 from ml.src.scoring.status import STATUS_LABELS_VI
-from ml.src.taxonomy.rules import evaluate_review_sample
+from ml.src.taxonomy.rules import evaluate_review_sample, evaluate_taxonomy_predictions
 
 
 class PipelineTest(unittest.TestCase):
@@ -123,6 +123,35 @@ class PipelineTest(unittest.TestCase):
         metrics = evaluate_review_sample(review_path)
         self.assertAlmostEqual(metrics["coverage"], 2 / 3)
         self.assertAlmostEqual(metrics["accuracy"], 2 / 3)
+
+    def test_taxonomy_prediction_evaluation_uses_corrected_labels(self) -> None:
+        self.processed_dir.mkdir()
+        review_path = self.processed_dir / "reviewed.csv"
+        metrics_path = self.processed_dir / "metrics.json"
+        pd.DataFrame(
+            {
+                "product_id": ["1", "2"],
+                "product_type": ["balo", "ví khác"],
+                "is_correct": ["đúng", "sai"],
+                "corrected_product_type": ["", "ví nam"],
+            }
+        ).to_csv(review_path, index=False)
+        products = pd.DataFrame(
+            {
+                "product_id": ["1", "2"],
+                "product_type": ["balo", "ví nam"],
+                "taxonomy_source": ["name_rule", "name_priority_rule"],
+            }
+        )
+
+        metrics, comparison = evaluate_taxonomy_predictions(
+            products, review_path, metrics_path
+        )
+
+        self.assertEqual(metrics["reviewed_rows"], 2)
+        self.assertEqual(metrics["accuracy"], 1.0)
+        self.assertEqual(comparison["expected_product_type"].tolist(), ["balo", "ví nam"])
+        self.assertTrue(metrics_path.exists())
 
 
 if __name__ == "__main__":

@@ -22,7 +22,7 @@ def load_taxonomy_rules(path: str | Path) -> list[dict[str, Any]]:
     if not rules:
         raise ValueError("Taxonomy configuration has no product_types rules")
     for rule in rules:
-        if not rule.get("label") or not rule.get("keywords"):
+        if not rule.get("label") or not (rule.get("keywords") or rule.get("priority_keywords")):
             raise ValueError(f"Invalid taxonomy rule: {rule}")
     return rules
 
@@ -51,12 +51,33 @@ def assign_product_types(
     }
     category_search = category_search.mask(category_search.isin(generic_categories), "")
 
+    # Strong, product-specific phrases in a title can correct a broad or noisy raw category.
+    # Keep this opt-in so incidental title phrases do not override reliable categories.
+    for rule in rules:
+        priority_keywords = rule.get("priority_keywords", [])
+        if not priority_keywords:
+            continue
+        escaped = [re.escape(_search_text(keyword)) for keyword in priority_keywords]
+        pattern = r"(?:^|\W)(?:" + "|".join(escaped) + r")(?:$|\W)"
+        matched = result["product_type"].eq("unknown") & name_search.str.contains(
+            pattern, regex=True, na=False
+        )
+        if matched.any():
+            result.loc[matched, "product_type"] = rule["label"]
+            result.loc[matched, "taxonomy_match"] = name_search[matched].str.extract(
+                f"({pattern})", expand=False
+            ).fillna("")
+            result.loc[matched, "taxonomy_source"] = "name_priority_rule"
+
     # Reliable raw categories take precedence over product names. This prevents gift phrases
     # such as "tặng lót giày" from overriding a category like "Giày lười vải nam".
     for source_name, search_values in (("category_rule", category_search), ("name_rule", name_search)):
         for rule in rules:
             available = result["product_type"].eq("unknown")
-            escaped = [re.escape(_search_text(keyword)) for keyword in rule["keywords"]]
+            keywords = rule.get("keywords", [])
+            if not keywords:
+                continue
+            escaped = [re.escape(_search_text(keyword)) for keyword in keywords]
             pattern = r"(?:^|\W)(?:" + "|".join(escaped) + r")(?:$|\W)"
             matched = available & search_values.str.contains(pattern, regex=True, na=False)
             if matched.any():
@@ -185,3 +206,72 @@ def evaluate_review_sample(path: str | Path) -> dict[str, Any]:
     with metrics_path.open("w", encoding="utf-8") as stream:
         json.dump(metrics, stream, ensure_ascii=False, indent=2)
     return metrics
+
+
+def evaluate_taxonomy_predictions(
+    products: pd.DataFrame,
+    review_path: str | Path,
+    metrics_path: str | Path,
+) -> tuple[dict[str, Any], pd.DataFrame]:
+    """Evaluate current taxonomy predictions against labels established by manual review."""
+    review = pd.read_csv(review_path, dtype=str).fillna("")
+    normalized = review["is_correct"].str.strip().str.lower()
+    valid_values = {"true", "false", "1", "0", "yes", "no", "đúng", "sai"}
+    correct_values = {"true", "1", "yes", "đúng"}
+    reviewed_mask = normalized.isin(valid_values)
+    expected = review["product_type"].where(
+        normalized.isin(correct_values), review["corrected_product_type"]
+    )
+    missing_correction = reviewed_mask & ~normalized.isin(correct_values) & expected.eq("")
+    if missing_correction.any():
+        ids = review.loc[missing_correction, "product_id"].tolist()
+        raise ValueError(f"Incorrect review rows are missing corrected_product_type: {ids}")
+
+    current = products[["product_id", "product_type", "taxonomy_source"]].copy()
+    current["product_id"] = current["product_id"].astype(str)
+    comparison = review.assign(expected_product_type=expected).merge(
+        current.rename(
+            columns={
+                "product_type": "predicted_product_type",
+                "taxonomy_source": "predicted_taxonomy_source",
+            }
+        ),
+        on="product_id",
+        how="left",
+        validate="many_to_one",
+    )
+    comparison["prediction_correct"] = (
+        comparison["predicted_product_type"].fillna("")
+        == comparison["expected_product_type"]
+    ) & reviewed_mask
+    reviewed = int(reviewed_mask.sum())
+    matched_products = int(comparison["predicted_product_type"].notna().sum())
+    accuracy = (
+        float(comparison.loc[reviewed_mask, "prediction_correct"].mean()) if reviewed else 0.0
+    )
+    metrics = {
+        "sample_rows": int(len(comparison)),
+        "reviewed_rows": reviewed,
+        "matched_product_rows": matched_products,
+        "assigned_rows": int(
+            comparison["predicted_product_type"].fillna("unknown").ne("unknown").sum()
+        ),
+        "coverage": float(matched_products / len(comparison)) if len(comparison) else 0.0,
+        "accuracy": accuracy,
+    }
+    source_metrics: dict[str, dict[str, float | int]] = {}
+    for source, source_rows in comparison.loc[reviewed_mask].groupby(
+        "predicted_taxonomy_source", dropna=False
+    ):
+        source_metrics[str(source)] = {
+            "sample_rows": int(len(source_rows)),
+            "accuracy": float(source_rows["prediction_correct"].mean()),
+        }
+    metrics["by_taxonomy_source"] = source_metrics
+
+    output = Path(metrics_path)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    with output.open("w", encoding="utf-8") as stream:
+        json.dump(metrics, stream, ensure_ascii=False, indent=2)
+    comparison.to_csv(output.with_name("taxonomy_review_comparison.csv"), index=False)
+    return metrics, comparison
