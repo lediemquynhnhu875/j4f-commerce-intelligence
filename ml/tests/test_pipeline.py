@@ -10,6 +10,11 @@ import pandas as pd
 
 from ml.src.cli import peers, prepare, score, train
 from ml.src.config import PipelineConfig
+from ml.src.evaluation.review_queues import (
+    create_fallback_review,
+    create_peer_review,
+    create_taxonomy_holdout,
+)
 from ml.src.scoring.status import STATUS_LABELS_VI
 from ml.src.taxonomy.rules import evaluate_review_sample, evaluate_taxonomy_predictions
 
@@ -152,6 +157,48 @@ class PipelineTest(unittest.TestCase):
         self.assertEqual(metrics["accuracy"], 1.0)
         self.assertEqual(comparison["expected_product_type"].tolist(), ["balo", "ví nam"])
         self.assertTrue(metrics_path.exists())
+
+    def test_independent_review_queues(self) -> None:
+        review_dir = self.processed_dir / "review_queues"
+        self.processed_dir.mkdir()
+        products = pd.DataFrame(
+            {
+                "product_id": [str(index) for index in range(30)],
+                "product_name": [f"Sản phẩm {index}" for index in range(30)],
+                "description": [f"Mô tả {index}" for index in range(30)],
+                "category_raw": ["Root"] * 30,
+                "source_file": ["source.csv"] * 30,
+                "product_type": ["balo" if index % 2 else "ví nam" for index in range(30)],
+                "taxonomy_source": [
+                    "source_fallback" if index < 12 else "name_rule" for index in range(30)
+                ],
+                "taxonomy_match": [""] * 30,
+                "price": np.arange(30) + 100,
+                "peer_count": [5] * 30,
+                "mean_peer_similarity": np.linspace(0.05, 0.9, 30),
+            }
+        )
+        products["peer_ids"] = [
+            json.dumps([str((index + offset) % 30) for offset in range(1, 6)])
+            for index in range(30)
+        ]
+        previous_path = self.processed_dir / "previous.csv"
+        pd.DataFrame({"product_id": ["0"]}).to_csv(previous_path, index=False)
+
+        holdout = create_taxonomy_holdout(
+            products, review_dir, [previous_path], sample_size=10
+        )
+        fallback = create_fallback_review(products, review_dir, sample_size=6)
+        peer_pairs = create_peer_review(
+            products, review_dir, target_count=5, peers_per_target=2
+        )
+
+        self.assertEqual(len(holdout), 10)
+        self.assertNotIn("0", set(holdout["product_id"]))
+        self.assertNotIn("product_type", holdout.columns)
+        self.assertEqual(len(fallback), 6)
+        self.assertEqual(len(peer_pairs), 10)
+        self.assertEqual(peer_pairs["target_product_id"].nunique(), 5)
 
 
 if __name__ == "__main__":

@@ -8,6 +8,7 @@ import pandas as pd
 
 from ml.src.config import PipelineConfig, load_config
 from ml.src.data.clean import clean_products
+from ml.src.evaluation.review_queues import create_review_queues, evaluate_review_queues
 from ml.src.models.reference import train_reference_models
 from ml.src.peers.build import build_peer_features
 from ml.src.scoring.status import score_products
@@ -203,6 +204,35 @@ def _parser() -> argparse.ArgumentParser:
         type=Path,
         default=DEFAULT_PROCESSED_DIR / "taxonomy_review_metrics.json",
     )
+
+    queue_parser = subparsers.add_parser(
+        "create-review-queues",
+        help="Create independent taxonomy, fallback, and peer manual-review queues",
+    )
+    queue_parser.add_argument(
+        "--processed-dir", type=Path, default=DEFAULT_PROCESSED_DIR
+    )
+    queue_parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=DEFAULT_PROCESSED_DIR / "review_queues",
+    )
+    queue_parser.add_argument(
+        "--reviewed-file",
+        type=Path,
+        action="append",
+        default=[],
+        help="Previously reviewed taxonomy CSV; may be passed more than once",
+    )
+
+    queue_metrics_parser = subparsers.add_parser(
+        "evaluate-review-queues", help="Summarize completed taxonomy and peer reviews"
+    )
+    queue_metrics_parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=DEFAULT_PROCESSED_DIR / "review_queues",
+    )
     return parser
 
 
@@ -235,6 +265,20 @@ def main() -> None:
         print(json.dumps({**metrics, "passed": passed}, ensure_ascii=False, indent=2))
         if not passed:
             raise SystemExit(2)
+    elif args.command == "create-review-queues":
+        reviewed_files = args.reviewed_file or [
+            args.processed_dir / "taxonomy_sample_reviewed.csv",
+            args.processed_dir / "taxonomy_review_sample.csv",
+        ]
+        metrics = create_review_queues(
+            _read_csv(args.processed_dir / "clean_products.csv"),
+            _read_csv(args.processed_dir / "peer_features.csv"),
+            args.output_dir,
+            reviewed_files,
+        )
+        print(json.dumps(metrics, ensure_ascii=False, indent=2))
+    elif args.command == "evaluate-review-queues":
+        print(json.dumps(evaluate_review_queues(args.output_dir), ensure_ascii=False, indent=2))
 
 
 if __name__ == "__main__":

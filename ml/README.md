@@ -66,6 +66,27 @@ Do not proceed to peer groups unless coverage is at least 90% and reviewed accur
 
 `taxonomy_summary.json` separates assignments made by category/name rules from lower-confidence source-file fallbacks. `taxonomy_review_metrics.json` reports accuracy overall and by taxonomy source.
 
+## Independent taxonomy and peer review
+
+After building peers, create the next manual-review round with:
+
+```bash
+python3 -m ml.src.cli create-review-queues
+```
+
+This writes three editable files under `data/processed/review_queues/`:
+
+- `taxonomy_holdout_review.csv`: assign `human_product_type` without opening the private predictions file.
+- `taxonomy_fallback_review.csv`: assign `proposed_product_type` and optionally suggest a reusable keyword.
+- `peer_pairs_review.csv`: enter `đúng` or `sai` in `is_relevant` for each target-peer pair.
+
+The holdout excludes IDs from previous taxonomy review files. Do not update taxonomy rules from
+the holdout; use the fallback queue for rule development. After all reviews are filled, run:
+
+```bash
+python3 -m ml.src.cli evaluate-review-queues
+```
+
 ## Model guardrail
 
 Model A uses only actionable product fields and supplies the primary flags. Model B includes review count and rating only as a comparison because those fields accumulate after sales. All training metrics use out-of-fold predictions grouped by seller.
