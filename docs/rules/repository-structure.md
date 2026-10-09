@@ -8,7 +8,7 @@
 - These are target responsibilities; the existing scaffolds are not complete runtimes.
 - See [the stack decision](../decisions/0001-web-database-model-stack.md).
 
-## `backend/` - Mai, with Huy for model integration
+## `backend/` - Mai, with Nhung for model integration
 
 - `app/api/`: model-service HTTP routes only; service logic stays in services.
 - `app/core/`: configuration, logging, and shared application setup.
@@ -17,7 +17,7 @@
 - `app/services/`: model loading, inference, and scoring integration.
 - `tests/`: model-service unit and API tests.
 
-## `frontend/` - Nhung (UI), Mai (web backend and database)
+## `frontend/` - Huy (UI), Mai (web backend and database)
 
 - Planned Next.js application with frontend and web backend code; initialize its
   framework structure when implementation begins.
@@ -29,7 +29,7 @@
 - `src/types/`: shared TypeScript types.
 - `tests/`: web UI and web API tests.
 
-## `ml/` - Huy
+## `ml/` - Nhung
 
 - `notebooks/`: numbered exploration notebooks; no production logic.
 - `src/data/`: merge, validation, and cleaning steps.
@@ -40,17 +40,28 @@
 - `tests/`: deterministic tests for transformations and scoring.
 - `artifacts/`: generated models and vectorizers; not committed.
 
-## `data/` - Mai and Huy
+## `data/` - Mai and Nhung
 
 - `raw/`: untouched source CSV files.
 - `interim/`: intermediate outputs used for debugging.
 - `processed/`: clean products and final product scores.
 - `samples/`: small anonymized fixtures that may be committed for tests and UI work.
 
-## `docs/` - Nhu
+## `docs/` - Như
 
 - Product requirements, architecture, data contracts, decisions, evaluation results, test cases, and demo material.
-- Existing competition documents at the repository root remain source references until the team decides how to organize them.
+- Use available reports as sources. No complete project/competition report was
+  found in the current checkout; do not claim it was reviewed.
+
+## `specs/` - Shared feature planning
+
+- Eight bounded features store English specs, plans, contracts and task lists.
+- Each task has one proposed member owner; actual claims are recorded in
+  `docs/CURRENT_STATE.md` after team coordination.
+- See [the backlog](../PROJECT_BACKLOG.md). Task counts are not effort estimates.
+- Planned web server modules live in `frontend/src/server/`, domain handlers in
+  `frontend/src/app/api/v1/`, auth handlers in `frontend/src/app/api/auth/`,
+  and versioned SQL migrations in `frontend/db/migrations/`.
 
 ## `scripts/` and `tests/`
 

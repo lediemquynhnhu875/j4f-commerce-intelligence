@@ -23,6 +23,12 @@ documentation, record the change and its impact.
 
 ## 2. Task Ownership and Coordination
 
+- Current roster: Như owns product/QA/human evaluation/reports/demo; Nhung owns
+  data science/ML; Mai owns cleaning/data engineering/database/web backend and
+  FastAPI integration; Huy owns frontend/UX. Older swapped assignments are
+  superseded by `docs/decisions/0002-planning-scope-and-ownership.md`.
+- Use `docs/PROJECT_BACKLOG.md` to select a feature. Proposed task owners in its
+  plans are not confirmed work claims.
 - Each task has one owner at a time. Record its feature/task ID, owner, branch,
   and status in the active task table.
 - Before working concurrently, the team must confirm assignments through its
@@ -43,6 +49,10 @@ documentation, record the change and its impact.
   `docs/decisions/0001-web-database-model-stack.md` for component boundaries.
 - Follow code placement and ownership in `docs/rules/repository-structure.md`.
   Reusable ML logic belongs in `ml/src/`, not only in notebooks.
+- Admin provisions email/password accounts; every User has one assigned store.
+  Validate active account, role and persisted ownership on the server for all
+  product, analysis, suggestion, action and history IDs. Source seller metadata
+  does not confer application ownership.
 - Backend routes handle HTTP; business logic belongs in services. The frontend
   consumes documented APIs and must not read processed CSV files directly in
   production.
@@ -61,6 +71,13 @@ documentation, record the change and its impact.
 
 ## 4. Checklists and Completion Criteria
 
+- Display tasks in dependency-valid execution order. Phase headings must not
+  introduce unlisted prerequisites. Frontend setup and labeled synthetic previews
+  can proceed from draft requirements/contracts; real integration requires the
+  reviewed contract and verified server/model dependencies.
+- Keep mock completion separate from real feature acceptance. Preserve task IDs
+  after execution starts; the one-time pre-execution migration is recorded in
+  `docs/decisions/0003-ui-preview-first-task-order.md`.
 - Once Spec Kit is installed, agents share `specs/<feature>/spec.md`, `plan.md`,
   and `tasks.md`. Agent-specific skill directories support the workflow.
 - `tasks.md` tracks implementation. Change `[ ]` to `[x]` only after meeting

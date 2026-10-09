@@ -68,3 +68,49 @@ The frontend may display Vietnamese labels, but storage and API values use these
 - `favourite_count` is excluded because it is zero throughout the supplied snapshot.
 - `date_created` is excluded until its unit and meaning are verified.
 - A recommendation must cite observable evidence and must not be phrased as a causal guarantee.
+
+## Planned application and serving extension
+
+Status: reviewed planning baseline, not an implemented API or applied schema.
+The CSV fields above remain intact. Differences discovered in real data must
+be resolved by Mai and Nhung before publication.
+
+- `quantity_sold` and `observed_sales` are the observed target, never estimator
+  features for predicting that same target. Missing essential cleaning values
+  are rejected/audited. Optional values stay null rather than becoming zero.
+- The app's product ID is a persisted `StoreProduct` ID. CSV `product_id`
+  becomes `source_product_id` in provenance. Explicit assignments link app
+  products to stores; source `seller_id` is not account ownership.
+- Admin provisions accounts. An active User has one store; every nested product,
+  analysis, suggestion, action and history lookup enforces original store scope.
+- Imported snapshots are immutable and record source/checksum/import metadata.
+  Unknown capture time or observed-sales window stays unknown; `scored_at`
+  does not stand in for source capture time.
+- Inference receives allowlisted model features and a separate observation.
+  Artifacts include fitted preprocessing/model, calibration, dependency versions,
+  config/taxonomy/corpus identity and evaluation provenance. No request-time fit.
+- Inference numeric outputs must be finite or JSON null. No-model or insufficient
+  peer basis yields unavailable references/intervals and explicit reasons.
+  Feedback-only insufficiency can retain valid references with its reason.
+  Nonfinite service responses violate the contract.
+- Processing values `pending`, `running`, `succeeded` and `failed` are distinct
+  from the six analytic statuses above. A successful `insufficient_data` result
+  is not a technical processing failure.
+- Saved analyses freeze input/output, approved peer/source evidence, recommendations,
+  limitations and model/config versions. Reassignment and later product edits
+  do not rewrite historical evidence or ownership.
+- Recommendation rules run in Python and are reused by serving. Public peer
+  fields may be disclosed through approved DTOs; other stores' private app records
+  may not.
+- Original suggestions remain immutable. Action state and append-only history
+  are written atomically with version checks; completion is work progress, not
+  verified sales uplift.
+
+Authoritative feature details:
+[identity](../../specs/001-web-foundation/contracts/interfaces.md),
+[catalog](../../specs/002-product-catalog/contracts/interfaces.md),
+[ML readiness](../../specs/003-ml-readiness/contracts/interfaces.md),
+[serving](../../specs/004-analysis-integration/contracts/interfaces.md),
+[presentation](../../specs/005-user-dashboard/contracts/interfaces.md),
+[actions](../../specs/006-improvement-workflow/contracts/interfaces.md), and
+[Admin](../../specs/007-system-admin/contracts/interfaces.md).

@@ -2,8 +2,12 @@
 
 Status: Accepted by the team; implementation pending.
 Date: 2026-10-09 (Asia/Saigon).
-Owners: Mai (web backend, database, and service integration), Nhung (frontend),
-Huy (ML and model integration), Nhu (product and QA).
+Owners: Mai (web backend, database, and service integration), Huy (frontend),
+Nhung (ML and model integration), Như (product and QA).
+
+Ownership corrected on 2026-10-09 to follow the current user-confirmed roster;
+the architecture decision is unchanged. See
+[planning scope and ownership](0002-planning-scope-and-ownership.md).
 
 ## Context
 
@@ -16,7 +20,7 @@ have not yet been initialized as complete services.
 ## Decision
 
 - Use Next.js for the frontend and web backend. The planned web application
-  lives in `frontend/`, with UI ownership assigned to Nhung and web backend
+  lives in `frontend/`, with UI ownership assigned to Huy and web backend
   ownership assigned to Mai.
 - Use PostgreSQL hosted on Neon for application persistence. The Next.js server
   owns product queries, score retrieval, and user action tracking through the

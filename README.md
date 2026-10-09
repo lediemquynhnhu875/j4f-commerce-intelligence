@@ -12,8 +12,8 @@ The system provides decision-support hypotheses. It does not claim causal effect
 
 | Component | Technology |
 | --- | --- |
-| Web backend | Next.js |
-| Frontend | Next.js |
+| Web backend | Next.js / TypeScript |
+| Frontend | Next.js / TypeScript |
 | Database | PostgreSQL on Neon |
 | Model service | Python / FastAPI |
 
@@ -46,10 +46,10 @@ it when handing work over. See [docs/README.md](docs/README.md) for the document
 
 | Area | Primary owner | Reviewer |
 | --- | --- | --- |
-| Product, QA, report, demo | Nhu | All members |
-| Data science and ML | Huy | Nhu |
-| Data pipeline, backend, database | Mai | Huy |
-| Frontend and UX | Nhung | Nhu |
+| Product, QA, real human evaluation, report, demo | Như | All members |
+| Data science and ML | Nhung | Như |
+| Data pipeline, web backend, database, model-service integration | Mai | Nhung |
+| Frontend and UX | Huy | Như |
 
 ## MVP flow
 
@@ -66,13 +66,26 @@ Raw CSV files
 
 ## Getting started
 
-1. Put the six original CSV files in `data/raw/`. Do not commit them.
-2. Copy `.env.example` to `.env` when local services are introduced.
-3. Implement data cleaning first and write `data/processed/clean_products.csv`.
-4. Implement scoring and write `data/processed/product_scores.csv` according to the shared contract.
-5. Let the backend and frontend use sample data until the full model is ready.
+1. Review [the implementation backlog](docs/PROJECT_BACKLOG.md) and claim a
+   feature/task through team coordination.
+2. Start F001/T001 frontend setup, then F001/T002–T004 mock previews. F003 ML
+   verification can start independently. Review real contracts before integrating
+   auth/database/model behavior; reuse existing cleaning and scoring code.
+3. Obtain the six source CSVs and trusted artifacts locally. Do not commit them.
+4. Copy `.env.example` to `.env` when implementing runtime setup.
+5. Use clearly labeled mocks only for the planned UI tasks; real integration
+   requires verified source/artifacts and acceptance evidence.
 
-The data and model pipeline is ready. See [ml/README.md](ml/README.md) for commands and checkpoints. Backend and frontend runtime commands will be added when those applications are initialized.
+Admin provisions email/password accounts; each User has one explicit store.
+User access is enforced server-side; Admin manages the system. Demo assignments
+do not derive account ownership from source seller metadata.
+
+Spec Kit and the constitution are initialized. Eight feature plans contain 110
+unchecked tasks. Existing ML runtime readiness remains unverified: the current
+test attempt fails at import because `pandas` is missing, and source/model
+artifacts are absent. See [the evidence audit](docs/verification/planning-audit.md)
+and [ml/README.md](ml/README.md) for commands and checkpoints. Web and service
+runtime commands will be supplied by their implementation tasks.
 
 ## Git workflow
 
