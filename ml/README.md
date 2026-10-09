@@ -1,6 +1,12 @@
 # Data and machine learning pipeline
 
-Owner: Huy. Reviewer: Nhu.
+Owner: Nhung. Reviewer: Như. Cleaning/data engineering: Mai.
+
+Readiness is not verified in this checkout. The latest test discovery fails
+because `pandas` is missing; source CSVs, trained artifacts and completed review
+labels are unavailable. Existing pipeline code is preserved. See
+[the evidence audit](../docs/verification/planning-audit.md) and
+[F003 verification tasks](../specs/003-ml-readiness/tasks.md).
 
 ## Outputs
 
@@ -14,7 +20,7 @@ Owner: Huy. Reviewer: Nhu.
 
 Audit outputs include exact duplicates, duplicated product IDs, rejected rows, data quality metrics, and the saved model bundle.
 
-The supplied six-file snapshot currently produces these checks:
+Historical six-file snapshot results, not reproduced in this planning session:
 
 - 41,603 raw rows and 41,576 unique clean products.
 - 22 exact duplicate rows removed.
