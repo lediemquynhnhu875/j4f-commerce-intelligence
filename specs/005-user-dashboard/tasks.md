@@ -42,7 +42,7 @@ Task IDs were revised at the user's request before any task was claimed or compl
 
 **Independent Test**: Inspect labeled fixture states; no real session, API, database or model result is claimed.
 
-- [ ] T002 [P] [US1] Build metric cards and review-priority UI using labeled fixtures in `frontend/src/features/dashboard/overview.tsx`.
+- [ ] T002 [P] [US1] Build metric cards and review-priority UI using labeled fixtures in `frontend/src/features/user/overview.tsx`.
   - Primary owner (proposed): **Huy**. Reviewer: **Như**. Collaborators: None.
   - Dependencies: T001.
   - Completion criteria: All availability states and metric labels follow draft DTOs; fixtures do not claim real model completion.
@@ -98,7 +98,7 @@ Task IDs were revised at the user's request before any task was claimed or compl
 
 **Independent Test**: Inspect valid, feedback-only-insufficient and no-basis saved runs through the presentation.
 
-- [ ] T008 [US2] Implement observed/reference/gap and peer evidence components in `frontend/src/features/analysis/evidence-panel.tsx`.
+- [ ] T008 [US2] Implement observed/reference/gap and peer evidence components in `frontend/src/features/user/evidence-panel.tsx`.
   - Primary owner (proposed): **Huy**. Reviewer: **Như**. Collaborators: Nhung.
   - Dependencies: T005, F004/T001.
   - Completion criteria: Gap is reference minus observed; no-basis fields remain unavailable; approved peer fields and limitations displayed.

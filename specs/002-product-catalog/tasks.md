@@ -42,7 +42,7 @@ Task IDs were revised at the user's request before any task was claimed or compl
 
 **Independent Test**: Inspect labeled fixture states; no real session, API, database or model result is claimed.
 
-- [ ] T002 [P] [US2] Build catalog list/search/filter/pagination UI with labeled mocks in `frontend/src/features/products/product-list.tsx`.
+- [ ] T002 [P] [US2] Build catalog list/search/filter/pagination UI with labeled mocks in `frontend/src/features/user/product-list.tsx`.
   - Primary owner (proposed): **Huy**. Reviewer: **Như**. Collaborators: None.
   - Dependencies: F001/T002.
   - Completion criteria: Loading/empty/error states work against the draft contract; mock adapter is clearly separate from real API.

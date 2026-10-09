@@ -1,25 +1,40 @@
-# Model Service
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/create-next-app).
 
-Owner: Mai. Reviewer: Nhung.
+## Getting Started
 
-Agreed stack: Python and FastAPI for model serving. This directory contains the
-existing Python service scaffold; the model-service runtime has not been initialized.
+First, run the development server:
 
-The web backend uses Next.js as part of the web application in `frontend/`.
-It owns web APIs under `/api/v1`, application logic, PostgreSQL access on Neon,
-and user action tracking. This service exposes model inference to that backend
-and reuses the model and scoring modules in `ml/src/`.
+```bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
+```
 
-Keep HTTP routes in `app/api/`, service logic in `app/services/`, configuration
-in `app/core/`, and request/response schemas in `app/schemas/`. The existing
-`app/db/` directory is a scaffold; it does not establish ownership of the web
-application's persistence layer. Endpoint contracts and runtime commands will
-be documented when the service is implemented.
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-See [the stack decision](../docs/decisions/0001-web-database-model-stack.md) and
-[the shared data contract](../docs/rules/data-contracts.md).
+You can start editing the page by modifying `app/route.ts`. The page auto-updates as you edit the file.
 
-Planned delivery: [F003 readiness](../specs/003-ml-readiness/plan.md) must verify
-the bundle/corpus before [F004 serving](../specs/004-analysis-integration/plan.md)
-claims real inference. Models load from trusted configuration at startup;
-recommendation rules stay in Python. All implementation tasks remain unchecked.
+## Learn More
+
+To learn more about Next.js, take a look at the following resources:
+
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+
+## Deploy on Vercel
+
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## API Routes
+
+This directory contains example API routes for the headless API app.
+
+For more details, see [route.js file convention](https://nextjs.org/docs/app/api-reference/file-conventions/route).

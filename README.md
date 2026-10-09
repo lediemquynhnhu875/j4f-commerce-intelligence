@@ -19,7 +19,10 @@ The system provides decision-support hypotheses. It does not claim causal effect
 
 The planned Next.js application in `frontend/` serves the UI and web APIs.
 The Python service in `backend/` serves model inference using `ml/src/`.
-Web, database, and model-service runtime setup is still pending. See
+The frontend now has eight synthetic User/Admin pages and a demo login; see
+[frontend setup](frontend/README.md). Real authentication, database and model
+integration remain pending. The current separate Next.js `backend/` scaffold
+needs its model-service boundary reconciled before integration. See
 [the architecture decision](docs/decisions/0001-web-database-model-stack.md).
 
 ## Repository structure
