@@ -8,12 +8,26 @@ The MVP processes a Tiki fashion-product snapshot, finds comparable products, es
 
 The system provides decision-support hypotheses. It does not claim causal effects or forecast future sales.
 
+## Agreed technology stack
+
+| Component | Technology |
+| --- | --- |
+| Web backend | Next.js |
+| Frontend | Next.js |
+| Database | PostgreSQL on Neon |
+| Model service | Python / FastAPI |
+
+The planned Next.js application in `frontend/` serves the UI and web APIs.
+The Python service in `backend/` serves model inference using `ml/src/`.
+Web, database, and model-service runtime setup is still pending. See
+[the architecture decision](docs/decisions/0001-web-database-model-stack.md).
+
 ## Repository structure
 
 ```text
 .
-|-- backend/              # API, database, and model integration
-|-- frontend/             # Web dashboard and product analysis UI
+|-- backend/              # Python/FastAPI model-service scaffold
+|-- frontend/             # Planned Next.js frontend and web backend
 |-- ml/                   # Data preparation, peer groups, models, scoring
 |-- data/                 # Local datasets (large/sensitive files are ignored)
 |-- docs/                 # Architecture, contracts, decisions, and reports
@@ -22,7 +36,11 @@ The system provides decision-support hypotheses. It does not claim causal effect
 `-- .github/              # GitHub templates and CI workflows
 ```
 
-See [docs/repository-structure.md](docs/repository-structure.md) for ownership and file placement rules, and [docs/data-contracts.md](docs/data-contracts.md) for the first shared output contract.
+See [docs/rules/repository-structure.md](docs/rules/repository-structure.md) for ownership and file placement rules, and [docs/rules/data-contracts.md](docs/rules/data-contracts.md) for the first shared output contract.
+
+All contributors and coding agents follow [AGENTS.md](AGENTS.md). Read
+[docs/CURRENT_STATE.md](docs/CURRENT_STATE.md) before starting a task and update
+it when handing work over. See [docs/README.md](docs/README.md) for the documentation index.
 
 ## Team ownership
 

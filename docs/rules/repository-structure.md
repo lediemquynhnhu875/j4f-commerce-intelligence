@@ -1,22 +1,33 @@
 # Repository structure and ownership
 
-## `backend/` - Mai
+## Agreed stack and component boundaries
 
-- `app/api/`: HTTP routes only; business logic stays in services.
+- Next.js serves the frontend and web backend in the planned `frontend/` web application.
+- The web backend owns application logic, PostgreSQL access on Neon, and user actions.
+- Python/FastAPI in `backend/` serves model inference and reuses `ml/src/`.
+- These are target responsibilities; the existing scaffolds are not complete runtimes.
+- See [the stack decision](../decisions/0001-web-database-model-stack.md).
+
+## `backend/` - Mai, with Huy for model integration
+
+- `app/api/`: model-service HTTP routes only; service logic stays in services.
 - `app/core/`: configuration, logging, and shared application setup.
-- `app/db/`: database session and persistence code.
-- `app/schemas/`: API request and response contracts.
-- `app/services/`: product queries, scoring integration, and recommendations.
-- `tests/`: backend unit and API tests.
+- `app/db/`: existing scaffold; web persistence belongs to the Next.js backend.
+- `app/schemas/`: model-service request and response contracts.
+- `app/services/`: model loading, inference, and scoring integration.
+- `tests/`: model-service unit and API tests.
 
-## `frontend/` - Nhung
+## `frontend/` - Nhung (UI), Mai (web backend and database)
 
+- Planned Next.js application with frontend and web backend code; initialize its
+  framework structure when implementation begins.
 - `src/components/`: reusable UI components.
 - `src/features/dashboard/`: summary metrics, charts, and priority products.
 - `src/features/products/`: product list, filters, profile, peers, and actions.
-- `src/lib/`: API client and generic helpers.
+- `src/lib/`: API client and generic helpers; keep database and model-service
+  integration code in server-only modules when the application is initialized.
 - `src/types/`: shared TypeScript types.
-- `tests/`: frontend tests.
+- `tests/`: web UI and web API tests.
 
 ## `ml/` - Huy
 
@@ -52,5 +63,5 @@
 - Backend routes must not contain data-cleaning or model-training logic.
 - Frontend code must consume documented API responses, not read processed CSV files in production.
 - Commit only small, anonymized sample data required for development or testing.
-- Changes to column names, API fields, or status labels require a matching update to `docs/data-contracts.md`.
+- Changes to column names, API fields, or status labels require a matching update to `docs/rules/data-contracts.md`.
 
