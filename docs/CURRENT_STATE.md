@@ -6,84 +6,104 @@ Updated: 2026-10-09 (Asia/Saigon).
 
 | Component | Target technology / responsibility |
 | --- | --- |
-| Web application | Next.js App Router and TypeScript in `frontend/`; UI, authentication, authorization, APIs and workflow |
-| Database | PostgreSQL on Neon; application state and atomic history |
-| Model service | Python/FastAPI in `backend/`; reuse `ml/src/` for inference and analysis |
+| Frontend | Next.js App Router, TypeScript and Tailwind in `frontend/` |
+| Web backend | Next.js / TypeScript; separate `backend/` scaffold exists in the current checkout |
+| Database | PostgreSQL on Neon; real connectivity and migrations pending |
+| Model service | Python/FastAPI reusing `ml/src/`; reconcile service location before integration |
 
-Admin creates email/password accounts; public registration is excluded. Each User
-has one explicitly assigned store. Source `seller_id` does not establish ownership.
-Analysis is snapshot decision support without future-sales or causal guarantees.
-See [stack](decisions/0001-web-database-model-stack.md) and
-[scope/ownership](decisions/0002-planning-scope-and-ownership.md) decisions.
+Admin provisions email/password accounts; no public registration. Each User has
+one explicitly assigned store. Source `seller_id` does not establish ownership.
+Analysis provides snapshot decision support without causal or future-sales guarantees.
+Older [stack](decisions/0001-web-database-model-stack.md) and
+[structure](rules/repository-structure.md) docs still place FastAPI in `backend/`.
+The user's later separate Next.js backend setup supersedes that observed folder
+description; no service was moved or implemented in this frontend session.
 
 ## Observed State
 
 | Area | Current state and evidence |
 | --- | --- |
-| Spec Kit | Initialized with Codex, Claude and Copilot integrations; constitution v1.0.0 exists |
-| Planning | Eight feature directories, 24 user stories and 110 unchecked implementation tasks; drafts for team review, not assigned work |
-| ML code | Cleaning, taxonomy, peers, model, scoring and review modules exist; source inspected, runtime readiness unverified |
-| ML tests | Python 3.12.4; unittest discovery exits 1 at import because `pandas` is missing; four real test methods did not execute |
-| Data/artifacts | Raw/processed/model directories contain placeholders; actual snapshot, trained artifacts and completed human labels absent |
-| EDA | Existing notebook and 16 figures inspected as historical material; quantitative findings not reproduced |
-| Web/service/database | Scaffolds and target architecture only; no runnable Next.js/FastAPI service, Neon connectivity or migrations verified |
-| Human evidence/report | Review instructions exist; no completed independent review or full project report found |
-| Shared instructions | English `AGENTS.md`, Claude/Copilot instructions, constitution and feature docs |
+| Spec Kit | Codex/Claude/Copilot integrations; constitution v1.0.0 and eight feature drafts |
+| Backlog | 110 tasks: 3 checked, 107 unchecked; a mock does not complete real feature acceptance |
+| Frontend | Runnable Next.js 16.4.0 / React 19.3.0 / Tailwind 4.3.3; lint, build, development HTTP and six Chromium browser tests passed |
+| User UI | Four Stitch-based synthetic pages: overview, products, analysis, suggestions |
+| Admin UI | Four Stitch-based synthetic pages: overview, stores, monitor, model configuration |
+| Demo login | One public mock Admin and one mock User; browser-tab role selection only, no server authentication |
+| Backend/Neon/model serving | Existing separate Next.js backend scaffold preserved; real auth/API/DB/inference unverified |
+| ML/data | Existing pipeline preserved; prior missing-pandas test blocker and missing snapshot/model/human artifacts remain |
+| Human review/release | No human acceptance, independent model review or production readiness claim |
 
-No application or ML functionality was demonstrated working during this planning
-session. Existing source is preserved for verification and scoped gap filling.
-Detailed evidence: [planning audit](verification/planning-audit.md).
+Detailed frontend evidence: [UI verification](verification/sellens-ui-preview.md).
+Historical planning evidence: [planning audit](verification/planning-audit.md).
 
 ## Active Tasks
 
-No implementation task has been claimed or started by this planning request.
-Proposed owners in task files do not represent team assignments.
+Implementation was explicitly requested by the current contributor. The named
+team ownership roster is unchanged; no other contributor's work was taken over.
+The existing dirty `set_up` branch was retained without pulling or stashing.
 
 | Feature / task ID | Owner | Branch | Status | Dependencies / notes |
 | --- | --- | --- | --- | --- |
-| None | Unassigned | N/A | No task claimed | Team reviews drafts and confirms claims first |
-
-## Proposed Ownership and First Work
-
-| Member | Responsibility | Recommended first task |
-| --- | --- | --- |
-| Như | Product, QA, genuine human evaluation, report/slides/demo | F001/T005: auth/ownership acceptance review |
-| Nhung | Data science, taxonomy, peers, modeling and evaluation | F003/T001: environment/code/readiness audit |
-| Mai | Cleaning, DB, web backend/auth/imports and FastAPI integration | F001/T001: initialize frontend; no auth-review prerequisite |
-| Huy | Frontend/UX and User/Admin screens | F001/T002 after T001: mock shell; then mock navigation/login |
-
-Use [PROJECT_BACKLOG.md](PROJECT_BACKLOG.md) for feature links, execution order and
-outstanding decisions. Start F001/T001 frontend setup, then F001/T002–T004
-mock previews; F003 audit can start independently. Review F001/T005–T006 before
-real persistence/auth integration. Connect real catalog/model/workflow components
-only when their listed prerequisites pass.
+| F001/T001 | Requesting contributor, Codex-assisted | set_up | Complete | Existing frontend setup verified locally; shared Node LTS baseline still needs review |
+| F001/T002 | Requesting contributor, Codex-assisted | set_up | Complete | Both synthetic role shells and responsive layout verified |
+| F006/T001 | Requesting contributor, Codex-assisted | set_up | Complete, mock only | Evidence-preserving accept/reject and required reason verified |
+| F001/T003–T004 | Requesting contributor, Codex-assisted | set_up | Partial, unchecked | Navigation/login/pending/failure/logout/role-denial built; explicit expired/unassigned fixtures remain |
+| F002/T002; F005/T001–T002; F007/T001 | Requesting contributor, Codex-assisted | set_up | Partial, unchecked | Visual implementation exists; loading/error states, wireframe artifacts and contract reviews remain |
 
 ## Latest Handoff
 
-- Scope: corrected checklist ordering at the user's request; documentation only.
-  Used the installed Spec Kit task template with each feature selected explicitly.
-- Reordered eight task files so local prerequisites appear before their dependents.
-  F001/T001 now initializes the frontend without waiting for auth review.
-  F001/T002–T004 separately track mock shell, navigation and login.
-- Early catalog/import, analysis, dashboard and suggestion mocks, plus Admin
-  wireframes, no longer wait for unrelated database/API/model readiness.
-  Real integration still requires reviewed contracts, active server guards and
-  genuine model/human evidence.
-- Three new mock tasks bring the total to 110 unchecked tasks. No task was
-  claimed, implemented or marked complete. Existing completed preparation includes
-  shared rules, stack/scope decisions, Spec Kit/constitution and draft feature plans.
-- Renumbering occurred before execution; all current task references and first-task
-  recommendations were updated. Use the
-  [ID migration](decisions/0003-ui-preview-first-task-order.md) for older references.
-  Preserve task IDs once owners start work.
-- Verified task format, local execution order, dependency references/acyclicity,
-  75 requirement mappings, owner preservation, 337 local links and diff whitespace.
-  These checks do not establish runtime readiness.
-- Existing blockers remain: Python dependencies, actual source/model artifacts,
-  human review and runtime/Neon provisioning. No application/ML code or tests were
-  changed; prior frontend placeholder deletions remain intact.
-- Local feature pointer selects F001. Next step: coordinate the F001/T001 claim,
-  perform frontend setup, then claim the mock tasks. No commit, push or merge.
+- Follow-up scope: the user requested separate header/sidebar components and
+  exactly four User screen files in one folder. Extracted
+  `frontend/src/components/layout/header.tsx` and `sidebar.tsx`;
+  `app-shell.tsx` composes them and retains demo role, drawer and notification state.
+- User screens now live in `frontend/src/features/user/`: `overview.tsx`,
+  `product-list.tsx`, `evidence-panel.tsx` and `suggestions-view.tsx`.
+  Preserved existing descriptive names. Shared donut/product presentation and
+  suggestion cards moved to `components/`; Admin no longer imports User screens
+  for shared helpers. Updated imports, source map, structure rules and task paths.
+- Refactor verification: `npm run lint` and `npm run build` passed; existing
+  six Chromium tests passed again for role navigation, workflows and mobile behavior.
+  No additional task was checked off by this structural refactor.
+- Scope: implement only `frontend/` UI from the user's Stitch project Sellens
+  Decision Support Platform. Read eight actor screens and the separate palette
+  screen. Follow its pink/fuchsia/purple/blue gradient and pale violet surfaces.
+- Routes: `/preview/user/{overview,products,analysis,suggestions}` and
+  `/preview/admin/{overview,stores,monitor,configuration}`. Login at `/`,
+  `/preview` or `/preview/login`. Four menu pages per actor.
+- Public fixtures: `admin@sellens.demo` and `user@sellens.demo`, both with
+  `Sellens123!`. These are demo-only strings. No real account was provisioned.
+- Implemented search/filter/pagination, selected-product analysis, missing
+  reference presentation, suggestion accept/reject/progress/Kanban, store
+  add/select/suspend, failed-job logs, local config versions, JSON exports,
+  responsive sidebar, keyboard navigation and mock notifications.
+- Reusable shell/UI components, `src/features/` views and
+  `src/lib/preview-fixtures.ts` separate synthetic content from future APIs.
+  Local product images come from the Stitch references. Docs are in English;
+  interface labels follow the Vietnamese designs.
+- Verification from `frontend/`: `npm run lint` passed; `npm run build`
+  passed; `npm run test:e2e` passed **6 Chromium tests**. Development server
+  `npm run dev -- --port 3100` returned HTTP 200 for `/preview/login`.
+  Desktop screenshots and mobile 390 px layout inspected. Test servers stopped.
+- Local Node 25.2.1/npm 11.6.2 were used; compatibility with the preferred shared
+  Node LTS baseline was not tested. Playwright 1.64.0 is pinned in the lockfile.
+- Removed only an obsolete generated Next type validator referencing the
+  deleted health route. Pre-existing backend changes/deletions and ML are
+  preserved. No commit, push or merge.
+- Mock role selection persists in `sessionStorage`; component edits reset on
+  reload. No database, durable audit, API, model inference or server permission
+  is supplied by these previews. Configuration controls do not change ML.
+- Next: review the eight screens with Huy/Như, finish remaining preview states,
+  choose the shared Node baseline and reconcile backend/model-service placement.
+  Real auth, tenant guards and Neon/model integration retain their existing
+  requirements and unchecked tasks.
+
+## Team Ownership
+
+Như: product/QA/human evaluation/reports/demo; Nhung: data science/ML;
+Mai: cleaning/data engineering/database/web backend/FastAPI integration;
+Huy: frontend/UX. See [ownership decision](decisions/0002-planning-scope-and-ownership.md).
+Use [PROJECT_BACKLOG.md](PROJECT_BACKLOG.md) for task dependencies. Confirm
+concurrent assignments through the team's coordination channel or a PR.
 
 ## Session Update Template
 

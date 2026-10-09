@@ -30,7 +30,7 @@ Task IDs were revised at the user's request before any task was claimed or compl
 
 **Independent Test**: Run the dev page, production build and lint using the recorded Node/dependency versions.
 
-- [ ] T001 Initialize the Next.js App Router TypeScript app and pin its frontend runtime dependencies in `frontend/package.json`.
+- [x] T001 Initialize the Next.js App Router TypeScript app and pin its frontend runtime dependencies in `frontend/package.json`.
   - Primary owner (proposed): **Mai**. Reviewer: **Nhung**. Collaborators: None.
   - Dependencies: None.
   - Completion criteria: Working App Router under frontend/; compatible Node/Next.js/TypeScript versions, lockfile and dev/build/lint scripts recorded. Existing ML remains intact. No database/auth/service is required for this task.
@@ -42,7 +42,7 @@ Task IDs were revised at the user's request before any task was claimed or compl
 
 **Independent Test**: Inspect labeled fixture states; no real session, API, database or model result is claimed.
 
-- [ ] T002 [US3] Build the shared User/Admin shell with visibly labeled synthetic previews in `frontend/src/components/layout/app-shell.tsx`.
+- [x] T002 [US3] Build the shared User/Admin shell with visibly labeled synthetic previews in `frontend/src/components/layout/app-shell.tsx`.
   - Primary owner (proposed): **Huy**. Reviewer: **Như**. Collaborators: None.
   - Dependencies: T001.
   - Completion criteria: Preview layouts, sidebar and responsive structure render using synthetic role fixtures. They make no auth/API/database/model calls and establish no real permissions.
@@ -235,7 +235,10 @@ Owners are proposed, not confirmed claims. Record actual owner/branch/status in 
 
 ## Notes
 
-Generated 16 unchecked tasks. All pre-existing work remains unchecked; no implementation is claimed.
+Initially generated 16 unchecked tasks. F001/T001–T002 were subsequently
+verified and checked during the user-requested UI preview implementation.
+See [verification](../../docs/verification/sellens-ui-preview.md). T003–T004 are
+partial; all real authentication/authorization tasks remain unchecked.
 
 ## Requirement Coverage
 

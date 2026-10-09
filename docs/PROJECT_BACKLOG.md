@@ -1,10 +1,12 @@
 # Sellens Implementation Backlog
 
 Date: 2026-10-09 (Asia/Saigon).
-Status: draft for team review; 110 unchecked implementation tasks.
+Status: 110 implementation tasks; 3 checked, 107 unchecked. Real integration remains planned.
 
 Task count is an inventory, not an effort estimate or completion percentage.
-This planning session implements no application features and claims no tasks.
+The initial planning session claimed no tasks. The user subsequently authorized
+the Stitch-based frontend preview. See [UI verification](verification/sellens-ui-preview.md)
+and [current handoff](CURRENT_STATE.md) for implementation evidence and remaining work.
 
 ## Confirmed scope and ownership
 
@@ -34,13 +36,13 @@ quality checklist.
 
 | ID / priority | Feature / task file | Scope | Proposed contributors | Main dependencies | Current evidence | Tasks |
 | --- | --- | --- | --- | --- | --- | ---: |
-| F001 / P1 | [Web foundation](../specs/001-web-foundation/tasks.md) | Next.js, provisioned login, ownership and navigation | Mai, Huy, Như | Agreed stack; setup independent of auth review | Planned; no app runtime | 16 |
+| F001 / P1 | [Web foundation](../specs/001-web-foundation/tasks.md) | Next.js, provisioned login, ownership and navigation | Mai, Huy, Như | Agreed stack; setup independent of auth review | Frontend runtime and synthetic shell verified; real auth pending | 16 |
 | F002 / P1 | [Product catalog](../specs/002-product-catalog/tasks.md) | Cleaning reuse, staged imports, assignment, search/detail | Mai, Huy, Nhung, Như | F001; field/provenance review | Cleaning source exists; runtime/imports unverified | 15 |
 | F003 / P1 | [ML readiness](../specs/003-ml-readiness/tasks.md) | EDA/taxonomy/peers/models; real bundle, calibration, eligibility | Nhung, Mai, Như | Actual data/dependencies/human labels | ML source exists; tests blocked by missing pandas | 16 |
 | F004 / P1 | [Analysis integration](../specs/004-analysis-integration/tasks.md) | FastAPI inference, frozen results, idempotency and failures | Mai, Nhung, Huy, Như | F001, F002 and verified F003 | Planned; no real service | 13 |
-| F005 / P1 | [User dashboard](../specs/005-user-dashboard/tasks.md) | Supported metrics, evidence and frozen history | Huy, Mai, Nhung, Như | F001, F002, F004 | Planned; no connected screens | 12 |
-| F006 / P1 | [Improvement workflow](../specs/006-improvement-workflow/tasks.md) | Decisions, progress, immutable original and atomic history | Mai, Huy, Nhung, Như | F001, F004; recommendation contract | Rules exist; app workflow planned | 12 |
-| F007 / P1 | [System Admin](../specs/007-system-admin/tasks.md) | Accounts, stores/categories/imports and processing monitor | Mai, Huy, Như | F001, F002, F004 | Planned; no management runtime | 12 |
+| F005 / P1 | [User dashboard](../specs/005-user-dashboard/tasks.md) | Supported metrics, evidence and frozen history | Huy, Mai, Nhung, Như | F001, F002, F004 | Stitch-based synthetic overview/analysis built; contracts and real integration pending | 12 |
+| F006 / P1 | [Improvement workflow](../specs/006-improvement-workflow/tasks.md) | Decisions, progress, immutable original and atomic history | Mai, Huy, Nhung, Như | F001, F004; recommendation contract | Mock review/accept/reject verified; real workflow and history pending | 12 |
+| F007 / P1 | [System Admin](../specs/007-system-admin/tasks.md) | Accounts, stores/categories/imports and processing monitor | Mai, Huy, Như | F001, F002, F004 | Four synthetic Admin pages built; real management and review pending | 12 |
 | F008 / P1 release gate | [Demo readiness](../specs/008-demo-readiness/tasks.md) | E2E/human QA, report/slides/demo/runbook | Như, Mai, Nhung, Huy | Verified F003–F007; preparation can start earlier | Instructions exist; no release/human evidence | 14 |
 
 All features are required MVP/release work. Within each feature, story priorities

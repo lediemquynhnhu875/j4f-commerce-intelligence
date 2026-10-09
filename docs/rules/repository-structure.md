@@ -21,9 +21,13 @@
 
 - Planned Next.js application with frontend and web backend code; initialize its
   framework structure when implementation begins.
-- `src/components/`: reusable UI components.
-- `src/features/dashboard/`: summary metrics, charts, and priority products.
-- `src/features/products/`: product list, filters, profile, peers, and actions.
+- `src/components/`: reusable UI components; `layout/header.tsx` and
+  `layout/sidebar.tsx` are composed by `layout/app-shell.tsx`.
+- `src/features/admin/`: four Admin screen files: `overview.tsx`, `stores.tsx`,
+  `monitor.tsx` and `configuration.tsx`.
+- `src/features/user/`: four User screen files: `overview.tsx` (dashboard),
+  `product-list.tsx` (catalog), `evidence-panel.tsx` (analysis) and
+  `suggestions-view.tsx` (improvements). Keep reusable helpers in `components/`.
 - `src/lib/`: API client and generic helpers; keep database and model-service
   integration code in server-only modules when the application is initialized.
 - `src/types/`: shared TypeScript types.

@@ -30,7 +30,7 @@ Task IDs were revised at the user's request before any task was claimed or compl
 
 **Independent Test**: Inspect labeled fixture states; no real session, API, database or model result is claimed.
 
-- [ ] T001 [P] [US1] Build suggestion review/accept/reject UI against draft DTOs in `frontend/src/features/improvements/suggestion-card.tsx`.
+- [x] T001 [P] [US1] Build suggestion review/accept/reject UI against draft DTOs in `frontend/src/components/user/suggestion-card.tsx`.
   - Primary owner (proposed): **Huy**. Reviewer: **Như**. Collaborators: None.
   - Dependencies: F001/T002.
   - Completion criteria: Original evidence always available; rejection reason required; no guaranteed-uplift wording.
@@ -189,7 +189,10 @@ Owners are proposed, not confirmed claims. Record actual owner/branch/status in 
 
 ## Notes
 
-Generated 12 unchecked tasks. All pre-existing work remains unchecked; no implementation is claimed.
+Initially generated 12 unchecked tasks. T001 was subsequently verified and
+checked for synthetic review/accept/reject only. See
+[verification](../../docs/verification/sellens-ui-preview.md). Real API, persistence,
+immutable audit history and feature acceptance remain unchecked.
 
 ## Requirement Coverage
 
