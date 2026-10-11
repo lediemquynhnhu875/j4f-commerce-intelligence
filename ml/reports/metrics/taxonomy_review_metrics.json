@@ -1,0 +1,26 @@
+{
+  "sample_rows": 200,
+  "reviewed_rows": 200,
+  "matched_product_rows": 200,
+  "assigned_rows": 200,
+  "coverage": 1.0,
+  "accuracy": 0.945,
+  "by_taxonomy_source": {
+    "category_rule": {
+      "sample_rows": 64,
+      "accuracy": 0.875
+    },
+    "name_priority_rule": {
+      "sample_rows": 70,
+      "accuracy": 1.0
+    },
+    "name_rule": {
+      "sample_rows": 62,
+      "accuracy": 0.967741935483871
+    },
+    "source_fallback": {
+      "sample_rows": 4,
+      "accuracy": 0.75
+    }
+  }
+}

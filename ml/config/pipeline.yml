@@ -1,7 +1,7 @@
 random_state: 42
 peer_count: 25
 minimum_peer_count: 15
-minimum_mean_peer_similarity: 0.05
+minimum_mean_peer_similarity: 0.10
 taxonomy_review_size: 200
 taxonomy_min_coverage: 0.90
 taxonomy_min_accuracy: 0.85

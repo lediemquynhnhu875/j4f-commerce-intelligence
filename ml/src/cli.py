@@ -233,6 +233,12 @@ def _parser() -> argparse.ArgumentParser:
         type=Path,
         default=DEFAULT_PROCESSED_DIR / "review_queues",
     )
+    queue_metrics_parser.add_argument(
+        "--products-file",
+        type=Path,
+        default=DEFAULT_PROCESSED_DIR / "clean_products.csv",
+        help="Current taxonomy predictions for the locked holdout IDs",
+    )
     return parser
 
 
@@ -278,7 +284,17 @@ def main() -> None:
         )
         print(json.dumps(metrics, ensure_ascii=False, indent=2))
     elif args.command == "evaluate-review-queues":
-        print(json.dumps(evaluate_review_queues(args.output_dir), ensure_ascii=False, indent=2))
+        print(
+            json.dumps(
+                evaluate_review_queues(
+                    args.output_dir,
+                    _read_csv(args.products_file),
+                    config.minimum_mean_peer_similarity,
+                ),
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
 
 
 if __name__ == "__main__":

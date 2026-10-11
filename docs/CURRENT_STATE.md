@@ -1,6 +1,6 @@
 # Project State and Handoff
 
-Updated: 2026-10-09 (Asia/Saigon).
+Updated: 2026-10-11 (Asia/Saigon).
 
 ## Agreed Stack and MVP
 
@@ -30,7 +30,7 @@ description; no service was moved or implemented in this frontend session.
 | Admin UI | Four Stitch-based synthetic pages: overview, stores, monitor, model configuration |
 | Demo login | One public mock Admin and one mock User; browser-tab role selection only, no server authentication |
 | Backend/Neon/model serving | Existing separate Next.js backend scaffold preserved; real auth/API/DB/inference unverified |
-| ML/data | Existing pipeline preserved; prior missing-pandas test blocker and missing snapshot/model/human artifacts remain |
+| ML/data | Prior pipeline results and updated taxonomy/peer code handed off from the AISC 2026 checkout; metrics in `ml/reports/metrics/`. Four synthetic pipeline tests passed in a Python 3.13 virtual environment on 2026-10-11. Independent taxonomy accuracy is 58%, below the 85% gate; full snapshot/model compatibility and serving remain unverified |
 | Human review/release | No human acceptance, independent model review or production readiness claim |
 
 Detailed frontend evidence: [UI verification](verification/sellens-ui-preview.md).
@@ -51,6 +51,76 @@ The existing dirty `set_up` branch was retained without pulling or stashing.
 | F002/T002; F005/T001–T002; F007/T001 | Requesting contributor, Codex-assisted | set_up | Partial, unchecked | Visual implementation exists; loading/error states, wireframe artifacts and contract reviews remain |
 
 ## Latest Handoff
+
+### Python Environment Verification - 2026-10-11
+
+- The contributor's test command used system Python 3.9 and failed to import
+  `scipy`. The project requires Python >=3.11.
+- Created the ignored local `.venv` with Miniconda Python 3.13.13 and installed
+  the project's declared dependencies using `.venv/bin/python -m pip install -e .`.
+  No source-code or dependency-declaration changes were required.
+- Verification: `.venv/bin/python -m unittest discover -s ml/tests -v` passed
+  all four tests, including the end-to-end pipeline on 72 synthetic products.
+  These temporary test results do not replace the copied full-snapshot reports
+  or establish saved-model compatibility with the new environment.
+- Use `.venv/bin/python` directly, or run `source .venv/bin/activate` before
+  Python commands. The joblib physical-core detection warning did not fail tests.
+- F003 remains incomplete: the independent taxonomy gate, full-data validation,
+  artifact compatibility and serving checks still apply.
+
+### Data and Model Handoff - 2026-10-11
+
+- Scope: F003 evidence handoff on `feature/data-pipeline-handoff`; no feature
+  acceptance or task completion is claimed by copying prior results.
+- Provenance: reports were copied from the local
+  `/Users/nhule/Desktop/COMPETITION/AISC 2026` checkout. The recorded model run
+  was generated on **2026-10-02 at 08:34:25 (Asia/Saigon)**, version
+  `j4f-20261002T013425Z`. The handoff date is 2026-10-11; these are historical
+  pipeline results, not a new run. Other metric files have no embedded run date.
+- Cleaning: six CSVs, 41,603 raw rows and 41,576 clean products; 22 exact
+  duplicates removed and 27 duplicated raw product IDs audited/resolved.
+  One invalid zero-price row is excluded from model training (41,575 rows).
+  `favourite_count` is excluded; `date_created` remains unverified metadata.
+- Taxonomy: 59 observed product types; assignment coverage 100%, rule coverage
+  90.98%, source-file fallback 9.02% (3,749 products). The 200-row development
+  review reached 94.5%; the independent 300-row holdout reached **58%, below
+  the required 85%**. The development score does not establish independent
+  readiness. Preserve holdout labels and use separate development data for tuning.
+- Peer review: all 250 pairs across 50 targets were reviewed; raw relevance
+  was 77.6%. At the configured mean-similarity threshold of 0.10, 200 pairs
+  across 40 targets were retained with 83.5% relevance. This is a thresholded
+  audit result, not the overall relevance score.
+- Model evaluation: scikit-learn histogram gradient boosting, two-part
+  classification/regression, five seller-grouped folds across 3,806 sellers.
+
+  | Model | ROC-AUC | PR-AUC | RMSLE |
+  | --- | --- | --- | --- |
+  | Peer baseline | 0.656 | 0.624 | 1.525 |
+  | Model A | 0.698 | 0.686 | 1.366 |
+  | Model B | 0.869 | 0.900 | 0.646 |
+
+- Model A remains the primary flagging model. Model B adds rating/review
+  signals that accumulate after sales and is comparison-only. Outputs provide
+  snapshot decision support, not causal explanations or future-sales forecasts.
+- Updated files: `ml/config/pipeline.yml`, `ml/config/taxonomy.yml`,
+  `ml/src/cli.py`, `ml/src/evaluation/review_queues.py`, and
+  `docs/manual-review-round-2.md`. The evaluator joins current taxonomy
+  predictions to locked holdout IDs and reports raw/thresholded peer relevance.
+- Evidence: [data quality](../ml/reports/metrics/data_quality_report.json),
+  [taxonomy summary](../ml/reports/metrics/taxonomy_summary.json),
+  [development review](../ml/reports/metrics/taxonomy_review_metrics.json),
+  [independent/peer review](../ml/reports/metrics/review_queue_metrics.json),
+  and [model metrics](../ml/reports/metrics/model_metrics.json).
+- Verification in this documentation update: inspected copied JSON reports
+  and checked documentation links/diff. No pipeline rerun, retraining or test
+  execution was performed. Raw/processed CSVs, human review originals and the
+  model binary remain in the source checkout and are not supplied by these reports.
+- Next: improve taxonomy using new development labels; retain independent
+  evaluation; share versioned data/model snapshots outside Git; verify this
+  checkout's dependencies, tests and artifact compatibility before serving.
+  F003 readiness and backend/model integration remain incomplete.
+
+### Previous Frontend Handoff
 
 - Follow-up scope: the user requested separate header/sidebar components and
   exactly four User screen files in one folder. Extracted
