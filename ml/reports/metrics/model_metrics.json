@@ -1,0 +1,53 @@
+{
+  "model_version": "j4f-20261002T013425Z",
+  "generated_at": "2026-10-02T01:34:25.160773+00:00",
+  "training_rows": 41575,
+  "excluded_invalid_rows": 1,
+  "peer_baseline": {
+    "roc_auc": 0.6558880255019376,
+    "pr_auc": 0.6243905335549781,
+    "brier_score": 0.2302071321558774,
+    "rmsle_all": 1.5245784347105749,
+    "spearman_all": 0.27995594710175814
+  },
+  "model_a_actionable": {
+    "estimator_backend": "sklearn_hist_gradient_boosting",
+    "folds": 5,
+    "seller_groups": 3806,
+    "roc_auc": 0.6981282283489407,
+    "pr_auc": 0.6862504795436141,
+    "brier_score": 0.2196260839714457,
+    "conditional_mae_log1p": 1.0318107755746473,
+    "rmsle_all": 1.3655972601498123,
+    "spearman_all": 0.3801420901064724,
+    "prediction_coverage_all": 0.8946722790138304,
+    "prediction_coverage_evaluation": 0.8895428221667687,
+    "conformal_calibration_rows": 20336,
+    "conformal_evaluation_rows": 21239,
+    "conformal_radius_log1p": 2.093316251104144
+  },
+  "model_b_with_outcome_correlated_feedback": {
+    "estimator_backend": "sklearn_hist_gradient_boosting",
+    "folds": 5,
+    "seller_groups": 3806,
+    "roc_auc": 0.868966411772546,
+    "pr_auc": 0.8999495655318839,
+    "brier_score": 0.12442280951729447,
+    "conditional_mae_log1p": 0.4908523697193425,
+    "rmsle_all": 0.6459850336891133,
+    "spearman_all": 0.7348884828017854,
+    "prediction_coverage_all": 0.8985207456404088,
+    "prediction_coverage_evaluation": 0.8971232167239512,
+    "conformal_calibration_rows": 20336,
+    "conformal_evaluation_rows": 21239,
+    "conformal_radius_log1p": 0.9594288415756824
+  },
+  "model_b_minus_model_a": {
+    "roc_auc": 0.17083818342360524,
+    "pr_auc": 0.2136990859882698,
+    "brier_score": -0.09520327445415123,
+    "rmsle_all": -0.719612226460699,
+    "spearman_all": 0.35474639269531305
+  },
+  "interpretation": "Model B may score better because review_count and rating_average accumulate after sales. It must not be used for the primary opportunity flag."
+}

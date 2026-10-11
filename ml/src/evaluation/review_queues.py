@@ -257,7 +257,11 @@ def create_review_queues(
     }
 
 
-def evaluate_review_queues(output_dir: str | Path) -> dict[str, Any]:
+def evaluate_review_queues(
+    output_dir: str | Path,
+    products: pd.DataFrame | None = None,
+    minimum_peer_similarity: float | None = None,
+) -> dict[str, Any]:
     output = Path(output_dir)
     valid_labels = set(
         pd.read_csv(output / "taxonomy_label_set.csv", dtype=str)["product_type"]
@@ -265,9 +269,16 @@ def evaluate_review_queues(output_dir: str | Path) -> dict[str, Any]:
         .str.strip()
     )
     holdout = pd.read_csv(output / "taxonomy_holdout_review.csv", dtype=str).fillna("")
-    predictions = pd.read_csv(
-        output / "taxonomy_holdout_predictions_private.csv", dtype=str
-    ).fillna("")
+    if products is None:
+        predictions = pd.read_csv(
+            output / "taxonomy_holdout_predictions_private.csv", dtype=str
+        ).fillna("")
+    else:
+        predictions = products[
+            ["product_id", "product_type", "taxonomy_source", "taxonomy_match"]
+        ].copy()
+        predictions["product_id"] = predictions["product_id"].astype(str)
+        predictions = predictions.rename(columns={"product_type": "predicted_product_type"})
     holdout = holdout.merge(predictions, on="product_id", how="left", validate="one_to_one")
     holdout_complete = holdout["human_product_type"].str.strip().ne("")
     holdout_valid = holdout["human_product_type"].isin(valid_labels)
@@ -282,6 +293,13 @@ def evaluate_review_queues(output_dir: str | Path) -> dict[str, Any]:
     relevance = peers["is_relevant"].str.strip().str.lower()
     peer_complete = relevance.isin(VALID_RELEVANCE_VALUES)
     peer_positive = relevance.isin(POSITIVE_RELEVANCE_VALUES)
+    peer_similarity = pd.to_numeric(peers["target_mean_peer_similarity"], errors="coerce")
+    accepted_peer = (
+        peer_similarity.ge(minimum_peer_similarity)
+        if minimum_peer_similarity is not None
+        else pd.Series(True, index=peers.index)
+    )
+    accepted_reviewed = accepted_peer & peer_complete
 
     holdout_by_source: dict[str, dict[str, float | int | None]] = {}
     for source, rows in holdout.groupby("taxonomy_source", dropna=False):
@@ -330,6 +348,16 @@ def evaluate_review_queues(output_dir: str | Path) -> dict[str, Any]:
             "reviewed_pairs": int(peer_complete.sum()),
             "relevance_rate_reviewed": float(peer_positive[peer_complete].mean())
             if peer_complete.any()
+            else None,
+            "minimum_similarity_threshold": minimum_peer_similarity,
+            "accepted_pair_rows": int(accepted_peer.sum()),
+            "accepted_target_rows": int(
+                peers.loc[accepted_peer, "target_product_id"].nunique()
+            ),
+            "relevance_rate_at_threshold": float(
+                peer_positive[accepted_reviewed].mean()
+            )
+            if accepted_reviewed.any()
             else None,
             "by_similarity_band": peer_by_band,
         },

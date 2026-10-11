@@ -41,6 +41,10 @@ After all three files are complete, run:
 python3 -m ml.src.cli evaluate-review-queues
 ```
 
+The evaluator joins the locked holdout IDs to the current `clean_products.csv`; it does not
+resample the holdout. Peer metrics report both raw relevance and relevance after the configured
+minimum similarity threshold.
+
 Targets for the first independent round:
 
 - Taxonomy holdout accuracy: at least 85%.
