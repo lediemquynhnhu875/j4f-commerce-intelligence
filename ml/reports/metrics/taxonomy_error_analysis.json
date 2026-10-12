@@ -1,0 +1,25 @@
+{
+  "error_rows": 143,
+  "error_group_counts": {
+    "compositional_keyword_or_semantic_gap": 50,
+    "scope_filter_gap": 26,
+    "taxonomy_gap_or_insufficient_information": 24,
+    "description_evidence_missed": 17,
+    "rule_precedence_conflict": 14,
+    "category_overrides_main_item": 10,
+    "sparse_or_code_only_title": 2
+  },
+  "ambiguous_rows": 24,
+  "ambiguity_reason_counts": {
+    "insufficient_type_or_gender_evidence": 8,
+    "multiple_main_items_or_conflicting_structure": 5,
+    "missing_generic_unisex_shoe_label": 3,
+    "missing_gender_neutral_boot_label": 3,
+    "missing_unisex_sandal_label": 2,
+    "missing_unisex_loafer_label": 2,
+    "frame_vs_complete_glasses_unclear": 1
+  },
+  "human_labels_changed": false,
+  "taxonomy_labels_added": false,
+  "interpretation": "AI diagnosis to organize development work. It does not establish root causes, human second review or independent accuracy."
+}

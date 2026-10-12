@@ -1,0 +1,89 @@
+taxonomy_version: v2-unisex-description
+specific_type_order: [out_of_scope, ambiguous, phụ kiện vệ sinh giày, phụ kiện vali du lịch, balo, túi laptop công sở, túi bao tử, túi tote, boots nữ, boots nam, sandal nữ, sandal nam, giày đế xuồng]
+special_name_rules:
+  - {label: phụ kiện thời trang khác, pattern: 'găng tay hình xăm|ống tay hình xăm|bộ móc may áo ngực'}
+  - {label: phụ kiện túi, pattern: 'móc treo cài túi|set nguyên liệu làm túi'}
+broad_labels: [ambiguous, giày nam, giày nữ, giày khác, giày unisex, boots khác, giày lười khác, sandal khác, dép khác, túi xách nam, túi xách nữ, túi xách khác, túi đeo khác, ví khác, phụ kiện thời trang khác, balo vali túi khác, túi ví nam khác, túi ví nữ khác, giày dép nam khác, giày dép nữ khác]
+new_labels:
+  - {label: sandal unisex, keywords: [sandal unisex, sandal nam nữ]}
+  - {label: sandal khác, keywords: [sandal, sandals, sandan, xăng đan]}
+  - {label: giày lười unisex, keywords: [giày lười unisex, giày lười nam nữ]}
+  - {label: giày lười khác, keywords: [giày lười, giày mọi, moccasin, loafer, slip on, slipon]}
+  - {label: boots unisex, keywords: [boots unisex, boot unisex, bốt unisex]}
+  - {label: boots khác, keywords: [boots, boot, bốt], description_keywords: [bản boots], description_context: '^\[|giày|boot|bốt'}
+  - {label: giày unisex, keywords: [giày unisex, giày nam nữ]}
+  - {label: giày khác, keywords: [giày]}
+updates:
+  ambiguous:
+    keywords: [không xác định loại sản phẩm]
+    name_patterns: ['combo\s+\d+\s+món\s+túi\s*/\s*bóp', 'combo.*(?:mũ|nón).*khăn']
+  out_of_scope:
+    keywords: [giày bảo hộ, giày lao động, giày cao su lao động, găng tay túi bóng, bao tay túi bóng, chắn giọt bắn, chống giọt bắn, face shield, bao da điện thoại, bao da 8800, vỏ bọc thẻ, hộp đựng thẻ nhân viên, chì tròn xuyên tâm, túi mắt, cặp tay côn, cặp hạt gỗ, nút gỗ dừa, khóa áo khoác, đai lưng, chân váy, chân vây]
+    name_patterns: ['^lcd\d+\b', 'cặp\s+tay\s+thắng', 'túi\s+đựng.{0,35}50\s+chiếc']
+    description_keywords: [breadboard, hộp kim chỉ, phụ kiện đan móc, bộ găng tay túi bóng]
+    description_context: '^lcd|^hộp|bao tay|găng tay'
+  phụ kiện vệ sinh giày:
+    keywords: [lót chuyên cho giày, giấy ướt lau giày, nước giặt giày, keo dán giày, chai xịt làm sạch giày, chai tẩy trắng giày, miếng đệm mũi giày, lót độn]
+  phụ kiện vali du lịch:
+    name_patterns: ['túi.{0,45}đựng.{0,35}(?:mỹ phẩm|đồ trang điểm|quần áo)', 'túi.{0,30}đựng\s+phụ\s+kiện\s+dream\s+travel', '\bpassport\s+cover\b']
+    description_keywords: [túi mỹ phẩm du lịch, túi đựng giày, túi phụ kiện dream travel, túi đựng mỹ phẩm]
+    description_context: 'túi|wash bag'
+  balo:
+    description_keywords: [balo tặng móc khóa, dạng balo, balo đựng, kiểu dáng balo]
+    description_context: 'balo|ba lô|cặp|cốp|túi'
+  túi laptop công sở:
+    name_patterns: ['(?:túi|cặp).{0,50}\blaptop\b', 'cặp\s+(?:nam\s+)?công\s+sở']
+    description_keywords: [cặp tài liệu, cặp sách nam, cặp xách nam, túi đựng laptop]
+    description_context: 'túi|cặp|cap|kẹp'
+  túi bao tử:
+    name_patterns: ['túi.{0,40}đeo\s+(?:bụng|hông)']
+    description_keywords: [túi đeo hông, túi bao tử, túi đeo bụng]
+    description_context: 'túi'
+  túi đeo chéo:
+    name_patterns: ['\btúi\s+chéo\b']
+    description_keywords: ['hình thức: túi đeo chéo', hình thức túi đeo chéo]
+    description_context: 'túi'
+  túi xách nam:
+    name_patterns: ['túi.{0,60}(?:dành\s+cho\s+nam|cho\s+nam)\b']
+  túi xách nữ:
+    description_keywords: [túi cho con gái, túi xách nữ]
+    description_context: 'túi'
+  túi xách khác:
+    keywords: [túi canvas, túi da, túi đỏ da, túi vải rơm, túi đựng đồ đi mua sắm, túi lưới rút dây]
+  ví khác:
+    keywords: [ví thẻ, hộp đựng thẻ, card holder]
+  giày búp bê:
+    description_keywords: [giày búp bê]
+    description_context: 'giày|búp bê'
+  giày lười nữ:
+    description_keywords: [loafer, moccasin, giày mọi]
+    description_context: 'giày.*nữ|giày nữ'
+  giày lười nam:
+    description_keywords: [giày sục nam, giày lười nam]
+    description_context: 'giày.*nam|giày nam|^chất liệu'
+  boots nam:
+    name_patterns: ['(?:giày\s+)?bốt.{0,25}\bnam\b']
+  boots nữ:
+    description_patterns: ['(?:ủng|boots|bốt).{0,160}(?:phụ nữ|\bnữ\b)']
+    description_context: 'giày|bốt|boot|ủng'
+  giày tây nam:
+    keywords: [giày derby, giày oxford]
+  giày thể thao nam:
+    name_patterns: ['giày.{0,50}thể\s+thao\s+nam']
+  giày thể thao khác:
+    keywords: [giày bata]
+  phụ kiện thời trang khác:
+    keywords: [khăn lau kính chống bám hơi nước, tròng kính viễn, găng tay hình xăm]
+remove_priority_keywords:
+  giày cao gót: [giày nữ cao cấp elly]
+  giày thể thao nam: [giày nam giá rẻ]
+  túi xách khác: [cặp đa năng]
+guide_additions:
+  sandal unisex: {group: shoes, definition: 'Sandal xác nhận dùng cho cả nam và nữ.', distinction: 'Không rõ giới tính thì dùng sandal khác.'}
+  sandal khác: {group: shoes, definition: 'Xác định là sandal nhưng chưa rõ giới tính.', distinction: 'Không tự suy unisex từ việc thiếu giới tính.'}
+  giày lười unisex: {group: shoes, definition: 'Giày lười/loafer xác nhận dùng cho cả nam và nữ.', distinction: 'Sneaker slip-on rõ kiểu thể thao vẫn thuộc giày thể thao khác.'}
+  giày lười khác: {group: shoes, definition: 'Giày lười/loafer chưa rõ giới tính.', distinction: 'Không ép sang nam/nữ từ category hoặc file nguồn.'}
+  boots unisex: {group: shoes, definition: 'Boots/bốt xác nhận dùng cho cả nam và nữ.', distinction: 'Không rõ giới tính thì dùng boots khác.'}
+  boots khác: {group: shoes, definition: 'Boots/bốt chưa rõ giới tính.', distinction: 'Boots có gót vẫn là boots, không tự đổi thành cao gót.'}
+  giày unisex: {group: shoes, definition: 'Giày xác nhận dùng cho cả nam và nữ, chưa thuộc kiểu chuyên biệt.', distinction: 'Ưu tiên kiểu cụ thể nếu có: thể thao, boots hoặc giày lười.'}
+  giày khác: {group: shoes, definition: 'Xác định là giày nhưng chưa rõ kiểu chuyên biệt hoặc giới tính.', distinction: 'Chưa xác định được giày hay dép thì giữ ambiguous/nhãn nhóm có bằng chứng.'}

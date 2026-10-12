@@ -27,6 +27,7 @@ class PipelineConfig:
     price_gap_ratio: float = 0.15
     description_gap_ratio: float = 0.30
     video_peer_share_threshold: float = 0.40
+    minimum_good_peer_video_count: int = 5
 
 
 def load_config(path: str | Path | None = None) -> PipelineConfig:

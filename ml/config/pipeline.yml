@@ -16,3 +16,4 @@ exclude_same_seller_from_peers: true
 price_gap_ratio: 0.15
 description_gap_ratio: 0.30
 video_peer_share_threshold: 0.40
+minimum_good_peer_video_count: 5

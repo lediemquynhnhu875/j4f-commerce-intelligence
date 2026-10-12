@@ -1,0 +1,308 @@
+labels:
+  out_of_scope:
+    group: special
+    definition: Sản phẩm không thuộc phạm vi giày dép, túi ví, vali và phụ kiện thời
+      trang.
+    distinction: Ví dụ máy sấy tóc, đồ điện tử, dụng cụ gia dụng; không dùng chỉ vì
+      tên khó hiểu.
+  ambiguous:
+    group: special
+    definition: Không đủ thông tin để xác định một loại duy nhất hoặc nhiều loại chính
+      ngang nhau.
+    distinction: Ghi lý do và nhờ người thứ hai; không suy giới tính từ file nguồn.
+  phụ kiện vệ sinh giày:
+    group: accessories
+    definition: 'Phụ kiện chăm sóc hoặc hỗ trợ giày: xi, dung dịch vệ sinh, dây giày,
+      lót giày, đệm gót.'
+    distinction: Nhãn hiện tại bao gồm phụ kiện giày nói chung; giày tặng kèm lót
+      vẫn gán theo đôi giày.
+  tất vớ:
+    group: accessories
+    definition: Tất hoặc vớ mang chân.
+    distinction: Phân biệt với găng tay và ống tay chống nắng.
+  khẩu trang:
+    group: accessories
+    definition: Khẩu trang đeo mặt.
+    distinction: Không gán cho kính hoặc mũ che mặt.
+  găng tay:
+    group: accessories
+    definition: Găng tay hoặc bao tay.
+    distinction: Khăn quàng và ống tay không phải găng tay.
+  khăn thời trang:
+    group: accessories
+    definition: Khăn quàng, choàng, bandana hoặc khăn tay thuộc phụ kiện thời trang.
+    distinction: Khăn vệ sinh giày thuộc phụ kiện giày; khăn tắm gia dụng ngoài phạm
+      vi.
+  kính áp tròng:
+    group: eyewear
+    definition: Lens đeo trực tiếp lên mắt.
+    distinction: Không gán cho kính có gọng hoặc lens máy ảnh.
+  gọng kính:
+    group: eyewear
+    definition: Gọng kính được bán như sản phẩm chính, chưa phải kính hoàn chỉnh.
+    distinction: Kính râm hoàn chỉnh thuộc kính mắt; không suy từ từ gọng trong mô
+      tả.
+  kính mắt:
+    group: eyewear
+    definition: 'Kính đeo mắt hoàn chỉnh: kính râm, kính mát, kính lão hoặc kính thời
+      trang.'
+    distinction: Gọng riêng thuộc gọng kính; lens đeo trực tiếp thuộc kính áp tròng.
+  phụ kiện vali du lịch:
+    group: bags
+    definition: 'Phụ kiện tổ chức hoặc bảo vệ hành lý: túi đựng giày, mỹ phẩm, quần
+      áo, bao hộ chiếu.'
+    distinction: Túi hành lý chính thuộc túi du lịch; vali chính thuộc vali.
+  vali:
+    group: bags
+    definition: Vali chứa hành lý, thường có khung và tay kéo.
+    distinction: Vỏ bọc, bánh xe hoặc khóa vali là phụ kiện; vali dạng balo vẫn theo
+      công dụng chính.
+  balo:
+    group: bags
+    definition: Túi đeo lưng hai quai hoặc cặp học sinh có cấu trúc đeo lưng.
+    distinction: Balo laptop vẫn là balo; cặp laptop xách tay thuộc túi laptop công
+      sở.
+  túi laptop công sở:
+    group: bags
+    definition: Túi, cặp hoặc bao chống sốc chuyên chứa laptop, tài liệu công sở.
+    distinction: Ưu tiên balo khi sản phẩm chính là balo; túi chỉ có ngăn laptop chưa
+      chắc là túi chuyên laptop.
+  túi tote:
+    group: bags
+    definition: Túi tote có hai quai xách và khoang chính rộng.
+    distinction: Gán tote khi tên hoặc cấu trúc xác nhận; có dây đeo phụ không đổi
+      loại chính.
+  túi bao tử:
+    group: bags
+    definition: Túi nhỏ thiết kế đeo eo, bụng hoặc hông.
+    distinction: Túi bao tử đeo chéo vẫn ưu tiên bao tử; túi đeo chéo thông thường
+      không tự thành bao tử.
+  túi du lịch:
+    group: bags
+    definition: Túi hành lý chính cho chuyến đi, túi trống hoặc duffel.
+    distinction: Túi chia ngăn mỹ phẩm hoặc quần áo nằm trong hành lý là phụ kiện
+      du lịch.
+  túi đeo chéo:
+    group: bags
+    definition: Túi chính thiết kế đeo chéo thân hoặc đeo ngực.
+    distinction: Loại chuyên dụng balo, bao tử, tote hoặc laptop được ưu tiên nếu
+      rõ; dây chéo tặng kèm không đủ bằng chứng.
+  túi xách nữ:
+    group: bags
+    definition: Túi xách hoặc đeo vai nữ, chưa xác định loại chuyên dụng hơn.
+    distinction: Tote, túi đeo chéo và túi laptop rõ loại thì ưu tiên nhãn chuyên
+      dụng.
+  túi xách nam:
+    group: bags
+    definition: Túi xách hoặc clutch nam, chưa xác định loại chuyên dụng hơn.
+    distinction: Ví nam là ví đựng tiền/thẻ nhỏ; clutch cần xét công dụng và cấu trúc.
+  phụ kiện túi:
+    group: bags
+    definition: Dây đeo, quai, phụ kiện trang trí hoặc bộ phận túi được bán riêng.
+    distinction: Túi có dây đeo đi kèm vẫn là sản phẩm túi.
+  túi xách khác:
+    group: bags
+    definition: Xác định được là túi xách nhưng chưa rõ giới tính hoặc loại chuyên
+      dụng.
+    distinction: Dùng trước nhãn túi ví nam/nữ khác nếu đã xác định được là túi.
+  túi đeo khác:
+    group: bags
+    definition: Xác định được là túi đeo nhưng chưa rõ cách đeo hoặc loại chuyên dụng.
+    distinction: Chỉ dùng khi chưa đủ căn cứ cho túi đeo chéo, bao tử, balo hoặc túi
+      xách.
+  ví nữ:
+    group: wallets
+    definition: Ví hoặc bóp đựng tiền/thẻ dành cho nữ.
+    distinction: Túi lớn hoặc clutch dùng chứa nhiều đồ cần xét là túi xách nữ.
+  ví nam:
+    group: wallets
+    definition: Ví hoặc bóp đựng tiền/thẻ dành cho nam.
+    distinction: Không suy giới tính chỉ từ category hoặc file nguồn nếu tên/mô tả
+      không xác nhận.
+  ví khác:
+    group: wallets
+    definition: Xác định được là ví nhưng giới tính không rõ hoặc unisex.
+    distinction: Bao hộ chiếu chuyên dụng thuộc phụ kiện vali du lịch.
+  boots nữ:
+    group: shoes
+    definition: Giày boot/bốt cổ cao dành cho nữ.
+    distinction: Boot có gót vẫn ưu tiên boots nữ; không chỉ gán cao gót.
+  boots nam:
+    group: shoes
+    definition: Giày boot/bốt cổ cao dành cho nam.
+    distinction: 'Boot unisex hoặc không rõ giới tính: dùng ambiguous nếu không có
+      nhãn phù hợp.'
+  giày cao gót:
+    group: shoes
+    definition: Giày có gót cao, loại chính không phải boot hoặc đế xuồng.
+    distinction: Sandal cao gót rõ cấu trúc sandal thuộc sandal nữ; giày đế xuồng
+      ưu tiên đế xuồng.
+  giày búp bê:
+    group: shoes
+    definition: Giày búp bê hoặc giày bệt nữ kiểu ballet.
+    distinction: Không gán mọi giày bệt nữ vào đây; giày lười rõ kiểu thuộc giày lười
+      nữ.
+  giày đế xuồng:
+    group: shoes
+    definition: Giày có đế nâng dạng khối liền từ gót đến trước bàn chân.
+    distinction: Sandal cấu trúc rõ thuộc sandal nữ/nam; giày cao gót rời không phải
+      đế xuồng.
+  giày tây nam:
+    group: shoes
+    definition: Giày nam kiểu trang trọng, giày tây.
+    distinction: Giày lười không dây rõ loại ưu tiên giày lười nam; chất liệu da chưa
+      đủ để gọi giày tây.
+  giày lười nữ:
+    group: shoes
+    definition: Giày nữ kiểu slip-on/loafer không cần buộc dây.
+    distinction: Sneaker slip-on rõ kiểu thể thao ưu tiên giày thể thao nữ.
+  giày lười nam:
+    group: shoes
+    definition: Giày nam kiểu slip-on/loafer không cần buộc dây.
+    distinction: Sneaker slip-on rõ kiểu thể thao ưu tiên giày thể thao nam.
+  sandal nữ:
+    group: shoes
+    definition: Sandal nữ có quai giữ chân, thường có quai hậu.
+    distinction: Dép không quai hậu thuộc dép nữ; sandal gót cao vẫn là sandal.
+  sandal nam:
+    group: shoes
+    definition: Sandal nam có quai giữ chân, thường có quai hậu.
+    distinction: 'Sandal không rõ giới tính/unisex: ambiguous khi không có nhãn phù
+      hợp.'
+  giày thể thao nữ:
+    group: shoes
+    definition: Sneaker hoặc giày thể thao xác nhận dành cho nữ.
+    distinction: Không suy giới tính từ file nguồn; phụ kiện vệ sinh sneaker không
+      phải giày.
+  giày thể thao nam:
+    group: shoes
+    definition: Sneaker hoặc giày thể thao xác nhận dành cho nam.
+    distinction: Giày chạy bộ chưa rõ giới tính thuộc giày thể thao khác.
+  giày thể thao khác:
+    group: shoes
+    definition: Sneaker/giày thể thao unisex hoặc chưa rõ giới tính.
+    distinction: Ưu tiên nhãn nam/nữ khi tên hoặc mô tả xác nhận rõ.
+  dép nữ:
+    group: shoes
+    definition: Dép hoặc guốc xác nhận dành cho nữ, không phải sandal.
+    distinction: Có cấu trúc sandal thì dùng sandal nữ; không suy giới tính chỉ từ
+      nguồn.
+  dép nam:
+    group: shoes
+    definition: Dép xác nhận dành cho nam, không phải sandal.
+    distinction: Dép unisex dùng dép unisex; chưa rõ giới tính dùng dép khác.
+  dép unisex:
+    group: shoes
+    definition: Dép có bằng chứng dành cho cả nam và nữ.
+    distinction: 'Không rõ giới tính không đồng nghĩa với unisex: dùng dép khác.'
+  dép khác:
+    group: shoes
+    definition: Xác định được là dép nhưng chưa rõ giới tính hoặc kiểu chuyên dụng.
+    distinction: Không dùng cho sản phẩm có quai hậu rõ là sandal.
+  giày nữ:
+    group: shoes
+    definition: Xác định là giày nữ nhưng chưa rõ kiểu giày cụ thể.
+    distinction: Dép nữ không thuộc nhãn này; chỉ dùng sau khi loại nhãn giày chuyên
+      dụng.
+  giày nam:
+    group: shoes
+    definition: Xác định là giày nam nhưng chưa rõ kiểu giày cụ thể.
+    distinction: Giày da chưa chắc là giày tây; dép nam không thuộc nhãn này.
+  mũ nón:
+    group: accessories
+    definition: Mũ hoặc nón đội đầu.
+    distinction: Mũ bảo hiểm chuyên dụng ngoài phạm vi thời trang hiện tại; kẹp tóc
+      là phụ kiện tóc.
+  thắt lưng:
+    group: accessories
+    definition: Thắt lưng, dây nịt hoặc mặt khóa thắt lưng bán riêng.
+    distinction: Dây đeo túi thuộc phụ kiện túi; dây đeo quần thuộc phụ kiện thời
+      trang khác.
+  đồng hồ:
+    group: accessories
+    definition: Đồng hồ đeo tay hoàn chỉnh.
+    distinction: Dây hoặc khóa đồng hồ bán riêng thuộc phụ kiện thời trang khác; đồng
+      hồ treo tường ngoài phạm vi.
+  hình xăm tạm thời:
+    group: accessories
+    definition: Miếng dán hoặc decal hình xăm tạm thời trên cơ thể.
+    distinction: Không gán cho dụng cụ xăm chuyên nghiệp.
+  trang sức:
+    group: accessories
+    definition: Vòng, nhẫn, dây chuyền, bông tai hoặc trang sức đeo người.
+    distinction: Ghim áo thuộc phụ kiện cài áo; móc khóa thuộc phụ kiện thời trang
+      khác.
+  cà vạt:
+    group: accessories
+    definition: Cà vạt hoặc nơ đeo cổ trang phục.
+    distinction: Nơ tóc thuộc phụ kiện tóc; nơ gói quà ngoài phạm vi.
+  phụ kiện tóc:
+    group: accessories
+    definition: Kẹp, bờm, băng đô, dây buộc, lược hoặc dụng cụ tạo kiểu tóc không
+      chạy điện.
+    distinction: Máy sấy, máy uốn điện hoặc thuốc dưỡng/nhuộm tóc thuộc out_of_scope.
+  phụ kiện cài áo:
+    group: accessories
+    definition: Ghim, pin hoặc phụ kiện cài lên áo.
+    distinction: Kẹp tóc và kẹp giấy không thuộc nhãn này.
+  phụ kiện thời trang khác:
+    group: accessories
+    definition: 'Phụ kiện thời trang xác định được nhưng chưa có nhãn riêng: móc khóa,
+      khăn lau kính, dây nối áo ngực.'
+    distinction: Không dùng cho đồ điện tử/gia dụng hoặc vì không hiểu sản phẩm.
+  balo vali túi khác:
+    group: broad
+    definition: Thuộc nhóm hành lý nhưng chưa phân biệt được balo, vali hay túi.
+    distinction: Chỉ dùng khi tên/mô tả xác nhận nhóm này; không gán chỉ từ file nguồn.
+  túi ví nam khác:
+    group: broad
+    definition: Xác nhận sản phẩm thuộc túi/ví nam nhưng chưa phân biệt được là túi
+      hay ví.
+    distinction: Nếu xác định được ví thì dùng ví nam; xác định túi thì ưu tiên nhãn
+      túi phù hợp.
+  túi ví nữ khác:
+    group: broad
+    definition: Xác nhận sản phẩm thuộc túi/ví nữ nhưng chưa phân biệt được là túi
+      hay ví.
+    distinction: Không dùng chỉ vì nguồn women_bags; ưu tiên nhãn túi hoặc ví cụ thể.
+  giày dép nam khác:
+    group: broad
+    definition: Xác nhận nhóm giày/dép nam nhưng chưa phân biệt được giày hay dép.
+    distinction: Nếu đã rõ là giày thì dùng giày nam; đã rõ là dép thì dùng dép nam.
+  giày dép nữ khác:
+    group: broad
+    definition: Xác nhận nhóm giày/dép nữ nhưng chưa phân biệt được giày hay dép.
+    distinction: Nếu đã rõ là giày thì dùng giày nữ; đã rõ là dép thì dùng dép nữ.
+  sandal unisex:
+    group: shoes
+    definition: Sandal xác nhận dùng cho cả nam và nữ.
+    distinction: Không rõ giới tính thì dùng sandal khác.
+  sandal khác:
+    group: shoes
+    definition: Xác định là sandal nhưng chưa rõ giới tính.
+    distinction: Không tự suy unisex từ việc thiếu giới tính.
+  giày lười unisex:
+    group: shoes
+    definition: Giày lười/loafer xác nhận dùng cho cả nam và nữ.
+    distinction: Sneaker slip-on rõ kiểu thể thao vẫn thuộc giày thể thao khác.
+  giày lười khác:
+    group: shoes
+    definition: Giày lười/loafer chưa rõ giới tính.
+    distinction: Không ép sang nam/nữ từ category hoặc file nguồn.
+  boots unisex:
+    group: shoes
+    definition: Boots/bốt xác nhận dùng cho cả nam và nữ.
+    distinction: Không rõ giới tính thì dùng boots khác.
+  boots khác:
+    group: shoes
+    definition: Boots/bốt chưa rõ giới tính.
+    distinction: Boots có gót vẫn là boots, không tự đổi thành cao gót.
+  giày unisex:
+    group: shoes
+    definition: Giày xác nhận dùng cho cả nam và nữ, chưa thuộc kiểu chuyên biệt.
+    distinction: 'Ưu tiên kiểu cụ thể nếu có: thể thao, boots hoặc giày lười.'
+  giày khác:
+    group: shoes
+    definition: Xác định là giày nhưng chưa rõ kiểu chuyên biệt hoặc giới tính.
+    distinction: Chưa xác định được giày hay dép thì giữ ambiguous/nhãn nhóm có bằng
+      chứng.

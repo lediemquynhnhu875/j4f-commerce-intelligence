@@ -35,6 +35,7 @@ data/raw/*
 data/interim/*
 data/processed/*
 data/external/*
+data/local_reviews/
 !data/**/.gitkeep
 ml/artifacts/*
 !ml/artifacts/.gitkeep

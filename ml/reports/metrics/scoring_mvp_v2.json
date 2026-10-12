@@ -1,0 +1,60 @@
+{
+  "rows": 41576,
+  "scored_at": "2026-10-12T16:25:18.431146+00:00",
+  "model_versions": [
+    "j4f-20261011T181008Z"
+  ],
+  "scoring_rules_versions": [
+    "rule-based-v2-good-peer-video"
+  ],
+  "status_counts": {
+    "positive_feedback_low_sales": 0,
+    "low_rating_low_sales": 0,
+    "performing_well": 18176,
+    "untapped_potential": 5892,
+    "difficult_to_sell": 12380,
+    "insufficient_data": 5128
+  },
+  "status_reason_counts": {
+    "sales_not_below_prediction_interval": 18176,
+    "zero_sales_low_reference_probability": 12380,
+    "zero_sales_high_reference_probability": 5892,
+    "peer_similarity_below_minimum": 3222,
+    "out_of_scope_product": 1015,
+    "peer_count_below_minimum": 600,
+    "insufficient_feedback_for_low_sales_interpretation": 183,
+    "unresolved_product_type": 107,
+    "invalid_essential_data": 1
+  },
+  "products_with_recommendations": 27696,
+  "recommendation_count": 42652,
+  "action_counts": {
+    "Bổ sung ảnh rõ chất liệu, kích thước và các góc sử dụng.": 15966,
+    "Rà soát định vị giá và giá trị khác biệt của sản phẩm.": 14080,
+    "Kiểm tra từ khóa trong tên, khả năng xuất hiện khi tìm kiếm và trạng thái tồn kho.": 5892,
+    "Kiểm tra khả năng bổ sung video sản phẩm ngắn.": 3857,
+    "Bổ sung chất liệu, kích thước, công dụng và hướng dẫn sử dụng.": 2713,
+    "Đọc đánh giá và kiểm tra vấn đề chất lượng hoặc trải nghiệm; phân nhóm phản hồi trước khi thay đổi sản phẩm.": 144
+  },
+  "rule_id_counts": {
+    "add_product_images": 15966,
+    "review_price_positioning": 14080,
+    "review_visibility_and_stock": 5892,
+    "consider_product_video": 3857,
+    "improve_product_description": 2713,
+    "review_quality_feedback": 144
+  },
+  "analysis_is_hypothesis": true,
+  "output": "data/processed/scoring_mvp_v2/product_scores.csv",
+  "input_peer_features": "data/processed/taxonomy_v2_run/peer_features.csv",
+  "input_model_predictions": "data/processed/taxonomy_v2_run/model_predictions.csv",
+  "input_peer_sha256": "00427b01280655324722cd3cc542dbae967449366483e9cc427d7b6a20b76d65",
+  "input_prediction_sha256": "b4f7f837f5b53bcdf6e69db0012c1794161f34d7d6d8860a20c730f68eaacb53",
+  "model_retrained": false,
+  "good_peer_definition": "Positive observed peer sales at or above the selected peer sales 75th percentile; minimum threshold 1",
+  "minimum_good_peer_video_count": 5,
+  "video_share_threshold": 0.4,
+  "quality_acceptance": false,
+  "output_directory": "data/processed/scoring_mvp_v2",
+  "source_taxonomy_holdout_accuracy": 0.63
+}

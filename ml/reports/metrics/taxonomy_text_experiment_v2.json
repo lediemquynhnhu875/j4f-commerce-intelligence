@@ -1,0 +1,39 @@
+{
+  "generated_at": "2026-10-11T18:11:48.715792+00:00",
+  "evaluation": "development_out_of_fold_near_duplicate_grouped",
+  "estimator": "TF-IDF word(1,2) + char_wb(3,5) + LinearSVC(C=1, class_weight=balanced)",
+  "rows": 707,
+  "classes": 60,
+  "folds": 5,
+  "duplicate_groups": 695,
+  "near_duplicate_similarity_threshold": 0.9,
+  "accuracy": 0.6251768033946252,
+  "macro_f1": 0.5246469229857672,
+  "round3_accuracy": 0.583756345177665,
+  "margin_threshold": 0.8,
+  "margin_selected_rows": 95,
+  "margin_selected_coverage": 0.13437057991513437,
+  "margin_selected_accuracy": 0.9368421052631579,
+  "classes_with_fewer_than_5_duplicate_groups": {
+    "boots khác": 3,
+    "giày dép nam khác": 1,
+    "giày lười khác": 1,
+    "giày lười unisex": 2,
+    "giày unisex": 3,
+    "sandal unisex": 2,
+    "trang sức": 1,
+    "túi du lịch": 1,
+    "túi ví nữ khác": 2,
+    "túi đeo khác": 2
+  },
+  "holdout_used_for_training_or_model_selection": false,
+  "production_rules_modified": false,
+  "limitations": "Development labels include user-confirmed AI-assisted annotations. Macro F1 and rare-class support matter; SVM margins are not probabilities. Grouping used unlabelled titles to prevent duplicate leakage; classifier TF-IDF is fitted inside each training fold. This is not blind holdout acceptance or product readiness.",
+  "label_loading": {
+    "input_label_rows": 750,
+    "conflicting_product_ids": [],
+    "excluded_holdout_overlap_rows": 8,
+    "excluded_ambiguous_rows": 37,
+    "AI_schema_migrated_rows": 18
+  }
+}

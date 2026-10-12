@@ -1,0 +1,914 @@
+product_types:
+- label: out_of_scope
+  priority_keywords:
+  - máy sấy tóc
+  - máy tạo kiểu tóc
+  - dưỡng tóc
+  - lập trình nhúng
+  - bảng mạch
+  - adapter typec
+  - vôn kế
+  - hộp đựng bàn chải
+  - túi treo đồ
+  - phụ kiện đan móc
+  - khăn xô tròn
+  - sách - giày
+  - chỉ may bao
+  - băng keo dán móng
+  - nước pha mực
+  - tranh spa
+  - động cơ bước
+  - thiếc hàn
+  - bánh xương mềm
+  - mũ con sâu
+  - thảm dã ngoại
+  - áo lót
+  - túi đen sinh học
+  - hộp vải
+  - đồng gò mối
+  - võng gác chân
+  - hộp để bàn chải
+  - phễu chiết mỹ phẩm
+  - phếu chiết mỹ phẩm
+  - kính hàn
+  - thợ hàn
+  - túi gói hàng
+  - ốp nổi
+  - băng bảo vệ
+  - định hình ngón
+  - hộp đựng ví
+  - tay thắng
+  - túi nilong
+  - bao đựng bảo vệ thẻ
+  - vỏ bao đựng bọc thẻ
+  - hộp đựng thuốc
+  - tách ngón chân
+  - chai chiết kem
+  - bộ đồ chơi
+  - xốp bịt đáy cửa
+  - bộ chiết mỹ phẩm
+  - bình chiết mỹ phẩm
+  - kính hiển vi
+  - áo choàng dài chống nắng
+  keywords:
+  - máy sấy tóc
+  - máy tạo kiểu tóc
+  - lập trình nhúng
+  - bảng mạch
+  - vôn kế
+  - túi y tế
+  - cốc đựng bàn chải
+  - vải thô
+  - túi đựng tỏi
+  - bộ chiết mỹ phẩm
+  - túi đi sinh
+  - hũ chiết mỹ phẩm
+  - màn che full mặt
+  - vòi inox
+  - nơ rút
+  - xịt côn trùng
+  - thuốc nhuộm tóc
+  - lưu huỳnh nhanh khô
+  - lọ đựng mỹ phẩm
+  - túi lọc trà
+  - túi khuy
+  - lông mi giả
+  - hộp đựng đồ vệ sinh
+  - hộp kim chỉ
+  - thẻ ghi chú chìa khóa
+  - xịt khử mùi toilet
+  - chai chiết mỹ phẩm
+  - thùng hông
+  - bao da chìa khoá
+  - bao da chìa khóa
+  - kẹp giấy
+  - túi đựng bánh
+  - tấm alu
+  - nintendo switch
+  - đai chống gù
+  - túi đựng dụng cụ
+  - giày bảo hộ
+  - giày lao động
+  - giày cao su lao động
+  - găng tay túi bóng
+  - bao tay túi bóng
+  - chắn giọt bắn
+  - chống giọt bắn
+  - face shield
+  - bao da điện thoại
+  - bao da 8800
+  - vỏ bọc thẻ
+  - hộp đựng thẻ nhân viên
+  - chì tròn xuyên tâm
+  - túi mắt
+  - cặp tay côn
+  - cặp hạt gỗ
+  - nút gỗ dừa
+  - khóa áo khoác
+  - đai lưng
+  - chân váy
+  - chân vây
+  name_patterns:
+  - ^lcd\d+\b
+  - cặp\s+tay\s+thắng
+  - túi\s+đựng.{0,35}50\s+chiếc
+  description_keywords:
+  - breadboard
+  - hộp kim chỉ
+  - phụ kiện đan móc
+  - bộ găng tay túi bóng
+  description_context: ^lcd|^hộp|bao tay|găng tay
+- label: ambiguous
+  keywords:
+  - túi da cao cấp macsim
+  - sandal quai hậu nam nữ
+  - giày đế trấu unisex
+  - không xác định loại sản phẩm
+  priority_keywords: []
+  name_patterns:
+  - combo\s+\d+\s+món\s+túi\s*/\s*bóp
+  - combo.*(?:mũ|nón).*khăn
+- label: phụ kiện vệ sinh giày
+  keywords:
+  - vệ sinh giày
+  - xi giày
+  - xịt khử mùi giày
+  - xịt giầy
+  - xịt trắng giày
+  - xịt chống thấm
+  - lót giày
+  - lót giầy
+  - lót gót giày
+  - miếng lót giày
+  - miếng lót mũi giày
+  - miếng dán đế giày
+  - miếng đệm gót
+  - đón gót
+  - dây giày
+  - khăn lau giày
+  - phụ kiện cho giày
+  - phụ kiện giày
+  - làm sạch giày
+  - làm bóng giày
+  - khử mùi hôi giày
+  - tẩy trắng giày
+  - đánh giày
+  - lót chuyên cho giày
+  - giấy ướt lau giày
+  - nước giặt giày
+  - keo dán giày
+  - chai xịt làm sạch giày
+  - chai tẩy trắng giày
+  - miếng đệm mũi giày
+  - lót độn
+  priority_keywords:
+  - keo dán giày
+  - máy đánh bóng giày
+  - lót bảo vệ chân
+  - miếng lót cho giày
+  - lót độn đế
+  - lót độn giày
+  - đệm gót chân
+  - đệm mũi giày
+  - dụng cụ xỏ giày
+  - lót chuyên cho giày
+  - nước giặt giày
+  - giấy ướt lau giầy
+  - chai tẩy giày
+  - xi mút
+  - xi kem dưỡng da thật
+- label: tất vớ
+  keywords:
+  - vớ cổ cao
+  - vớ cổ ngắn
+  - vớ ngắn
+  - vớ dài
+  - vớ thể thao
+  - tất vớ
+  - tất
+  - vớ
+  priority_keywords: []
+- label: khẩu trang
+  keywords:
+  - khẩu trang
+  priority_keywords: []
+- label: găng tay
+  priority_keywords:
+  - bao tay
+  keywords:
+  - găng tay
+  - bao tay
+- label: khăn thời trang
+  keywords:
+  - khăn choàng
+  - khăn quàng
+  - choàng cổ
+  - khăn tay
+  - khăn thể thao
+  - khăn - găng tay
+  - khăn bandana
+  - bandana
+  - turban
+  priority_keywords:
+  - khăn bandana
+  - khăn turban
+  - khăn cột túi
+  - khăn quấn túi
+  - khăn cài túi
+  - khăn đa năng
+- label: kính áp tròng
+  keywords:
+  - kính áp tròng
+  - lens mắt
+  - lens
+  priority_keywords: []
+- label: gọng kính
+  keywords:
+  - gọng kính
+  - kính gọng
+  priority_keywords: []
+- label: kính mắt
+  keywords:
+  - kính mắt
+  - kính mát
+  - kính râm
+  - mắt kính
+  - kính đeo mắt
+  - kính lão
+  - kính phân cực
+  - kính thời trang
+  - kính nữ
+  - kính nam
+  - sunglasses
+  priority_keywords:
+  - kính mắt
+  - mắt kính
+  - kính lão
+  - kính viễn thị
+- label: phụ kiện vali du lịch
+  priority_keywords:
+  - túi đựng giày
+  - túi đựng giày dép
+  - túi đựng mỹ phẩm
+  - túi đựng đồ trang điểm
+  - túi đựng băng vệ sinh
+  - túi đựng phụ kiện công nghệ
+  - túi để phụ kiện điện tử
+  - túi đựng quần áo
+  - bịt mắt
+  keywords:
+  - phụ kiện vali
+  - phụ kiện du lịch
+  - ví passport
+  - bao passport
+  - hộ chiếu
+  - túi đựng giày
+  - túi đựng giày dép
+  - túi đựng mỹ phẩm du lịch
+  - túi đựng mỹ phẩm
+  - túi đựng đồ du lịch
+  - túi đựng quần áo
+  - đựng mỹ phẩm
+  name_patterns:
+  - túi.{0,45}đựng.{0,35}(?:mỹ phẩm|đồ trang điểm|quần áo)
+  - túi.{0,30}đựng\s+phụ\s+kiện\s+dream\s+travel
+  - \bpassport\s+cover\b
+  description_keywords:
+  - túi mỹ phẩm du lịch
+  - túi đựng giày
+  - túi phụ kiện dream travel
+  - túi đựng mỹ phẩm
+  description_context: túi|wash bag
+- label: vali
+  priority_keywords:
+  - vali hợp kim
+  - vali kéo
+  - vali nhôm
+  keywords:
+  - vali nhựa
+  - vali vải
+  - vali trẻ em
+  - vali-balo
+  - va li
+  - suitcase
+  - vali
+- label: balo
+  priority_keywords:
+  - balo laptop
+  - cặp học sinh
+  - cặp đẹp cho nữa
+  keywords:
+  - balo học sinh
+  - balo laptop
+  - balo du lịch
+  - balo dây rút
+  - balo nam
+  - balo nữ
+  - ba lô
+  - backpack
+  - balo
+  description_keywords:
+  - balo tặng móc khóa
+  - dạng balo
+  - balo đựng
+  - kiểu dáng balo
+  description_context: balo|ba lô|cặp|cốp|túi
+- label: túi laptop công sở
+  priority_keywords:
+  - cặp xách laptop
+  - macbook
+  - cặp đựng laptop
+  - túi laptop
+  - cặp laptop
+  - túi bảo vệ laptop
+  - túi đựng laptop
+  - túi công văn
+  - cặp doanh nhân
+  - kẹp tài liệu
+  - túi công sở
+  keywords:
+  - cặp xách laptop
+  - cặp đựng laptop
+  - túi chống sốc
+  - cặp laptop
+  - túi laptop
+  - túi da đựng laptop
+  - macbook
+  - cặp táp
+  - cặp tài liệu
+  - cặp đeo vai công sở
+  - túi da công sở
+  - cặp da
+  - cặp công sở
+  - túi xách công sở
+  name_patterns:
+  - (?:túi|cặp).{0,50}\blaptop\b
+  - cặp\s+(?:nam\s+)?công\s+sở
+  description_keywords:
+  - cặp tài liệu
+  - cặp sách nam
+  - cặp xách nam
+  - túi đựng laptop
+  description_context: túi|cặp|cap|kẹp
+- label: túi tote
+  keywords:
+  - túi tote
+  - tote
+  priority_keywords:
+  - túi tote
+  - túi vải không dệt
+- label: túi bao tử
+  priority_keywords:
+  - túi phụ kiện đeo hông
+  keywords:
+  - túi bao tử
+  - túi đeo bụng
+  - túi đeo hông
+  name_patterns:
+  - túi.{0,40}đeo\s+(?:bụng|hông)
+  description_keywords:
+  - túi đeo hông
+  - túi bao tử
+  - túi đeo bụng
+  description_context: túi
+- label: túi du lịch
+  keywords:
+  - túi trống
+  - túi du lịch
+  priority_keywords: []
+- label: túi đeo chéo
+  priority_keywords:
+  - túi đeo chéo
+  - cặp đeo chéo
+  - túi đeo ngực
+  - đeo đeo chéo
+  - thổ cẩm đeo chéo
+  - túi nam đeo chéo
+  keywords:
+  - túi đeo chéo
+  - cặp đeo chéo
+  - túi chéo
+  - túi đeo ngực
+  - túi da nam đeo chéo
+  - túi da đeo chéo
+  - kèm đeo chéo
+  - đeo chéo
+  - crossbody
+  name_patterns:
+  - \btúi\s+chéo\b
+  description_keywords:
+  - 'hình thức: túi đeo chéo'
+  - hình thức túi đeo chéo
+  description_context: túi
+- label: túi xách nữ
+  priority_keywords:
+  - túi xách nữ
+  - túi xách da nữ
+  - túi da nữ
+  - túi nữ thời trang
+  - túi vải nữ
+  - túi mini nữ
+  - túi nữ
+  - túi cói nữ
+  keywords:
+  - túi xách nữ
+  - túi thời trang nữ
+  - túi xách to bản
+  - túi xách vừa và nhỏ
+  - túi kẹp nách
+  - túi đeo vai nữ
+  - handbag
+  description_keywords:
+  - túi cho con gái
+  - túi xách nữ
+  description_context: túi
+- label: túi xách nam
+  keywords:
+  - túi xách nam
+  - túi thời trang nam
+  - túi ipad nam
+  - clutch nam
+  - túi nam
+  - briefcase
+  priority_keywords:
+  - túi da nam
+  - túi xách nam
+  name_patterns:
+  - túi.{0,60}(?:dành\s+cho\s+nam|cho\s+nam)\b
+- label: phụ kiện túi
+  keywords:
+  - dây quai đeo túi
+  - dây đeo túi
+  - phụ kiện cài túi
+  - phụ kiện túi
+  priority_keywords:
+  - dây kéo ykk
+  - khoen chữ
+  - bộ đầu khóa
+  - set nguyên liệu làm túi
+- label: túi xách khác
+  priority_keywords:
+  - túi xách hình âm nhạc
+  - túi xách tay
+  - túi đeo vai
+  - túi vải canvas
+  - túi vải bố
+  - túi cói
+  - giỏ cói
+  - túi đựng ipad
+  - túi ipad
+  - túi rút dây
+  - túi lưới rút dây
+  - túi hoa canvas
+  keywords:
+  - túi xách
+  - cặp xách
+  - làn cói
+  - túi canvas
+  - túi da
+  - túi đỏ da
+  - túi vải rơm
+  - túi đựng đồ đi mua sắm
+  - túi lưới rút dây
+- label: túi đeo khác
+  keywords:
+  - túi đeo
+  priority_keywords:
+  - túi phụ kiện đeo tay
+- label: ví nữ
+  priority_keywords:
+  - ví đựng tiền hình
+  - ví nữ
+  - bóp nữ
+  keywords:
+  - ví nữ
+  - bóp nữ
+  - clutch nữ
+- label: ví nam
+  priority_keywords:
+  - ví da nam
+  keywords:
+  - ví nam
+  - ví da nam
+  - bóp nam
+  - ví nam đứng
+  - ví nam ngang
+  - wallet nam
+- label: ví khác
+  keywords:
+  - ví dài
+  - ví ngắn
+  - ví da
+  - ví bóp
+  - ví cầm tay
+  - túi đựng giấy tờ và thẻ
+  - wallet
+  - ví
+  - ví thẻ
+  - hộp đựng thẻ
+  - card holder
+  priority_keywords: []
+- label: boots nữ
+  keywords:
+  - giày boots nữ
+  - giày boot nữ
+  - boots nữ
+  - boot nữ
+  - bốt nữ
+  - boot đùi
+  priority_keywords: []
+  description_patterns:
+  - (?:ủng|boots|bốt).{0,160}(?:phụ nữ|\bnữ\b)
+  description_context: giày|bốt|boot|ủng
+- label: boots nam
+  keywords:
+  - giày boots nam
+  - giày boot nam
+  - boots nam
+  - boot nam
+  - bốt nam
+  - chelsea boot
+  priority_keywords: []
+  name_patterns:
+  - (?:giày\s+)?bốt.{0,25}\bnam\b
+- label: giày cao gót
+  priority_keywords: []
+  keywords:
+  - giày cao gót
+  - cao gót
+  - giày gót
+- label: giày búp bê
+  priority_keywords:
+  - giày da cao cấp búp bê
+  keywords:
+  - giày búp bê
+  - giày bệt nữ
+  - giày búp
+  - búp bê
+  description_keywords:
+  - giày búp bê
+  description_context: giày|búp bê
+- label: giày đế xuồng
+  keywords:
+  - giày đế xuồng
+  - đế xuồng
+  priority_keywords: []
+- label: giày tây nam
+  keywords:
+  - giày tây nam
+  - giày tây
+  - giày derby
+  - giày oxford
+  priority_keywords: []
+- label: giày lười nữ
+  keywords:
+  - giày lười nữ
+  - giày lười hở gót
+  - giày lười mũi nhọn
+  - giày lười mũi vuông
+  priority_keywords:
+  - giày lười nữ
+  - giày mọi nữ
+  - giày moca nữ
+  description_keywords:
+  - loafer
+  - moccasin
+  - giày mọi
+  description_context: giày.*nữ|giày nữ
+- label: giày lười nam
+  keywords:
+  - giày lười nam
+  - giày lười nhựa nam
+  - giày lười vải nam
+  - giày lười da nam
+  - giày sục nam
+  priority_keywords:
+  - giày lười nam
+  - giày không gót nam
+  - giày da nam không dây
+  description_keywords:
+  - giày sục nam
+  - giày lười nam
+  description_context: giày.*nam|giày nam|^chất liệu
+- label: sandal nữ
+  keywords:
+  - sandal nữ
+  - sandal xỏ ngón
+  - sandals đế bằng
+  - sandals xỏ ngón
+  - sandals chiến binh
+  - sandals buộc dây
+  - xăng đan nữ
+  priority_keywords:
+  - sandal nữ
+  - sandals nữ
+  - giày sandal cao gót nữ
+  - giày sandal xuồng nữ
+- label: sandal nam
+  priority_keywords:
+  - giày sandals vento nam
+  - sandals vento nam
+  - dép sandal nam
+  - sandal nam
+  keywords:
+  - sandal nam
+  - sandals nam
+  - sandal đế bằng nam
+  - xăng đan nam
+- label: giày thể thao nữ
+  priority_keywords:
+  - giày thể thao nữ
+  - sneaker nữ
+  keywords:
+  - giày thể thao nữ
+  - sneaker nữ
+  - snaker nữ
+  - giày sneaker nữ
+- label: giày thể thao nam
+  priority_keywords: []
+  keywords:
+  - giày thể thao nam
+  - sneaker nam
+  - sneakers nam
+  - giày sneaker nam
+  - giày chạy bộ
+  name_patterns:
+  - giày.{0,50}thể\s+thao\s+nam
+- label: giày thể thao khác
+  priority_keywords:
+  - giày converse
+  keywords:
+  - giày thể thao
+  - giày sneakers
+  - sneaker
+  - giày bata
+- label: dép nữ
+  priority_keywords:
+  - dép sỏ ngón nữ
+  - dép xỏ ngón nữ
+  - dép kẹp nữ
+  - dép quai ngang nữ aldo
+  - dép sục nữ
+  - sục nữ
+  - giày sabo nữ
+  - dép quai ngang nữ
+  keywords:
+  - dép nữ
+  - dép sỏ ngón nữ
+  - dép xỏ ngón nữ
+  - dép kẹp nữ
+  - dép quai ngang nữ
+  - dép guốc nữ
+  - dép - guốc nữ
+- label: dép nam
+  keywords:
+  - dép nam
+  - dép nam xỏ ngón
+  - dép nam quai ngang
+  - dép nam đi trong nhà
+  priority_keywords: []
+- label: dép unisex
+  priority_keywords:
+  - dép cặp nam và nữ
+  keywords:
+  - dép xỏ ngón
+  - dép quai ngang
+  - dép đi trong nhà
+  - dép tổ ong
+- label: dép khác
+  priority_keywords:
+  - dép đúc nguyên khối
+  keywords:
+  - dép
+- label: giày nữ
+  priority_keywords:
+  - giày đi mưa
+  - giày nhựa đi mưa nữ
+  - giày nhựa siêu nhẹ đế cao nữ
+  keywords:
+  - giày nữ
+  - giày - dép nữ
+- label: giày nam
+  keywords:
+  - giày nam
+  - giày da nam
+  - giày - dép nam
+  priority_keywords: []
+- label: mũ nón
+  keywords:
+  - nón lưỡi trai
+  - nón tai bèo
+  - nón snapback
+  - nón nửa đầu
+  - nón chống nắng
+  - nón rộng vành
+  - nón len
+  - nón phớt
+  - nón nam
+  - nón nữ
+  - mũ
+  - nón
+  - cap
+  - bucket hat
+  priority_keywords: []
+- label: thắt lưng
+  keywords:
+  - thắt lưng
+  - dây nịt
+  - mặt thắt lưng
+  - belt
+  priority_keywords:
+  - đai váy
+  - đai thắt eo
+- label: đồng hồ
+  keywords:
+  - đồng hồ
+  - watch
+  priority_keywords: []
+- label: hình xăm tạm thời
+  priority_keywords:
+  - hình xăm
+  keywords:
+  - hình xăm
+- label: trang sức
+  keywords:
+  - vòng tay
+  - vòng cổ
+  - dây chuyền
+  - chuỗi đeo cổ
+  - ngọc trai
+  - nhẫn
+  - bông tai
+  - khuyên tai
+  priority_keywords: []
+- label: cà vạt
+  keywords:
+  - cà vạt
+  - cavat
+  - caravat
+  - cravat
+  priority_keywords:
+  - nơ đeo cổ
+- label: phụ kiện tóc
+  priority_keywords:
+  - bờm tóc
+  - băng đô
+  - dây chun buộc tóc
+  - dây buộc tóc
+  - cột tóc đính
+  - kẹp tóc
+  - lô uốn
+  - búi tóc
+  - cặp tóc
+  - lưới chụp tóc
+  keywords:
+  - bờm tóc
+  - cài tóc
+  - cột tóc
+  - cot tóc
+  - kẹp tóc
+  - kẹp càng cua
+  - kẹp tăm
+  - dây buộc tóc
+  - buộc tóc
+  - băng đô
+  - lược
+  - uốn tóc
+  - đệm phồng
+  - dụng cụ uốn tóc
+  - phụ kiện tóc
+- label: phụ kiện cài áo
+  keywords:
+  - cài áo
+  - ghim cài áo
+  - pin cài áo
+  priority_keywords:
+  - thẻ tên cài áo
+  - bảng nam châm gắn thẻ tên
+  - huy hiệu
+- label: phụ kiện thời trang khác
+  priority_keywords:
+  - dây nối áo ngực
+  - khóa bư-ớm đồng hồ
+  - dây đai chữ y
+  - miếng nối áo ngực
+  - bộ móc may áo ngực
+  - găng tay hình xăm
+  keywords:
+  - phụ kiện thời trang
+  - móc khóa
+  - phụ kiện cưới
+  - dây nối áo ngực
+  - dây đeo quần
+  - khăn lau kính
+  - bịt tai
+  - ống tay chống nắng
+  - khăn lau kính chống bám hơi nước
+  - tròng kính viễn
+  - găng tay hình xăm
+- label: sandal unisex
+  keywords:
+  - sandal unisex
+  - sandal nam nữ
+- label: sandal khác
+  keywords:
+  - sandal
+  - sandals
+  - sandan
+  - xăng đan
+- label: giày lười unisex
+  keywords:
+  - giày lười unisex
+  - giày lười nam nữ
+- label: giày lười khác
+  keywords:
+  - giày lười
+  - giày mọi
+  - moccasin
+  - loafer
+  - slip on
+  - slipon
+- label: boots unisex
+  keywords:
+  - boots unisex
+  - boot unisex
+  - bốt unisex
+- label: boots khác
+  keywords:
+  - boots
+  - boot
+  - bốt
+  description_keywords:
+  - bản boots
+  description_context: ^\[|giày|boot|bốt
+- label: giày unisex
+  keywords:
+  - giày unisex
+  - giày nam nữ
+- label: giày khác
+  keywords:
+  - giày
+generic_categories:
+- Root
+- Thời Trang
+- Giày - Dép nam
+- Giày - Dép nữ
+- Khăn - Găng tay nam
+- Khăn - Tất - Vớ nữ
+- Phụ kiện thời trang
+- Phụ kiện thời trang nữ
+- Phụ kiện kính
+- Phụ kiện du lịch khác
+- Phụ kiện cưới
+- Túi thời trang nam
+- Túi thời trang nữ
+- Balo và Vali
+- Balo Học Sinh - Cặp học sinh
+source_fallbacks:
+  fashion_accessories: phụ kiện thời trang khác
+  backpacks_suitcases: balo vali túi khác
+  men_bags: túi ví nam khác
+  women_bags: túi ví nữ khác
+  men_shoes: giày dép nam khác
+  women_shoes: giày dép nữ khác
+taxonomy_version: v2-unisex-description
+broad_labels:
+- ambiguous
+- giày nam
+- giày nữ
+- giày khác
+- giày unisex
+- boots khác
+- giày lười khác
+- sandal khác
+- dép khác
+- túi xách nam
+- túi xách nữ
+- túi xách khác
+- túi đeo khác
+- ví khác
+- phụ kiện thời trang khác
+- balo vali túi khác
+- túi ví nam khác
+- túi ví nữ khác
+- giày dép nam khác
+- giày dép nữ khác
+special_name_rules:
+- label: phụ kiện thời trang khác
+  pattern: găng tay hình xăm|ống tay hình xăm|bộ móc may áo ngực
+- label: phụ kiện túi
+  pattern: móc treo cài túi|set nguyên liệu làm túi
+specific_type_order:
+- out_of_scope
+- ambiguous
+- phụ kiện vệ sinh giày
+- phụ kiện vali du lịch
+- balo
+- túi laptop công sở
+- túi bao tử
+- túi tote
+- boots nữ
+- boots nam
+- sandal nữ
+- sandal nam
+- giày đế xuồng

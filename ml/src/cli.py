@@ -8,10 +8,14 @@ import pandas as pd
 
 from ml.src.config import PipelineConfig, load_config
 from ml.src.data.clean import clean_products
+from ml.src.evaluation.development import (
+    create_development_queue, merge_development_annotations, validate_development_review,
+)
 from ml.src.evaluation.review_queues import create_review_queues, evaluate_review_queues
 from ml.src.models.reference import train_reference_models
 from ml.src.peers.build import build_peer_features
-from ml.src.scoring.status import score_products
+from ml.src.peers.build import add_peer_action_features
+from ml.src.scoring.status import STATUS_LABELS_VI, score_products
 from ml.src.taxonomy.rules import (
     assign_product_types,
     create_review_sample,
@@ -138,19 +142,44 @@ def train(processed_dir: Path, artifact_dir: Path, config: PipelineConfig) -> pd
     return predictions
 
 
-def score(processed_dir: Path, config: PipelineConfig, baseline_only: bool = False) -> pd.DataFrame:
+def score(
+    processed_dir: Path, config: PipelineConfig, baseline_only: bool = False,
+    output_file: Path | None = None,
+) -> pd.DataFrame:
     peer_features = _read_csv(processed_dir / "peer_features.csv")
     prediction_path = processed_dir / "model_predictions.csv"
+    if "good_peer_video_share" not in peer_features:
+        peer_features = add_peer_action_features(peer_features)
     predictions = None if baseline_only else _read_csv(prediction_path)
     scored = score_products(peer_features, predictions, config)
-    scored.to_csv(processed_dir / "product_scores.csv", index=False)
+    output_path = output_file or processed_dir / "product_scores.csv"
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    scored.to_csv(output_path, index=False)
+    recommendations = scored["recommendations"].map(json.loads)
+    summary = {
+        "rows": len(scored),
+        "scored_at": scored["scored_at"].iloc[0] if len(scored) else None,
+        "model_versions": scored["model_version"].dropna().unique().tolist(),
+        "scoring_rules_versions": scored["scoring_rules_version"].dropna().unique().tolist(),
+        "status_counts": {status: int(scored["status"].eq(status).sum()) for status in STATUS_LABELS_VI},
+        "status_reason_counts": scored["status_reason"].value_counts().to_dict(),
+        "products_with_recommendations": int(recommendations.map(bool).sum()),
+        "recommendation_count": int(recommendations.map(len).sum()),
+        "action_counts": pd.Series(
+            [item["action"] for items in recommendations for item in items], dtype=str
+        ).value_counts().to_dict(),
+        "rule_id_counts": pd.Series(
+            [item["rule_id"] for items in recommendations for item in items], dtype=str
+        ).value_counts().to_dict(),
+        "analysis_is_hypothesis": True,
+        "output": str(output_path),
+    }
+    output_path.with_suffix(".summary.json").write_text(
+        json.dumps(summary, ensure_ascii=False, indent=2, allow_nan=False), encoding="utf-8"
+    )
     print(
         json.dumps(
-            {
-                "rows": len(scored),
-                "status_counts": scored["status"].value_counts(dropna=False).to_dict(),
-                "output": str(processed_dir / "product_scores.csv"),
-            },
+            summary,
             ensure_ascii=False,
             indent=2,
         )
@@ -178,6 +207,7 @@ def _parser() -> argparse.ArgumentParser:
     score_parser = subparsers.add_parser("score", help="Assign status and recommendations")
     score_parser.add_argument("--processed-dir", type=Path, default=DEFAULT_PROCESSED_DIR)
     score_parser.add_argument("--baseline-only", action="store_true")
+    score_parser.add_argument("--output-file", type=Path, default=None)
 
     all_parser = subparsers.add_parser("run-all", help="Run the full data and model pipeline")
     all_parser.add_argument("--raw-dir", type=Path, default=DEFAULT_RAW_DIR)
@@ -239,20 +269,50 @@ def _parser() -> argparse.ArgumentParser:
         default=DEFAULT_PROCESSED_DIR / "clean_products.csv",
         help="Current taxonomy predictions for the locked holdout IDs",
     )
+    development_parser = subparsers.add_parser(
+        "create-taxonomy-development", help="Create an excluded-ID taxonomy development queue"
+    )
+    development_parser.add_argument("--processed-dir", type=Path, default=DEFAULT_PROCESSED_DIR)
+    development_parser.add_argument("--output-dir", type=Path, default=Path("data/local_reviews/taxonomy_round_3"))
+    development_parser.add_argument("--taxonomy", type=Path, default=DEFAULT_TAXONOMY)
+    development_parser.add_argument("--guide", type=Path, default=Path("ml/config/taxonomy_label_guide.yml"))
+    development_parser.add_argument("--random-state", type=int, default=20261011)
+    development_validator = subparsers.add_parser(
+        "validate-taxonomy-development", help="Validate human development labels without changing rules"
+    )
+    development_validator.add_argument("--output-dir", type=Path, default=Path("data/local_reviews/taxonomy_round_3"))
+    development_merge = subparsers.add_parser(
+        "merge-taxonomy-development", help="Merge human annotations from a reviewed development subset"
+    )
+    development_merge.add_argument("--output-dir", type=Path, default=Path("data/local_reviews/taxonomy_round_3"))
+    development_merge.add_argument("--review-file", type=Path, required=True)
     return parser
 
 
 def main() -> None:
     args = _parser().parse_args()
     config = load_config(args.config)
-    if args.command == "prepare":
+    if args.command == "create-taxonomy-development":
+        metrics = create_development_queue(
+            args.processed_dir, args.output_dir, args.taxonomy, args.guide, args.random_state
+        )
+        print(json.dumps(metrics, ensure_ascii=False, indent=2))
+    elif args.command == "merge-taxonomy-development":
+        metrics = merge_development_annotations(args.output_dir, args.review_file)
+        print(json.dumps(metrics, ensure_ascii=False, indent=2))
+    elif args.command == "validate-taxonomy-development":
+        metrics = validate_development_review(args.output_dir)
+        print(json.dumps(metrics, ensure_ascii=False, indent=2))
+        if not metrics["complete"]:
+            raise SystemExit(2)
+    elif args.command == "prepare":
         prepare(args.raw_dir, args.processed_dir, args.taxonomy, config)
     elif args.command == "peers":
         peers(args.processed_dir, config)
     elif args.command == "train":
         train(args.processed_dir, args.artifact_dir, config)
     elif args.command == "score":
-        score(args.processed_dir, config, args.baseline_only)
+        score(args.processed_dir, config, args.baseline_only, args.output_file)
     elif args.command == "run-all":
         prepare(args.raw_dir, args.processed_dir, args.taxonomy, config)
         peers(args.processed_dir, config)
