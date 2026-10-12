@@ -23,6 +23,48 @@ PEER_MEDIAN_COLUMNS = (
 )
 
 
+def add_peer_action_features(products: pd.DataFrame) -> pd.DataFrame:
+    """Describe video presence among positive-selling upper-quartile retrieved peers."""
+    result = products.copy()
+    ids = result["product_id"].astype(str)
+    if ids.duplicated().any():
+        raise ValueError("Peer action features require unique product IDs")
+    positions = {product_id: position for position, product_id in enumerate(ids)}
+    sales = pd.to_numeric(result["quantity_sold"], errors="coerce").to_numpy(float)
+    video = result["has_video"].astype(str).str.strip().str.lower().map(
+        {"true": 1.0, "1": 1.0, "1.0": 1.0, "yes": 1.0,
+         "false": 0.0, "0": 0.0, "0.0": 0.0, "no": 0.0}
+    ).to_numpy(float)
+    records = []
+    for product_id, raw in zip(ids, result["peer_ids"]):
+        peers = json.loads(raw) if isinstance(raw, str) else raw
+        if not isinstance(peers, list):
+            raise ValueError("peer_ids must contain a JSON list")
+        peer_ids = [str(value) for value in peers]
+        if len(peer_ids) != len(set(peer_ids)) or product_id in peer_ids:
+            raise ValueError("Peer IDs must exclude self and duplicates")
+        missing = set(peer_ids) - positions.keys()
+        if missing:
+            raise ValueError(f"Peer snapshot is incomplete: missing IDs {sorted(missing)[:5]}")
+        selected = np.asarray([positions[value] for value in peer_ids], dtype=int)
+        values = sales[selected]
+        valid = np.isfinite(values) & (values >= 0)
+        threshold = max(1.0, float(np.quantile(values[valid], 0.75))) if valid.any() else np.nan
+        good = selected[valid & (values >= threshold)]
+        good_video = video[good]
+        known = np.isfinite(good_video)
+        records.append({
+            "good_peer_sales_threshold": threshold,
+            "good_peer_count": len(good),
+            "good_peer_video_known_count": int(known.sum()),
+            "good_peer_video_share": float(good_video[known].mean()) if known.any() else np.nan,
+        })
+    action_features = pd.DataFrame(records, index=result.index)
+    for column in action_features:
+        result[column] = action_features[column]
+    return result
+
+
 def _price_quartiles(products: pd.DataFrame) -> pd.Series:
     def assign(group: pd.Series) -> pd.Series:
         valid = group.notna()
@@ -230,4 +272,4 @@ def build_peer_features(products: pd.DataFrame, config: PipelineConfig) -> pd.Da
         },
         ensure_ascii=False,
     )
-    return result
+    return add_peer_action_features(result)

@@ -1,0 +1,179 @@
+{
+  "generated_at": "2026-10-11T18:09:32.112587+00:00",
+  "run_mode": "experimental_user_requested_rerun",
+  "taxonomy_version": "v2-unisex-description",
+  "taxonomy_label_count": 67,
+  "source_products_sha256": "04d762026c361b071f4a73519533eac8fddfae2a74f521c371ca2bd2562117ae",
+  "taxonomy_sha256": "158d1475f6f2d99e62a77faddf92419852c6094f3fc85db9dc1391ebcd7f7b47",
+  "holdout_sha256": "63f64655d2077417c066883f17dd211730ec7257f7ef3ba2790aa8de06110d92",
+  "rows": 41576,
+  "rule_coverage": 0.9484317875697518,
+  "fallback_rows": 2144,
+  "fallback_rate": 0.05156821243024822,
+  "source_counts": {
+    "name_rule": 28748,
+    "name_gender_rule": 7098,
+    "category_rule": 3328,
+    "source_fallback": 2144,
+    "description_rule": 247,
+    "name_context_rule": 11
+  },
+  "new_label_counts": {
+    "sandal unisex": 198,
+    "sandal khác": 286,
+    "giày lười unisex": 99,
+    "giày lười khác": 67,
+    "boots unisex": 8,
+    "boots khác": 148,
+    "giày unisex": 19,
+    "giày khác": 252
+  },
+  "development_round3_frozen_label_accuracy": 0.795,
+  "development_round3_schema_migrated_accuracy": 0.835,
+  "AI_schema_migrated_development_rows": 18,
+  "original_200_development_accuracy": 0.81,
+  "holdout_frozen_labels_accuracy": 0.63,
+  "holdout_rows": 300,
+  "holdout_gate_passed": false,
+  "schema_change_limitation": "Eight new labels were introduced. Holdout labels remain frozen v1 labels; no automated holdout relabelling was performed. The schema-migrated development score uses explicit AI proposals, not independent truth.",
+  "quality_acceptance": false,
+  "rerun_authorization": "User explicitly requested holdout and model rerun despite previous failing quality gates; downstream results remain experimental.",
+  "sufficient_peer_products": 37274,
+  "peer_quality_reason_counts": {
+    "passed": 37274,
+    "peer_similarity_below_minimum": 3339,
+    "peer_count_below_minimum": 962,
+    "invalid_essential_data": 1
+  },
+  "model_metrics": {
+    "model_version": "j4f-20261011T181008Z",
+    "generated_at": "2026-10-11T18:10:08.480056+00:00",
+    "training_rows": 41575,
+    "excluded_invalid_rows": 1,
+    "peer_baseline": {
+      "roc_auc": 0.6552885389576495,
+      "pr_auc": 0.6257760785239043,
+      "brier_score": 0.23058942306326521,
+      "rmsle_all": 1.5207952952780142,
+      "spearman_all": 0.2709517651254265
+    },
+    "model_a_actionable": {
+      "estimator_backend": "sklearn_hist_gradient_boosting",
+      "folds": 5,
+      "seller_groups": 3806,
+      "roc_auc": 0.7003581977491702,
+      "pr_auc": 0.6881287873547722,
+      "brier_score": 0.21894525756734834,
+      "conditional_mae_log1p": 1.028443161458401,
+      "rmsle_all": 1.361363224771711,
+      "spearman_all": 0.3835296606945132,
+      "prediction_coverage_all": 0.8975826819001804,
+      "prediction_coverage_evaluation": 0.8952398888836575,
+      "conformal_calibration_rows": 20336,
+      "conformal_evaluation_rows": 21239,
+      "conformal_radius_log1p": 2.1137411532347463
+    },
+    "model_b_with_outcome_correlated_feedback": {
+      "estimator_backend": "sklearn_hist_gradient_boosting",
+      "folds": 5,
+      "seller_groups": 3806,
+      "roc_auc": 0.8683145119968867,
+      "pr_auc": 0.8996263408345322,
+      "brier_score": 0.12460540291890027,
+      "conditional_mae_log1p": 0.489877392288129,
+      "rmsle_all": 0.6458374954183005,
+      "spearman_all": 0.7330842175783693,
+      "prediction_coverage_all": 0.8988574864702346,
+      "prediction_coverage_evaluation": 0.8977352982720467,
+      "conformal_calibration_rows": 20336,
+      "conformal_evaluation_rows": 21239,
+      "conformal_radius_log1p": 0.9566415218854644
+    },
+    "model_b_minus_model_a": {
+      "roc_auc": 0.1679563142477165,
+      "pr_auc": 0.21149755347975996,
+      "brier_score": -0.09433985464844807,
+      "rmsle_all": -0.7155257293534104,
+      "spearman_all": 0.34955455688385606
+    },
+    "interpretation": "Model B may score better because review_count and rating_average accumulate after sales. It must not be used for the primary opportunity flag."
+  },
+  "scoring_summary": {
+    "rows": 41576,
+    "scored_at": "2026-10-11T18:10:10.739392+00:00",
+    "model_versions": [
+      "j4f-20261011T181008Z"
+    ],
+    "status_counts": {
+      "positive_feedback_low_sales": 0,
+      "low_rating_low_sales": 0,
+      "performing_well": 18377,
+      "untapped_potential": 5918,
+      "difficult_to_sell": 12796,
+      "insufficient_data": 4485
+    },
+    "status_reason_counts": {
+      "sales_not_below_prediction_interval": 18377,
+      "zero_sales_low_reference_probability": 12796,
+      "zero_sales_high_reference_probability": 5918,
+      "peer_similarity_below_minimum": 3339,
+      "peer_count_below_minimum": 962,
+      "insufficient_feedback_for_low_sales_interpretation": 183,
+      "invalid_essential_data": 1
+    },
+    "products_with_recommendations": 27382,
+    "recommendation_count": 40331,
+    "action_counts": {
+      "Bổ sung ảnh rõ chất liệu, kích thước và các góc sử dụng.": 16234,
+      "Rà soát định vị giá và giá trị khác biệt của sản phẩm.": 14322,
+      "Kiểm tra từ khóa trong tên, khả năng xuất hiện khi tìm kiếm và trạng thái tồn kho.": 5918,
+      "Bổ sung chất liệu, kích thước, công dụng và hướng dẫn sử dụng.": 2744,
+      "Kiểm tra khả năng bổ sung video sản phẩm ngắn.": 969,
+      "Đọc đánh giá và kiểm tra vấn đề chất lượng hoặc trải nghiệm; phân nhóm phản hồi trước khi thay đổi sản phẩm.": 144
+    },
+    "analysis_is_hypothesis": true,
+    "output": "data/processed/taxonomy_v2_run/product_scores.csv"
+  },
+  "output_dir": "data/processed/taxonomy_v2_run",
+  "artifact_dir": "ml/artifacts/taxonomy_v2_run",
+  "peer_audit_limitation": "Previous human peer relevance scores do not validate newly retrieved peer groups.",
+  "text_model_metrics": {
+    "generated_at": "2026-10-11T18:11:48.715792+00:00",
+    "evaluation": "development_out_of_fold_near_duplicate_grouped",
+    "estimator": "TF-IDF word(1,2) + char_wb(3,5) + LinearSVC(C=1, class_weight=balanced)",
+    "rows": 707,
+    "classes": 60,
+    "folds": 5,
+    "duplicate_groups": 695,
+    "near_duplicate_similarity_threshold": 0.9,
+    "accuracy": 0.6251768033946252,
+    "macro_f1": 0.5246469229857672,
+    "round3_accuracy": 0.583756345177665,
+    "margin_threshold": 0.8,
+    "margin_selected_rows": 95,
+    "margin_selected_coverage": 0.13437057991513437,
+    "margin_selected_accuracy": 0.9368421052631579,
+    "classes_with_fewer_than_5_duplicate_groups": {
+      "boots khác": 3,
+      "giày dép nam khác": 1,
+      "giày lười khác": 1,
+      "giày lười unisex": 2,
+      "giày unisex": 3,
+      "sandal unisex": 2,
+      "trang sức": 1,
+      "túi du lịch": 1,
+      "túi ví nữ khác": 2,
+      "túi đeo khác": 2
+    },
+    "holdout_used_for_training_or_model_selection": false,
+    "production_rules_modified": false,
+    "limitations": "Development labels include user-confirmed AI-assisted annotations. Macro F1 and rare-class support matter; SVM margins are not probabilities. Grouping used unlabelled titles to prevent duplicate leakage; classifier TF-IDF is fitted inside each training fold. This is not blind holdout acceptance or product readiness.",
+    "label_loading": {
+      "input_label_rows": 750,
+      "conflicting_product_ids": [],
+      "excluded_holdout_overlap_rows": 8,
+      "excluded_ambiguous_rows": 37,
+      "AI_schema_migrated_rows": 18
+    }
+  }
+}

@@ -27,6 +27,17 @@ Required fields:
 | `description_length` | integer/null | Normalized description length |
 | `data_quality_issue` | string | `none` or an auditable data issue |
 | `valid_for_model` | boolean | Whether essential fields are valid for peer/model logic |
+| `taxonomy_version` | string, v2 outputs | Version of the taxonomy used to assign product type |
+
+Taxonomy v2 (`v2-unisex-description`) adds eight labels: `sandal unisex`,
+`sandal khác`, `giày lười unisex`, `giày lười khác`, `boots unisex`, `boots khác`,
+`giày unisex`, `giày khác`. Unisex requires affirmative evidence for both genders;
+`khác` in these families means the structural type is known but gender or finer
+subtype is not. Size and source filename do not establish gender. Existing
+`giày thể thao khác` and `ví khác` retain their prior unisex/unspecified scope.
+All 67 label definitions are in `ml/config/taxonomy_label_guide_v2.yml`.
+Original annotation and holdout labels remain unchanged; AI-proposed schema
+migrations are identified separately and do not become independent ground truth.
 
 ## Product scores
 
@@ -49,7 +60,39 @@ Required fields:
 | `evidence` | JSON string | Facts used to explain the status |
 | `recommendations` | JSON string | Suggested actions linked to evidence |
 | `model_version` | string | Reproducible scoring version |
+| `scoring_rules_version` | string | Status/action rule version, separate from model training |
 | `scored_at` | ISO 8601 string | Scoring timestamp |
+| `status_reason` | string | Stable reason code for the selected status |
+| `status_label_vi` | string | Vietnamese display label for the stable status |
+| `status_explanation_vi` | string | Human-readable explanation of the observed/reference comparison |
+| `analysis_is_hypothesis` | boolean | Always true for this snapshot-based rule engine |
+| `analysis_limitations_vi` | string | Snapshot, taxonomy/peer and non-causal interpretation limitations |
+
+Scoring emits `product_scores.summary.json` beside the CSV with all six status
+counts (including zero counts), reason/action counts, score timestamp and model
+versions. Recommendations are JSON arrays of objects containing `rule_id`, `evidence`,
+`hypothesis`, `action` and `validation_needed`; evidence arrays use finite numbers
+or JSON null. Missing model predictions do not silently become baseline estimates.
+Baseline mode must be explicitly selected and uses `peer-baseline-v1`.
+Missing peer/model/observed-sales basis clears the primary reference and interval
+fields. Feedback-only insufficiency retains valid reference fields and may emit
+listing recommendations supported by peers; opportunity priority remains null.
+
+Out-of-scope or unresolved product types also suppress actions and clear primary
+references (`out_of_scope_product` / `unresolved_product_type`). Enriched peer
+snapshots include `good_peer_sales_threshold`, `good_peer_count`,
+`good_peer_video_known_count` and nullable `good_peer_video_share`. Good peers
+have positive observed sales at or above the selected-peer 75th percentile;
+unknown video presence is excluded from the share denominator.
+
+The separate MVP v2 export lives in `data/processed/scoring_mvp_v2/`:
+`product_statuses.csv` contains one row per product, while
+`product_recommendations.csv` contains one row per action with `product_id`,
+the five recommendation fields, model/rule versions and scoring time. Products
+without recommendations have no rows in the action table. These full-data exports
+stay outside Git; the aggregate report is shared under `ml/reports/metrics/`.
+
+See [interpretation guide](../ml/interpretation-guide.md) for decision order and thresholds.
 
 Approved statuses:
 

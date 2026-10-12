@@ -22,7 +22,7 @@ def load_taxonomy_rules(path: str | Path) -> list[dict[str, Any]]:
     if not rules:
         raise ValueError("Taxonomy configuration has no product_types rules")
     for rule in rules:
-        if not rule.get("label") or not (rule.get("keywords") or rule.get("priority_keywords")):
+        if not rule.get("label") or not (rule.get("keywords") or rule.get("priority_keywords") or rule.get("name_patterns")):
             raise ValueError(f"Invalid taxonomy rule: {rule}")
     return rules
 
@@ -32,10 +32,147 @@ def _load_taxonomy_config(path: str | Path) -> dict[str, Any]:
         return yaml.safe_load(stream) or {}
 
 
+def _keyword_pattern(keywords: list[str]) -> str:
+    return r"(?:^|\W)(?:" + "|".join(re.escape(_search_text(word)) for word in keywords) + r")(?:$|\W)"
+
+
+def _assign_v2(products: pd.DataFrame, config: dict[str, Any]) -> pd.DataFrame:
+    result = products.copy()
+    name = result.product_name.fillna("").map(_search_text).str.replace("giầy", "giày", regex=False)
+    name = name.str.split(r"\btặng(?:\s+kèm|\s+thêm)?\b|\bquà\s+tặng\b", n=1, regex=True).str[0]
+    description = result.description.fillna("").map(_search_text).str[:900]
+    description = description.str.split(
+        r"shop chuyên|chuyên phân phối|sản phẩm liên quan|các sản phẩm khác", n=1, regex=True
+    ).str[0]
+    category = result.category_raw.fillna("").map(_search_text)
+    generic = {_search_text(value) for value in config.get("generic_categories", [])}
+    category = category.mask(category.isin(generic), "")
+    broad = set(config["broad_labels"])
+    rules = config["product_types"]
+    labels = pd.Series("unknown", index=result.index, dtype=object)
+    matches = pd.Series("", index=result.index, dtype=object)
+    sources = pd.Series("unmatched", index=result.index, dtype=object)
+
+    def apply_rule(rule: dict[str, Any], text: pd.Series, source: str, eligible: pd.Series) -> None:
+        patterns = []
+        keywords = list(dict.fromkeys(rule.get("priority_keywords", []) + rule.get("keywords", [])))
+        if source == "description_rule":
+            keywords = rule.get("description_keywords", [])
+        if keywords:
+            patterns.append(_keyword_pattern(keywords))
+        if source == "name_rule":
+            patterns.extend(rule.get("name_patterns", []))
+        elif source == "description_rule":
+            patterns.extend(rule.get("description_patterns", []))
+        if not patterns:
+            return
+        pattern = "(?:" + "|".join(patterns) + ")"
+        selected = eligible & text.str.contains(pattern, regex=True, na=False)
+        if source == "description_rule":
+            context = rule.get("description_context")
+            if context:
+                selected &= name.str.contains(context, regex=True, na=False)
+        if selected.any():
+            labels.loc[selected] = rule["label"]
+            matches.loc[selected] = text.loc[selected].str.extract(f"({pattern})", expand=False).fillna("")
+            sources.loc[selected] = source
+
+    for rule in config.get("special_name_rules", []):
+        pattern = rule["pattern"]
+        take = labels.eq("unknown") & name.str.contains(pattern, regex=True, na=False)
+        labels.loc[take] = rule["label"]
+        matches.loc[take] = name.loc[take].str.extract(f"({pattern})", expand=False).fillna("")
+        sources.loc[take] = "name_context_rule"
+
+    first = config.get("specific_type_order", [])
+    rank = {label: index for index, label in enumerate(first)}
+    rules = sorted(rules, key=lambda rule: rank.get(rule["label"], len(rank)))
+
+    # Specific main-item titles win; broad words such as "tui" wait for category/description evidence.
+    for rule in rules:
+        if rule["label"] not in broad or rule["label"] == "ambiguous":
+            apply_rule(rule, name, "name_rule", labels.eq("unknown"))
+    for rule in rules:
+        apply_rule(rule, category, "category_rule", labels.eq("unknown"))
+    description_available = labels.eq("unknown") | labels.isin(broad) | sources.eq("category_rule")
+    description_assigned = pd.Series(False, index=result.index)
+    for rule in rules:
+        before = sources.copy()
+        apply_rule(rule, description, "description_rule", description_available & ~description_assigned)
+        description_assigned |= sources.eq("description_rule") & ~before.eq("description_rule")
+    for rule in rules:
+        if rule["label"] in broad:
+            apply_rule(rule, name, "name_rule", labels.eq("unknown"))
+
+    # Preserve structural type while resolving gender only from the main title or compatible description.
+    shoe = labels.str.startswith(("giày", "boots", "sandal", "dép"))
+    family = pd.Series("", index=result.index, dtype=object)
+    families = [
+        ("sandal", r"sandal|sandals|sandan|xăng đan"),
+        ("boots", r"\bboot(?:s)?\b|\bbốt\b"),
+        ("giày thể thao", r"giày.{0,50}thể thao|sneaker|\bbata\b|giày chạy bộ"),
+        ("giày lười", r"giày lười|giày mọi|moccasin|loafer|slip.?on"),
+        ("dép", r"\bdép\b|\bguốc\b|\bsục\b"),
+        ("giày", r"\bgiày\b"),
+    ]
+    for label, pattern in families:
+        selected = family.eq("") & name.str.contains(pattern, regex=True, na=False)
+        family.loc[selected] = label
+    gender_text = name.copy()
+    title_gender = name.str.contains(r"\bunisex\b|\bnam\b|\bnữ\b|bé trai|bé gái", regex=True)
+    compatible_description = name.ne("") & family.ne("") & ~title_gender
+    for label, pattern in families:
+        compatible = compatible_description & family.eq(label) & description.str.contains(pattern, regex=True, na=False)
+        gender_text.loc[compatible] = name.loc[compatible] + " " + description.loc[compatible]
+    unisex = gender_text.str.contains(r"\bunisex\b|nam\s*(?:và\s*|/\s*)?nữ|nam\s+cả\s+nữ", regex=True)
+    male = gender_text.str.contains(r"\bnam\b|bé trai", regex=True) & ~unisex
+    female = gender_text.str.contains(r"\bnữ\b|bé gái", regex=True) & ~unisex
+    protected = {"giày búp bê", "giày tây nam"}
+    resolved_families = {"sandal", "boots", "giày lười"}
+    for label in resolved_families:
+        selected = (shoe | labels.isin(broad) | labels.eq("unknown")) & family.eq(label) & ~labels.isin(protected)
+        for suffix, mask in [("unisex", unisex), ("nam", male), ("nữ", female), ("khác", ~unisex & ~male & ~female)]:
+            take = selected & mask
+            labels.loc[take] = label + " " + suffix
+            sources.loc[take] = "name_gender_rule"
+            matches.loc[take] = label + ":" + suffix
+    for label in ["giày thể thao", "dép", "giày"]:
+        allowed = {"giày", "giày nam", "giày nữ", "giày khác", "giày unisex", "unknown"}
+        if label == "giày thể thao":
+            allowed |= {"giày thể thao nam", "giày thể thao nữ", "giày thể thao khác"}
+        elif label == "dép":
+            allowed |= {"dép nam", "dép nữ", "dép unisex", "dép khác"}
+        selected = labels.isin(allowed) & family.eq(label)
+        unknown_suffix = "khác"
+        for suffix, mask in [("unisex", unisex), ("nam", male), ("nữ", female), (unknown_suffix, ~unisex & ~male & ~female)]:
+            take = selected & mask
+            resolved = label + " " + suffix
+            if label == "giày thể thao" and suffix == "unisex":
+                resolved = "giày thể thao khác"
+            labels.loc[take] = resolved
+            sources.loc[take] = "name_gender_rule"
+            matches.loc[take] = label + ":" + suffix
+    wallet_unisex = labels.isin({"ví nam", "ví nữ", "ví khác"}) & unisex
+    labels.loc[wallet_unisex] = "ví khác"
+    sources.loc[wallet_unisex] = "name_gender_rule"
+    source_key = result.source_file.str.replace("vietnamese_tiki_products_", "", regex=False).str.replace(".csv", "", regex=False)
+    for key, label in config.get("source_fallbacks", {}).items():
+        take = labels.eq("unknown") & source_key.eq(key)
+        labels.loc[take] = label
+        matches.loc[take] = key
+        sources.loc[take] = "source_fallback"
+    result["product_type"], result["taxonomy_match"], result["taxonomy_source"] = labels, matches, sources
+    result["taxonomy_version"] = config["taxonomy_version"]
+    return result
+
+
 def assign_product_types(
     products: pd.DataFrame,
     rules_path: str | Path,
 ) -> pd.DataFrame:
+    taxonomy_config = _load_taxonomy_config(rules_path)
+    if taxonomy_config.get("taxonomy_version") == "v2-unisex-description":
+        return _assign_v2(products, taxonomy_config)
     result = products.copy()
     category_search = result["category_raw"].fillna("").map(_search_text)
     name_search = result["product_name"].fillna("").map(_search_text)

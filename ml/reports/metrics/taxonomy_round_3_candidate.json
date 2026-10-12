@@ -1,0 +1,47 @@
+{
+  "generated_at": "2026-10-11T17:20:13.276939+00:00",
+  "experiment": "taxonomy_round_3_candidate",
+  "source_products": "/Users/nhule/Desktop/COMPETITION/AISC 2026/data/processed/clean_products.csv",
+  "candidate_rules_sha256": "618c82e47523b38aaa3121be134bdd4051ef1a1e0019af8f40441e3670f89a18",
+  "holdout_sha256": "63f64655d2077417c066883f17dd211730ec7257f7ef3ba2790aa8de06110d92",
+  "rows": 41576,
+  "unique_product_ids": 41576,
+  "assignment_coverage": 1.0,
+  "rule_coverage": 0.9226476813546277,
+  "fallback_rows": 3216,
+  "fallback_rate": 0.07735231864537233,
+  "changed_product_type_rows": 2002,
+  "original_200_development_accuracy": 0.915,
+  "round_3_development_rows": 400,
+  "round_3_development_accuracy": 0.6425,
+  "human_review_metadata_complete": false,
+  "holdout_rows": 300,
+  "holdout_correct_rows": 179,
+  "holdout_accuracy": 0.5966666666666667,
+  "previous_holdout_accuracy": 0.58,
+  "holdout_by_prediction_source": {
+    "category_rule": {
+      "rows": 66,
+      "accuracy": 0.6666666666666666
+    },
+    "name_priority_rule": {
+      "rows": 84,
+      "accuracy": 0.7261904761904762
+    },
+    "name_rule": {
+      "rows": 91,
+      "accuracy": 0.8021978021978022
+    },
+    "source_fallback": {
+      "rows": 59,
+      "accuracy": 0.01694915254237288
+    }
+  },
+  "required_holdout_accuracy": 0.85,
+  "holdout_gate_passed": false,
+  "ready_for_peer_model_rerun": false,
+  "production_rules_modified": false,
+  "peers_models_scores_rerun": false,
+  "candidate_output": "data/interim/taxonomy_round_3_candidate/clean_products_candidate.csv",
+  "limitations": "Experimental snapshot classification, not serving. Preserves specific bag labels from the original snapshot when generic names conflict. Round-3 labels were AI-assisted; review metadata remains incomplete. Holdout aggregate was evaluated once; do not tune from its errors."
+}

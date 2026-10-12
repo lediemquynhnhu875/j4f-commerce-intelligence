@@ -2,9 +2,10 @@
 
 Owner: Nhung. Reviewer: Như. Cleaning/data engineering: Mai.
 
-Readiness is not verified in this checkout. The latest test discovery fails
-because `pandas` is missing; source CSVs, trained artifacts and completed review
-labels are unavailable. Existing pipeline code is preserved. See
+Python 3.13 and project dependencies are installed in the local `.venv`;
+synthetic tests pass. Full source data and model binaries remain in the separate
+AISC 2026 checkout. Independent taxonomy accuracy is 58%, below the 85% gate,
+so full ML readiness is not established. See
 [the evidence audit](../docs/verification/planning-audit.md) and
 [F003 verification tasks](../specs/003-ml-readiness/tasks.md).
 
@@ -96,3 +97,51 @@ python3 -m ml.src.cli evaluate-review-queues
 ## Model guardrail
 
 Model A uses only actionable product fields and supplies the primary flags. Model B includes review count and rating only as a comparison because those fields accumulate after sales. All training metrics use out-of-fold predictions grouped by seller.
+
+## Status and Recommendations
+
+`score` assigns six stable statuses, Vietnamese explanations and evidence-backed
+rule recommendations; it also writes a `.summary.json` beside the output CSV.
+Use `--output-file` to preserve existing results when scoring another snapshot.
+Missing predictions do not fall back to baseline unless `--baseline-only` is
+explicitly selected. See [interpretation rules](../docs/ml/interpretation-guide.md)
+and [data contract](../docs/rules/data-contracts.md).
+
+Export steps 6 and 7 from the existing v2 snapshot without retraining:
+
+```bash
+.venv/bin/python -B -m ml.src.scoring.run_mvp \
+  --input-dir data/processed/taxonomy_v2_run \
+  --output-dir data/processed/scoring_mvp_v2
+```
+
+Use a new output directory on subsequent runs. This adds good-selling-peer video
+evidence, scope guards and stable action IDs. Outputs include full scores,
+`product_statuses.csv` and flat `product_recommendations.csv`; CSVs stay ignored.
+Shared aggregate results are in `ml/reports/metrics/scoring_mvp_v2.json`.
+Taxonomy quality gates remain unmet; these are exploratory review suggestions.
+
+## Taxonomy V2 Experiment
+
+V2 adds eight unisex/unknown-gender types and fixes main-item, gift, description
+and structural precedence. V1 configuration remains available. Rebuild v2 config:
+
+```bash
+.venv/bin/python -B -m ml.src.taxonomy.build_v2
+```
+
+The contributor explicitly requested a full model rerun despite the failing
+independent gate. The dedicated experiment runner records that exception and
+keeps results separate; ordinary CLI taxonomy checkpoints still apply.
+
+```bash
+.venv/bin/python -B -m ml.src.evaluation.rerun_taxonomy_v2 \
+  --source-dir '/Users/nhule/Desktop/COMPETITION/AISC 2026/data/processed'
+```
+
+The completed run is in `data/processed/taxonomy_v2_run/`, with reference model
+artifacts in `ml/artifacts/taxonomy_v2_run/`. Use new `--output-dir` and
+`--artifact-dir` paths to preserve completed experiments on rerun. Frozen-v1
+holdout accuracy is 63%, below 85%; the old 200-row development review is 81%.
+The full pipeline ran experimentally, not as an acceptance/release pass.
+See `docs/ml/taxonomy-v2-rerun.md` for schema and evaluation limitations.

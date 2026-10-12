@@ -19,6 +19,31 @@ STATUS_LABELS_VI = {
     "insufficient_data": "Chưa đủ dữ liệu",
 }
 
+STATUS_REASONS_VI = {
+    "out_of_scope_product": "Sản phẩm nằm ngoài phạm vi phân tích thời trang của dự án.",
+    "unresolved_product_type": "Chưa xác định được loại sản phẩm để xây cơ sở so sánh đáng tin cậy.",
+    "zero_sales_high_reference_probability": "Chưa ghi nhận bán hàng; xác suất có bán tham chiếu từ 50% trở lên.",
+    "zero_sales_low_reference_probability": "Chưa ghi nhận bán hàng; xác suất có bán tham chiếu thấp hơn 50%.",
+    "sales_not_below_prediction_interval": "Lượng bán ghi nhận không thấp hơn cận dưới của mức bán tham chiếu.",
+    "good_feedback_sales_below_lower_bound": "Lượng bán thấp hơn cận dưới tham chiếu; rating tốt và đủ số đánh giá.",
+    "low_rating_sales_below_lower_bound": "Lượng bán thấp hơn cận dưới tham chiếu; rating thấp và đủ số đánh giá.",
+    "insufficient_feedback_for_low_sales_interpretation": "Lượng bán thấp hơn cận dưới tham chiếu nhưng chưa đủ phản hồi để diễn giải.",
+    "peer_count_below_minimum": "Chưa đủ sản phẩm tương đồng để phân tích.",
+    "peer_similarity_below_minimum": "Độ tương đồng trung bình của nhóm peer chưa đạt ngưỡng.",
+    "invalid_essential_data": "Dữ liệu thiết yếu của sản phẩm không hợp lệ.",
+    "missing_observed_sales": "Chưa có số lượng bán hợp lệ để so sánh.",
+    "missing_reference_prediction": "Chưa có dự đoán tham chiếu hợp lệ cho sản phẩm.",
+    "peer_quality_failed": "Chưa đủ cơ sở so sánh từ nhóm sản phẩm tương đồng.",
+}
+
+SCORING_RULES_VERSION = "rule-based-v2-good-peer-video"
+
+ANALYSIS_LIMITATION_VI = (
+    "Trạng thái và đề xuất là giả thuyết cần rà soát từ dữ liệu snapshot; "
+    "không xác định nguyên nhân hoặc bảo đảm tăng doanh số. "
+    "Chưa xác minh thời gian quan sát lượng bán; kết quả phụ thuộc chất lượng taxonomy và peer."
+)
+
 
 def _number(value: Any) -> float | None:
     try:
@@ -26,6 +51,15 @@ def _number(value: Any) -> float | None:
         return number if np.isfinite(number) else None
     except (TypeError, ValueError):
         return None
+
+
+def _boolean(value: Any) -> bool | None:
+    if value is None or pd.isna(value):
+        return None
+    return {"true": True, "1": True, "1.0": True, "yes": True,
+            "false": False, "0": False, "0.0": False, "no": False}.get(
+        str(value).strip().lower()
+    )
 
 
 def _evidence(row: pd.Series) -> list[dict[str, Any]]:
@@ -54,20 +88,40 @@ def _evidence(row: pd.Series) -> list[dict[str, Any]]:
     evidence.append(
         {
             "metric": "has_video",
-            "observed": None if pd.isna(row.get("has_video")) else bool(row.get("has_video")),
+            "observed": _boolean(row.get("has_video")),
             "peer_share": _number(row.get("peer_video_share")),
+            "good_peer_share": _number(row.get("good_peer_video_share")),
+            "good_peer_count": _number(row.get("good_peer_count")),
+            "good_peer_video_known_count": _number(row.get("good_peer_video_known_count")),
+            "good_peer_sales_threshold": _number(row.get("good_peer_sales_threshold")),
         }
     )
+    evidence.append({
+        "metric": "quantity_sold",
+        "observed": _number(row.get("quantity_sold")),
+        "reference_sales": _number(row.get("reference_sales")),
+        "prediction_lower": _number(row.get("prediction_lower")),
+        "prediction_upper": _number(row.get("prediction_upper")),
+        "sale_probability": _number(row.get("sale_probability")),
+    })
+    evidence.append({
+        "metric": "peer_quality",
+        "peer_count": _number(row.get("peer_count")),
+        "mean_peer_similarity": _number(row.get("mean_peer_similarity")),
+    })
     return evidence
 
 
 def _recommendations(row: pd.Series, config: PipelineConfig) -> list[dict[str, str]]:
-    if row.get("status") in {"performing_well", "difficult_to_sell", "insufficient_data"}:
+    if _boolean(row.get("peer_insufficient_data")) is not False:
+        return []
+    if row.get("status_reason") in {"missing_reference_prediction", "missing_observed_sales"}:
         return []
     recommendations: list[dict[str, str]] = []
     if row.get("status") == "untapped_potential":
         recommendations.append(
             {
+                "rule_id": "review_visibility_and_stock",
                 "evidence": "Sản phẩm chưa phát sinh bán hàng nhưng có xác suất bán được tham chiếu cao.",
                 "hypothesis": "Khả năng hiển thị hoặc cách diễn đạt tên sản phẩm có thể cần rà soát.",
                 "action": "Kiểm tra từ khóa trong tên, khả năng xuất hiện khi tìm kiếm và trạng thái tồn kho.",
@@ -79,6 +133,7 @@ def _recommendations(row: pd.Series, config: PipelineConfig) -> list[dict[str, s
     if price is not None and peer_price and price > peer_price * (1 + config.price_gap_ratio):
         recommendations.append(
             {
+                "rule_id": "review_price_positioning",
                 "evidence": f"Giá cao hơn trung vị peer {((price / peer_price) - 1):.0%}.",
                 "hypothesis": "Định vị giá có thể chưa phù hợp với nhóm sản phẩm tương đồng.",
                 "action": "Rà soát định vị giá và giá trị khác biệt của sản phẩm.",
@@ -87,22 +142,26 @@ def _recommendations(row: pd.Series, config: PipelineConfig) -> list[dict[str, s
         )
     images = _number(row.get("image_count"))
     peer_images = _number(row.get("peer_median_image_count"))
-    if images is not None and peer_images is not None and images + 1 <= peer_images:
+    if images is not None and peer_images is not None and images < peer_images:
         recommendations.append(
             {
+                "rule_id": "add_product_images",
                 "evidence": f"Sản phẩm có {images:.0f} ảnh; trung vị peer là {peer_images:.0f}.",
                 "hypothesis": "Thông tin hình ảnh có thể chưa đủ để người mua đánh giá sản phẩm.",
                 "action": "Bổ sung ảnh rõ chất liệu, kích thước và các góc sử dụng.",
                 "validation_needed": "So sánh tương tác và chuyển đổi trước/sau khi bổ sung ảnh.",
             }
         )
-    has_video = row.get("has_video")
-    peer_video_share = _number(row.get("peer_video_share"))
-    no_video = not pd.isna(has_video) and str(has_video).strip().lower() in {"false", "0", "no"}
-    if no_video and peer_video_share is not None and peer_video_share >= config.video_peer_share_threshold:
+    peer_video_share = _number(row.get("good_peer_video_share"))
+    known_video_count = _number(row.get("good_peer_video_known_count")) or 0
+    no_video = _boolean(row.get("has_video")) is False
+    if (no_video and peer_video_share is not None
+            and known_video_count >= config.minimum_good_peer_video_count
+            and peer_video_share >= config.video_peer_share_threshold):
         recommendations.append(
             {
-                "evidence": f"Không có video; {peer_video_share:.0%} sản phẩm peer có video.",
+                "rule_id": "consider_product_video",
+                "evidence": f"Không có video; {peer_video_share:.0%} trong {known_video_count:.0f} peer bán ở nhóm trên và biết rõ trạng thái video có video.",
                 "hypothesis": "Video có thể giúp trình bày hình dáng hoặc cách sử dụng rõ hơn.",
                 "action": "Kiểm tra khả năng bổ sung video sản phẩm ngắn.",
                 "validation_needed": "Theo dõi thời gian xem và chuyển đổi sau khi bổ sung video.",
@@ -114,6 +173,7 @@ def _recommendations(row: pd.Series, config: PipelineConfig) -> list[dict[str, s
     if description is not None and description < description_threshold:
         recommendations.append(
             {
+                "rule_id": "improve_product_description",
                 "evidence": f"Mô tả dài {description:.0f} ký tự; ngưỡng tham chiếu là {description_threshold:.0f}.",
                 "hypothesis": "Mô tả có thể thiếu thông tin hỗ trợ quyết định mua.",
                 "action": "Bổ sung chất liệu, kích thước, công dụng và hướng dẫn sử dụng.",
@@ -122,12 +182,13 @@ def _recommendations(row: pd.Series, config: PipelineConfig) -> list[dict[str, s
         )
     rating = _number(row.get("rating_average"))
     reviews = _number(row.get("review_count")) or 0
-    if rating is not None and rating < config.positive_rating_threshold and reviews >= config.minimum_review_evidence:
+    if rating is not None and 0 < rating < config.positive_rating_threshold and reviews >= config.minimum_review_evidence:
         recommendations.append(
             {
+                "rule_id": "review_quality_feedback",
                 "evidence": f"Rating {rating:.1f}/5 từ {reviews:.0f} đánh giá.",
                 "hypothesis": "Có thể tồn tại vấn đề lặp lại về chất lượng hoặc trải nghiệm sau mua.",
-                "action": "Đọc và phân nhóm nội dung đánh giá trước khi thay đổi sản phẩm.",
+                "action": "Đọc đánh giá và kiểm tra vấn đề chất lượng hoặc trải nghiệm; phân nhóm phản hồi trước khi thay đổi sản phẩm.",
                 "validation_needed": "Ghi nhận tần suất từng vấn đề và theo dõi rating sau cải thiện.",
             }
         )
@@ -135,18 +196,20 @@ def _recommendations(row: pd.Series, config: PipelineConfig) -> list[dict[str, s
 
 
 def _status(row: pd.Series, config: PipelineConfig) -> tuple[str, str]:
-    if bool(row.get("insufficient_data", False)):
-        return "insufficient_data", str(row.get("peer_quality_reason") or "peer_quality_failed")
-    sales = _number(row.get("quantity_sold")) or 0.0
+    if _boolean(row.get("peer_insufficient_data")) is not False:
+        reason = row.get("peer_quality_reason")
+        return "insufficient_data", str(reason) if pd.notna(reason) and reason else "peer_quality_failed"
+    sales = _number(row.get("quantity_sold"))
+    if sales is None or sales < 0:
+        return "insufficient_data", "missing_observed_sales"
     probability = _number(row.get("sale_probability"))
     reference = _number(row.get("reference_sales"))
     lower = _number(row.get("prediction_lower"))
-    if reference is None:
-        reference = _number(row.get("baseline_median_sales")) or 0.0
-    if probability is None:
-        probability = _number(row.get("baseline_sold_rate")) or 0.0
-    if lower is None:
-        lower = reference
+    upper = _number(row.get("prediction_upper"))
+    if (reference is None or reference < 0 or probability is None
+            or not 0 <= probability <= 1 or lower is None or upper is None
+            or not 0 <= lower <= reference <= upper):
+        return "insufficient_data", "missing_reference_prediction"
 
     if sales <= 0:
         if probability >= config.high_sale_probability_threshold:
@@ -158,7 +221,7 @@ def _status(row: pd.Series, config: PipelineConfig) -> tuple[str, str]:
 
     reviews = _number(row.get("review_count")) or 0.0
     rating = _number(row.get("rating_average"))
-    if reviews < config.minimum_review_evidence or rating is None:
+    if reviews < config.minimum_review_evidence or rating is None or not 0 < rating <= 5:
         return "insufficient_data", "insufficient_feedback_for_low_sales_interpretation"
     if rating >= config.positive_rating_threshold:
         return "positive_feedback_low_sales", "good_feedback_sales_below_lower_bound"
@@ -180,8 +243,6 @@ def score_products(
         scored["product_id"] = scored["product_id"].astype(str)
         predictions["product_id"] = predictions["product_id"].astype(str)
         scored = scored.merge(predictions, on="product_id", how="left", validate="one_to_one")
-        if scored["model_version"].isna().any():
-            raise ValueError("Some products do not have model predictions")
     else:
         scored["sale_probability"] = scored["baseline_sold_rate"]
         scored["reference_sales"] = scored["baseline_median_sales"]
@@ -189,11 +250,49 @@ def score_products(
         scored["prediction_upper"] = scored["baseline_median_sales"]
         scored["model_version"] = "peer-baseline-v1"
 
-    scored["peer_insufficient_data"] = scored["insufficient_data"].astype(bool)
+    flags = scored.get("insufficient_data", pd.Series(True, index=scored.index))
+    counts = pd.to_numeric(scored.get("peer_count", pd.Series(index=scored.index, dtype=float)), errors="coerce")
+    similarities = pd.to_numeric(scored.get("mean_peer_similarity", pd.Series(index=scored.index, dtype=float)), errors="coerce")
+    scored["peer_insufficient_data"] = flags.map(_boolean).ne(False)
+    invalid_count = ~np.isfinite(counts) | counts.lt(config.minimum_peer_count)
+    invalid_similarity = ~np.isfinite(similarities) | similarities.lt(config.minimum_mean_peer_similarity)
+    reasons = scored.get("peer_quality_reason", pd.Series("", index=scored.index))
+    scored["peer_quality_reason"] = reasons.fillna("").astype(str)
+    scored.loc[invalid_count, "peer_quality_reason"] = "peer_count_below_minimum"
+    scored.loc[~invalid_count & invalid_similarity, "peer_quality_reason"] = "peer_similarity_below_minimum"
+    scored["peer_insufficient_data"] |= invalid_count | invalid_similarity
+    validity = scored.get("valid_for_model", pd.Series(True, index=scored.index)).map(_boolean)
+    scored.loc[validity.ne(True), "peer_quality_reason"] = "invalid_essential_data"
+    scored["peer_insufficient_data"] |= validity.ne(True)
+    types = scored.get("product_type", pd.Series("unknown", index=scored.index)).fillna("unknown")
+    unresolved = types.isin({"unknown", "ambiguous", "unmatched"})
+    out_of_scope = types.eq("out_of_scope")
+    scored.loc[unresolved, "peer_quality_reason"] = "unresolved_product_type"
+    scored.loc[out_of_scope, "peer_quality_reason"] = "out_of_scope_product"
+    scored["peer_insufficient_data"] |= unresolved | out_of_scope
+    for column in ["sale_probability", "conditional_sales", "reference_sales", "prediction_lower", "prediction_upper"]:
+        if column not in scored:
+            scored[column] = np.nan
+        values = pd.to_numeric(scored[column], errors="coerce").astype(float)
+        scored[column] = values.where(np.isfinite(values), np.nan)
     statuses = scored.apply(lambda row: _status(row, config), axis=1)
     scored["status"] = statuses.map(lambda value: value[0])
     scored["status_label_vi"] = scored["status"].map(STATUS_LABELS_VI)
     scored["status_reason"] = statuses.map(lambda value: value[1])
+    scored["status_explanation_vi"] = scored["status_reason"].map(STATUS_REASONS_VI)
+    probability_threshold = f"{config.high_sale_probability_threshold:.0%}"
+    for reason in ["zero_sales_high_reference_probability", "zero_sales_low_reference_probability"]:
+        mask = scored["status_reason"].eq(reason)
+        scored.loc[mask, "status_explanation_vi"] = scored.loc[mask, "status_explanation_vi"].str.replace(
+            "50%", probability_threshold, regex=False
+        )
+    scored["analysis_is_hypothesis"] = True
+    scored["scoring_rules_version"] = SCORING_RULES_VERSION
+    scored["analysis_limitations_vi"] = ANALYSIS_LIMITATION_VI
+    unsupported = scored["peer_insufficient_data"] | scored["status_reason"].isin(
+        {"missing_reference_prediction", "missing_observed_sales"}
+    )
+    scored.loc[unsupported, ["sale_probability", "conditional_sales", "reference_sales", "prediction_lower", "prediction_upper"]] = np.nan
     scored["insufficient_data"] = scored["status"].eq("insufficient_data")
     scored["observed_sales"] = scored["quantity_sold"]
     gap = scored["reference_sales"].fillna(0) - scored["observed_sales"].fillna(0)
@@ -202,10 +301,10 @@ def score_products(
     ) * scored["sale_probability"].fillna(0)
     scored.loc[scored["insufficient_data"], "opportunity_score"] = np.nan
     scored["evidence"] = scored.apply(
-        lambda row: json.dumps(_evidence(row), ensure_ascii=False), axis=1
+        lambda row: json.dumps(_evidence(row), ensure_ascii=False, allow_nan=False), axis=1
     )
     scored["recommendations"] = scored.apply(
-        lambda row: json.dumps(_recommendations(row, config), ensure_ascii=False), axis=1
+        lambda row: json.dumps(_recommendations(row, config), ensure_ascii=False, allow_nan=False), axis=1
     )
     scored["scored_at"] = datetime.now(timezone.utc).isoformat()
 
@@ -217,7 +316,8 @@ def score_products(
         "peer_median_image_count", "peer_video_share", "peer_median_rating_average",
         "peer_median_review_count", "peer_median_description_length", "sale_probability",
         "conditional_sales", "reference_sales", "prediction_lower", "prediction_upper",
-        "opportunity_score", "status", "status_label_vi", "status_reason", "insufficient_data",
+        "opportunity_score", "status", "status_label_vi", "status_reason", "status_explanation_vi",
+        "analysis_is_hypothesis", "analysis_limitations_vi", "scoring_rules_version", "insufficient_data",
         "peer_insufficient_data",
         "evidence", "recommendations", "model_version", "scored_at",
     ]
