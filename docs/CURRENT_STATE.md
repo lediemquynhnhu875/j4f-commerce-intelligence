@@ -1,23 +1,24 @@
 # Project State and Handoff
 
-Updated: 2026-10-12 (Asia/Saigon).
+Updated: 2026-10-14 (Asia/Saigon).
 
 ## Agreed Stack and MVP
 
 | Component | Target technology / responsibility |
 | --- | --- |
 | Frontend | Next.js App Router, TypeScript and Tailwind in `frontend/` |
-| Web backend | Next.js / TypeScript; separate `backend/` scaffold exists in the current checkout |
-| Database | PostgreSQL on Neon; real connectivity and migrations pending |
+| Web backend | Next.js / TypeScript in separate `backend/`; real shared-catalog REST API |
+| Database | PostgreSQL on Neon; inspected empty schema, additive migration and repeatable development seed applied |
 | Model service | Python/FastAPI reusing `ml/src/`; reconcile service location before integration |
 
-Admin provisions email/password accounts; no public registration. Each User has
-one explicitly assigned store. Source `seller_id` does not establish ownership.
+Admin provisions email/password accounts; no public registration. The supplied
+2026-10-14 backend architecture uses a shared catalog, overriding the older store
+plan for this deliverable; frontend store mocks remain unchanged. Source
+`seller_id` does not establish ownership. See [amendment](decisions/0004-shared-catalog-backend.md).
 Analysis provides snapshot decision support without causal or future-sales guarantees.
-Older [stack](decisions/0001-web-database-model-stack.md) and
-[structure](rules/repository-structure.md) docs still place FastAPI in `backend/`.
-The user's later separate Next.js backend setup supersedes that observed folder
-description; no service was moved or implemented in this frontend session.
+The older [stack decision](decisions/0001-web-database-model-stack.md) placed
+FastAPI in `backend/`; the existing separate Next.js backend has now been extended.
+Python model serving remains pending; no ML/service code was moved or changed.
 
 ## Observed State
 
@@ -25,11 +26,12 @@ description; no service was moved or implemented in this frontend session.
 | --- | --- |
 | Spec Kit | Codex/Claude/Copilot integrations; constitution v1.0.0 and eight feature drafts |
 | Backlog | 110 tasks: 3 checked, 107 unchecked; a mock does not complete real feature acceptance |
-| Frontend | Runnable Next.js 16.4.0 / React 19.3.0 / Tailwind 4.3.3; lint, build, development HTTP and six Chromium browser tests passed |
+| Frontend | Connected UI at /login, /user/*, /admin/*; isolated mocks under /preview/*; lint/typecheck/build, six preview browser tests and five live journeys passed across scoped runs |
 | User UI | Four Stitch-based synthetic pages: overview, products, analysis, suggestions |
 | Admin UI | Four Stitch-based synthetic pages: overview, stores, monitor, model configuration |
-| Demo login | One public mock Admin and one mock User; browser-tab role selection only, no server authentication |
-| Backend/Neon/model serving | Existing separate Next.js backend scaffold preserved; real auth/API/DB/inference unverified |
+| Authentication | Main login uses backend accounts and HttpOnly session proxy; isolated preview login still uses public mock roles |
+| Backend/Neon | Real PostgreSQL REST API, scrypt/Bearer sessions, active/admin checks, pagination, immutable analyses and atomic action audit; see backend verification |
+| Model serving | Unimplemented; saved seed analyses are synthetic insufficient-basis fixtures, not inference |
 | ML/data | Prior pipeline results and updated taxonomy/peer code handed off from the AISC 2026 checkout; metrics in `ml/reports/metrics/`. Four synthetic pipeline tests passed in a Python 3.13 virtual environment on 2026-10-11. Independent taxonomy accuracy is 58%, below the 85% gate; full snapshot/model compatibility and serving remain unverified |
 | Human review/release | No human acceptance, independent model review or production readiness claim |
 
@@ -38,12 +40,33 @@ Historical planning evidence: [planning audit](verification/planning-audit.md).
 
 ## Active Tasks
 
+Frontend integration now explicitly authorized: requesting contributor,
+Codex-assisted, continuing dirty `feature/backend-neon-mvp` without pull/stash.
+Scope amendment for F001/T012–T015, F002/T014, F004/T012, F005/T007/T009,
+F006/T011 and F007/T007/T009/T011; shared-catalog integration implemented and
+verified, original store/model/human acceptance remains unchecked. See ADR 0005
+for schema/UI conflicts and integration verification for executed evidence.
+
+Current backend session: directly authorized shared-catalog amendment of
+F001/T007–T011, F002/T006/T011/T013, F004/T004/T011 and F007/T004–T006/T008;
+owner requesting contributor, Codex-assisted, branch `feature/backend-neon-mvp`.
+Remote fetched; branch created from synchronized `origin/main` with clean tree.
+Requested shared-catalog deliverable implemented and verified; original feature
+acceptance checkboxes remain unchanged because store/UI/model/review criteria differ.
+See [scope amendment](decisions/0004-shared-catalog-backend.md).
+The supplied bare PostgreSQL URI was placed under DATABASE_URL unchanged;
+corrected sample credentials live only in ignored `.env`.
+
 Implementation was explicitly requested by the current contributor. The named
 team ownership roster is unchanged; no other contributor's work was taken over.
-The existing dirty `set_up` branch was retained without pulling or stashing.
+The earlier frontend session retained its dirty `set_up` branch; the backend
+session started clean, fetched remote refs and branched from `origin/main`.
 
 | Feature / task ID | Owner | Branch | Status | Dependencies / notes |
 | --- | --- | --- | --- | --- |
+| F001/T007; F002/T006; F007/T005 multi-store amendment | Requesting contributor, Codex-assisted | feature/backend-neon-mvp | Schema proposal prepared; unapplied, acceptance unchecked | One User owns many stores; explicit legacy assignment and future scoped API/UI required |
+| F001/T012–T015; F002/T014; F004/T012; F005/T007/T009; F006/T011; F007/T007/T009/T011 amendment | Requesting contributor, Codex-assisted | feature/backend-neon-mvp | Connected shared-catalog UI verified; original acceptance unchecked | Later direct request authorizes integration; stores/ML jobs/config writes unsupported |
+| F001/T007–T011; F002/T006/T011/T013; F004/T004/T011; F007/T004–T006/T008 amendment | Requesting contributor, Codex-assisted | feature/backend-neon-mvp | Shared-catalog backend verified; original acceptance unchecked | Supplied schema supersedes store plan for this backend; frontend/model integration excluded |
 | F001/T001 | Requesting contributor, Codex-assisted | set_up | Complete | Existing frontend setup verified locally; shared Node LTS baseline still needs review |
 | F001/T002 | Requesting contributor, Codex-assisted | set_up | Complete | Both synthetic role shells and responsive layout verified |
 | F006/T001 | Requesting contributor, Codex-assisted | set_up | Complete, mock only | Evidence-preserving accept/reject and required reason verified |
@@ -51,6 +74,89 @@ The existing dirty `set_up` branch was retained without pulling or stashing.
 | F002/T002; F005/T001–T002; F007/T001 | Requesting contributor, Codex-assisted | set_up | Partial, unchecked | Visual implementation exists; loading/error states, wireframe artifacts and contract reviews remain |
 
 ## Latest Handoff
+
+### Legacy Login Path Correction - 2026-10-14
+
+- Same contributor/branch and F001 login integration amendment. Screenshot showed
+  the legacy preview login still validating mock credentials instead of Neon.
+- `/preview` and `/preview/login` now show real API login, matching `/` and `/login`.
+  Explicit mock entry moved to `/preview/demo-login`; mock shell links/tests updated.
+- No credentials, database data/schema or store proposal changed. Frontend lint
+  and production build passed. Real Admin browser regression passed: all four
+  login entry points use real form, old /preview/login posts 200, Admin accounts
+  read returns 200, logout returns to /login. All six preview browser regressions
+  passed at the explicit demo-login path; diff whitespace checks passed.
+
+### Multi-store Schema Proposal - 2026-10-14
+
+- User now confirms one account owns multiple stores, with products per store;
+  ML exports remain unused. This supersedes one-store and shared-catalog-only
+  assumptions for future ownership work; ADR 0006 records the impact.
+- Prepared Mermaid, complete revised DBML and staged PostgreSQL proposals under
+  `docs/architecture/` and `backend/db/proposals/`. Owner: requesting contributor,
+  Codex-assisted, same dirty branch; related F001/F002/F007 scope amendment, no new
+  invented task IDs or acceptance checks. No pull/stash/commit/push.
+- Added store owner/product relations, nullable legacy assignment then guarded
+  NOT NULL finalization; preserve existing fields/history and applied migration 001.
+- Verification: diagram/schema text, relative paths and diff only. SQL not applied
+  or executed against PostgreSQL; no store data created/assigned. API/UI remain
+  shared catalog until store CRUD/selection and nested ownership checks are built.
+
+### Connected Frontend / Backend - 2026-10-14
+
+- Real login, HTTP client/DTOs, server cookie proxy and connected workspaces with
+  session/role/error/loading states. Preview stays under `/preview/*`; live errors
+  do not fall back to mocks. No database credentials or browser Bearer-token storage.
+- Catalog/overview/frozen analyses, work/transitions/history and Admin management
+  use PostgreSQL-backed endpoints. Stores, ML/jobs and config writes lack APIs;
+  unavailable/read-only states make that conflict explicit. ADR 0005 records scope.
+- Frontend lint/typecheck/build and all six preview tests passed. Five live journeys
+  passed across scoped runs: real auth/catalog, work/audit, Admin CRUD/suspension,
+  simulated failure/retry and required-reason rejection. Internal-host origin check
+  and session handling fixed; cached hidden-page test selectors corrected.
+- Original seed counts/action states unchanged. Test work IDs 4/5 completed, ID 6
+  rejected with history; test account ID 4 suspended. Disposable products removed.
+  No migration, secret publication, commit or push. Temporary test processes stopped;
+  existing port 3001 preserved. See [verification](verification/sellens-frontend-integration.md).
+- Next: team review, stores/model/API decisions and human/deployment checks.
+- Final documentation/security checks: 87 relative links resolved; whitespace diff
+  check passed; no local database URL or sample passwords found in 51 changed/new files.
+
+### Explicit Endpoint Table Refactor - 2026-10-14
+
+- Same requesting contributor/branch and existing backend amendment; no new task
+  or feature acceptance claim. Retained the dirty tree without pull/stash.
+- Replaced resource/method dispatch branches in `backend/src/server/api.ts` with
+  one explicit HTTP-method/full-path table and named handlers. Kept the Next.js
+  catch-all, aliases, services, authentication, CORS and error envelopes.
+- Frontend, migrations, seed definitions and database configuration unchanged.
+- Verification: `npm run typecheck`, `npm test` (5 passing tests), production
+  build and `npm run test:http` (62 passing requests against temporary port 3002)
+  succeeded. PostgreSQL seed DTOs still matched direct queries; aliases, auth,
+  nested IDs, 404/405 and CRUD passed. Temporary CRUD fixtures were removed.
+- Saved [refactor evidence](verification/sellens-backend-refactor-http.json).
+  Temporary server stopped after checks; port 3001 server was not interrupted.
+
+### Shared-Catalog Neon Backend - 2026-10-14
+
+- Extended existing Next.js backend; pooled parameterized SQL, strict validation,
+  safe JSON errors, CORS, scrypt/Bearer authentication, admin management, CRUD,
+  immutable saved analyses and transactional action/history services. Frontend unchanged.
+- Read supplied DBML and recorded shared-catalog/role/status changes in ADR 0004,
+  contracts and structure rules. Original Spec Kit IDs/checklists are unchanged.
+- Neon inspection showed no existing tables. Applied additive checksummed migration;
+  inserted 10 products, 3 analyses, 2 Users/database reviewers, 1 Admin, 3 categories,
+  3 actions and 3 audit events. Reruns applied no changes and inserted no duplicates.
+- Verification: backend typecheck, 4 unit tests, production build and 62 real HTTP
+  checks passed; full product/analysis DTOs matched direct PostgreSQL queries.
+  ID parsing and ON DELETE RESTRICT error handling defects were fixed and retested.
+  Unused vulnerable lint scaffold dependencies removed; npm audit found zero issues.
+- Documentation verification: 78 relative links resolved; diff whitespace checks
+  passed and no local DATABASE_URL/sample-password values appeared in changed files.
+- See [backend README](../backend/README.md) and [verification](verification/sellens-backend.md)
+  for exact requests, sanitized examples, evidence and limitations. Secrets remain
+  ignored; no commit/push performed. No frontend integration, inference, human
+  acceptance or production-readiness claim. Mai/Huy/Nhung review remains the next step.
 
 ### Six Statuses and Rule-Based Actions - 2026-10-12
 

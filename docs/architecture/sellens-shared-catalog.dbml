@@ -1,0 +1,172 @@
+// Sellens - Simple MVP database
+// Dataset CSVs, notebooks and model files live outside the application database.
+// One shared catalog for an admin/reviewer team. All timestamps are UTC.
+
+Project Sellens {
+  database_type: 'MySQL'
+  Note: 'Six core tables for product analysis and improvement work. Model files are stored separately; only analysis outputs and version labels are saved here.'
+}
+
+Enum UserRole {
+  admin
+  reviewer
+}
+
+Enum SalesScope {
+  unknown
+  listing
+  product_page
+}
+
+Enum AnalysisStatus {
+  positive_feedback_below_reference
+  low_rating_below_reference
+  at_or_above_reference
+  zero_sales_needs_investigation
+  zero_sales_no_priority_signal
+  below_reference_insufficient_reviews
+  monitor_gap
+  undecided
+  insufficient_basis
+}
+
+Enum ActionStatus {
+  proposed
+  accepted
+  in_progress
+  completed
+  rejected
+  cancelled
+}
+
+Enum ActionType {
+  review_price
+  complete_description
+  review_images_or_video
+  inspect_reviews
+  verify_listing_and_stock
+  verify_exposure
+  other
+}
+
+// 1. Website accounts
+Table users {
+  id bigint [pk, increment]
+  full_name varchar(150) [not null]
+  email varchar(254) [not null, unique]
+  password_hash varchar(255) [not null]
+  role UserRole [not null, default: 'reviewer']
+  is_active boolean [not null, default: true]
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+// 2. Normalized product types used for filtering and comparisons
+Table categories {
+  id bigint [pk, increment]
+  code varchar(80) [not null, unique]
+  name varchar(150) [not null]
+  description text
+  Note: 'Normalized categories such as womens_sneakers or handbags; preserve raw source categories in products.source_data_json.'
+}
+
+// 3. Current product/listing observations displayed on the website
+Table products {
+  id bigint [pk, increment]
+  category_id bigint [ref: > categories.id]
+  name varchar(500) [not null]
+  description longtext
+  brand varchar(255)
+  product_url text
+  thumbnail_url text
+  currency char(3) [not null, default: 'VND']
+  price decimal(18,2)
+  original_price decimal(18,2)
+  quantity_sold bigint [note: 'Observed count, not a count of orders placed on this website. NULL when unavailable or interval-only.']
+  rating_average decimal(3,2)
+  review_count int
+  number_of_images int
+  has_video boolean
+  sales_scope SalesScope [not null, default: 'unknown']
+  sales_label_verified boolean [not null, default: false, note: 'Set true only after verifying quantity_sold representation, unit and scope']
+  source_data_json json [note: 'Original/extracted fields, raw sales representation, materials and sizes; unknown values are not invented']
+  observed_at datetime [note: 'Source observation time if known; different from database creation time']
+  imported_by bigint [ref: > users.id]
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    category_id
+  }
+  Note: 'This table holds current data. The backend must freeze inputs and peer evidence in product_analyses before changes overwrite the displayed values. Sellers are source metadata, not website accounts.'
+}
+
+// 4. Saved analysis outputs; a product can have multiple historical analyses
+Table product_analyses {
+  id bigint [pk, increment]
+  product_id bigint [not null, ref: > products.id]
+  analyzed_by bigint [ref: > users.id]
+  reference_sold decimal(20,4) [note: 'Reference level at observation; NULL for descriptive analysis or insufficient basis']
+  probability_positive_sales decimal(7,6) [note: 'Optional P(Y > 0) at observation, not a future conversion rate']
+  sales_gap decimal(20,4) [note: 'Frozen observed sales minus reference_sold']
+  status AnalysisStatus [not null, default: 'insufficient_basis']
+  is_eligible boolean [not null, default: false]
+  needs_review boolean [not null, default: false]
+  priority_score decimal(12,6) [note: 'Optional ranking score; not a purchase probability']
+  model_version varchar(100) [note: 'Version label pointing to the external model/baseline bundle; no model table is required']
+  pipeline_version varchar(100) [not null]
+  input_snapshot_json json [not null, note: 'Freeze product attributes and observed sales used by this analysis']
+  comparison_json json [note: 'Freeze comparable products, source IDs, selected attributes and peer statistics']
+  evidence_json json [note: 'Observed evidence, optional model explanations and limitations; separate these layers in JSON']
+  config_json json [not null, note: 'Thresholds, peer criteria, preprocessing and prediction origin: new_input, holdout, out_of_fold or unavailable']
+  limitation_note text
+  analyzed_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (product_id, analyzed_at)
+    (status, needs_review)
+  }
+  Note: 'Append a new record when reanalyzing; never overwrite old results. Compare against input_snapshot_json, not changed product values. Only flag eligible out-of-sample results after sales labels are verified.'
+}
+
+// 5. System suggestions and user work are combined for the MVP
+Table improvement_actions {
+  id bigint [pk, increment]
+  analysis_id bigint [not null, ref: > product_analyses.id]
+  type ActionType [not null]
+  title varchar(255) [not null]
+  description text
+  original_suggestion_json json [not null, note: 'Freeze the original suggestion and supporting evidence before user edits']
+  information_needed text
+  status ActionStatus [not null, default: 'proposed']
+  assigned_to bigint [ref: > users.id]
+  created_by bigint [ref: > users.id, note: 'NULL for automatically generated suggestions']
+  decision_reason text [note: 'Required by the API for rejection']
+  due_at datetime
+  completed_at datetime
+  outcome_note text [note: 'Records work performed, not proof of sales uplift']
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    analysis_id
+    (assigned_to, status)
+  }
+}
+
+// 6. Keep an audit when a work item is accepted, edited or rejected
+Table action_history {
+  id bigint [pk, increment]
+  action_id bigint [not null, ref: > improvement_actions.id]
+  changed_by bigint [ref: > users.id, note: 'NULL for system events']
+  event_type varchar(50) [not null, note: 'created, accepted, edited, assigned, completed, rejected, cancelled or commented']
+  before_json json
+  after_json json
+  comment text
+  created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (action_id, created_at)
+  }
+  Note: 'Append only. Insert history in the same transaction as the action update.'
+}

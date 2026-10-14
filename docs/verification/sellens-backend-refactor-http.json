@@ -1,0 +1,1012 @@
+{
+  "pass": true,
+  "results": [
+    {
+      "test": "Liveness",
+      "method": "GET",
+      "path": "/health",
+      "status": 200,
+      "pass": true,
+      "example": {
+        "status": "ok"
+      }
+    },
+    {
+      "test": "PostgreSQL readiness",
+      "method": "GET",
+      "path": "/ready",
+      "status": 200,
+      "pass": true,
+      "example": {
+        "status": "ready",
+        "database": "connected"
+      }
+    },
+    {
+      "test": "Protected catalog without login",
+      "method": "GET",
+      "path": "/products",
+      "status": 401,
+      "pass": true,
+      "example": {
+        "error": {
+          "code": "UNAUTHENTICATED",
+          "message": "Authentication required"
+        }
+      }
+    },
+    {
+      "test": "Protected accounts without login",
+      "method": "GET",
+      "path": "/admin/accounts",
+      "status": 401,
+      "pass": true,
+      "example": {
+        "error": {
+          "code": "UNAUTHENTICATED",
+          "message": "Authentication required"
+        }
+      }
+    },
+    {
+      "test": "Invalid login input",
+      "method": "POST",
+      "path": "/auth/login",
+      "status": 422,
+      "pass": true,
+      "example": {
+        "error": {
+          "code": "VALIDATION_ERROR",
+          "message": "Invalid request input",
+          "details": [
+            {
+              "field": "email",
+              "message": "Invalid email address"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "test": "Seed USER1 login",
+      "method": "POST",
+      "path": "/auth/login",
+      "status": 200,
+      "pass": true,
+      "example": {
+        "data": {
+          "token_type": "Bearer",
+          "expires_in": 86400,
+          "account": {
+            "id": "1",
+            "role": "user"
+          }
+        }
+      }
+    },
+    {
+      "test": "Seed USER2 login",
+      "method": "POST",
+      "path": "/auth/login",
+      "status": 200,
+      "pass": true,
+      "example": {
+        "data": {
+          "token_type": "Bearer",
+          "expires_in": 86400,
+          "account": {
+            "id": "2",
+            "role": "user"
+          }
+        }
+      }
+    },
+    {
+      "test": "Seed ADMIN login",
+      "method": "POST",
+      "path": "/auth/login",
+      "status": 200,
+      "pass": true,
+      "example": {
+        "data": {
+          "token_type": "Bearer",
+          "expires_in": 86400,
+          "account": {
+            "id": "3",
+            "role": "admin"
+          }
+        }
+      }
+    },
+    {
+      "test": "Invalid credentials",
+      "method": "POST",
+      "path": "/auth/login",
+      "status": 401,
+      "pass": true,
+      "example": {
+        "error": {
+          "code": "INVALID_CREDENTIALS",
+          "message": "Invalid email or password"
+        }
+      }
+    },
+    {
+      "test": "Current account",
+      "method": "GET",
+      "path": "/auth/me",
+      "status": 200,
+      "pass": true,
+      "example": {
+        "data": {
+          "id": "1",
+          "full_name": "Sample Reviewer 1",
+          "role": "user"
+        }
+      }
+    },
+    {
+      "test": "Admin list denied to user",
+      "method": "GET",
+      "path": "/admin/accounts",
+      "status": 403,
+      "pass": true,
+      "example": {
+        "error": {
+          "code": "FORBIDDEN",
+          "message": "Administrator access required"
+        }
+      }
+    },
+    {
+      "test": "Product mutation denied to user",
+      "method": "POST",
+      "path": "/products",
+      "status": 403,
+      "pass": true,
+      "example": {
+        "error": {
+          "code": "FORBIDDEN",
+          "message": "Administrator access required"
+        }
+      }
+    },
+    {
+      "test": "Admin list accounts",
+      "method": "GET",
+      "path": "/admin/accounts",
+      "status": 200,
+      "pass": true,
+      "example": {
+        "data": [
+          {
+            "id": "1",
+            "full_name": "Sample Reviewer 1",
+            "role": "user"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 20,
+          "total": 3
+        }
+      }
+    },
+    {
+      "test": "/products page 1",
+      "method": "GET",
+      "path": "/products?page=1&limit=4",
+      "status": 200,
+      "pass": true,
+      "example": {
+        "data": [
+          {
+            "id": "1",
+            "name": "Canvas Everyday Tote",
+            "category_id": "1"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 4,
+          "total": 10
+        }
+      }
+    },
+    {
+      "test": "/products page 2",
+      "method": "GET",
+      "path": "/products?page=2&limit=4",
+      "status": 200,
+      "pass": true,
+      "example": {
+        "data": [
+          {
+            "id": "5",
+            "name": "Linen Summer Shirt",
+            "category_id": "3"
+          }
+        ],
+        "pagination": {
+          "page": 2,
+          "limit": 4,
+          "total": 10
+        }
+      }
+    },
+    {
+      "test": "/products page 3",
+      "method": "GET",
+      "path": "/products?page=3&limit=4",
+      "status": 200,
+      "pass": true,
+      "example": {
+        "data": [
+          {
+            "id": "9",
+            "name": "Minimal Leather Wallet",
+            "category_id": "1"
+          }
+        ],
+        "pagination": {
+          "page": 3,
+          "limit": 4,
+          "total": 10
+        }
+      }
+    },
+    {
+      "test": "Seed product 1 matches PostgreSQL",
+      "method": "GET",
+      "path": "/products/1",
+      "status": 200,
+      "pass": true,
+      "example": {
+        "data": {
+          "id": "1",
+          "name": "Canvas Everyday Tote",
+          "category_id": "1"
+        }
+      }
+    },
+    {
+      "test": "Seed product 2 matches PostgreSQL",
+      "method": "GET",
+      "path": "/products/2",
+      "status": 200,
+      "pass": true,
+      "example": {
+        "data": {
+          "id": "2",
+          "name": "Classic Leather Handbag",
+          "category_id": "1"
+        }
+      }
+    },
+    {
+      "test": "Seed product 3 matches PostgreSQL",
+      "method": "GET",
+      "path": "/products/3",
+      "status": 200,
+      "pass": true,
+      "example": {
+        "data": {
+          "id": "3",
+          "name": "Lightweight Running Sneakers",
+          "category_id": "2"
+        }
+      }
+    },
+    {
+      "test": "Seed product 4 matches PostgreSQL",
+      "method": "GET",
+      "path": "/products/4",
+      "status": 200,
+      "pass": true,
+      "example": {
+        "data": {
+          "id": "4",
+          "name": "Unisex Canvas Sneakers",
+          "category_id": "2"
+        }
+      }
+    },
+    {
+      "test": "Seed product 5 matches PostgreSQL",
+      "method": "GET",
+      "path": "/products/5",
+      "status": 200,
+      "pass": true,
+      "example": {
+        "data": {
+          "id": "5",
+          "name": "Linen Summer Shirt",
+          "category_id": "3"
+        }
+      }
+    },
+    {
+      "test": "Seed product 6 matches PostgreSQL",
+      "method": "GET",
+      "path": "/products/6",
+      "status": 200,
+      "pass": true,
+      "example": {
+        "data": {
+          "id": "6",
+          "name": "Cotton Polo Shirt",
+          "category_id": "3"
+        }
+      }
+    },
+    {
+      "test": "Seed product 7 matches PostgreSQL",
+      "method": "GET",
+      "path": "/products/7",
+      "status": 200,
+      "pass": true,
+      "example": {
+        "data": {
+          "id": "7",
+          "name": "Straight Leg Denim Jeans",
+          "category_id": "3"
+        }
+      }
+    },
+    {
+      "test": "Seed product 8 matches PostgreSQL",
+      "method": "GET",
+      "path": "/products/8",
+      "status": 200,
+      "pass": true,
+      "example": {
+        "data": {
+          "id": "8",
+          "name": "Pleated Midi Skirt",
+          "category_id": "3"
+        }
+      }
+    },
+    {
+      "test": "Seed product 9 matches PostgreSQL",
+      "method": "GET",
+      "path": "/products/9",
+      "status": 200,
+      "pass": true,
+      "example": {
+        "data": {
+          "id": "9",
+          "name": "Minimal Leather Wallet",
+          "category_id": "1"
+        }
+      }
+    },
+    {
+      "test": "Seed product 10 matches PostgreSQL",
+      "method": "GET",
+      "path": "/products/10",
+      "status": 200,
+      "pass": true,
+      "example": {
+        "data": {
+          "id": "10",
+          "name": "Comfort Strap Sandals",
+          "category_id": "2"
+        }
+      }
+    },
+    {
+      "test": "/analysis-results page 1",
+      "method": "GET",
+      "path": "/analysis-results?page=1&limit=4",
+      "status": 200,
+      "pass": true,
+      "example": {
+        "data": [
+          {
+            "id": "1",
+            "status": "insufficient_basis",
+            "product_id": "1",
+            "analyzed_by": "1",
+            "reference_sold": null,
+            "is_eligible": false,
+            "product": {
+              "id": "1",
+              "name": "Canvas Everyday Tote",
+              "category_id": "1"
+            },
+            "analyst": {
+              "id": "1",
+              "full_name": "Sample Reviewer 1"
+            }
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 4,
+          "total": 3
+        }
+      }
+    },
+    {
+      "test": "Seed analysis 1 matches PostgreSQL",
+      "method": "GET",
+      "path": "/analyses/1",
+      "status": 200,
+      "pass": true,
+      "example": {
+        "data": {
+          "id": "1",
+          "status": "insufficient_basis",
+          "product_id": "1",
+          "analyzed_by": "1",
+          "reference_sold": null,
+          "is_eligible": false,
+          "product": {
+            "id": "1",
+            "name": "Canvas Everyday Tote",
+            "category_id": "1"
+          },
+          "analyst": {
+            "id": "1",
+            "full_name": "Sample Reviewer 1"
+          }
+        }
+      }
+    },
+    {
+      "test": "Analysis 1 actions",
+      "method": "GET",
+      "path": "/analyses/1/actions",
+      "status": 200,
+      "pass": true,
+      "example": {
+        "data": [
+          {
+            "id": "1",
+            "status": "proposed",
+            "analysis_id": "1"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 20,
+          "total": 1
+        }
+      }
+    },
+    {
+      "test": "Seed analysis 2 matches PostgreSQL",
+      "method": "GET",
+      "path": "/analyses/2",
+      "status": 200,
+      "pass": true,
+      "example": {
+        "data": {
+          "id": "2",
+          "status": "insufficient_basis",
+          "product_id": "2",
+          "analyzed_by": "2",
+          "reference_sold": null,
+          "is_eligible": false,
+          "product": {
+            "id": "2",
+            "name": "Classic Leather Handbag",
+            "category_id": "1"
+          },
+          "analyst": {
+            "id": "2",
+            "full_name": "Sample Reviewer 2"
+          }
+        }
+      }
+    },
+    {
+      "test": "Analysis 2 actions",
+      "method": "GET",
+      "path": "/analyses/2/actions",
+      "status": 200,
+      "pass": true,
+      "example": {
+        "data": [
+          {
+            "id": "2",
+            "status": "proposed",
+            "analysis_id": "2"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 20,
+          "total": 1
+        }
+      }
+    },
+    {
+      "test": "Seed analysis 3 matches PostgreSQL",
+      "method": "GET",
+      "path": "/analyses/3",
+      "status": 200,
+      "pass": true,
+      "example": {
+        "data": {
+          "id": "3",
+          "status": "insufficient_basis",
+          "product_id": "3",
+          "analyzed_by": "1",
+          "reference_sold": null,
+          "is_eligible": false,
+          "product": {
+            "id": "3",
+            "name": "Lightweight Running Sneakers",
+            "category_id": "2"
+          },
+          "analyst": {
+            "id": "1",
+            "full_name": "Sample Reviewer 1"
+          }
+        }
+      }
+    },
+    {
+      "test": "Analysis 3 actions",
+      "method": "GET",
+      "path": "/analyses/3/actions",
+      "status": 200,
+      "pass": true,
+      "example": {
+        "data": [
+          {
+            "id": "3",
+            "status": "proposed",
+            "analysis_id": "3"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 20,
+          "total": 1
+        }
+      }
+    },
+    {
+      "test": "Shared catalog accessible to second user",
+      "method": "GET",
+      "path": "/products/1",
+      "status": 200,
+      "pass": true,
+      "example": {
+        "data": {
+          "id": "1",
+          "name": "Canvas Everyday Tote",
+          "category_id": "1"
+        }
+      }
+    },
+    {
+      "test": "Product analysis relationship",
+      "method": "GET",
+      "path": "/products/1/analyses",
+      "status": 200,
+      "pass": true,
+      "example": {
+        "data": [
+          {
+            "id": "1",
+            "status": "insufficient_basis",
+            "product_id": "1",
+            "analyzed_by": "1",
+            "reference_sold": null,
+            "is_eligible": false,
+            "product": {
+              "id": "1",
+              "name": "Canvas Everyday Tote",
+              "category_id": "1"
+            },
+            "analyst": {
+              "id": "1",
+              "full_name": "Sample Reviewer 1"
+            }
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 20,
+          "total": 1
+        }
+      }
+    },
+    {
+      "test": "List categories",
+      "method": "GET",
+      "path": "/categories",
+      "status": 200,
+      "pass": true,
+      "example": {
+        "data": [
+          {
+            "id": "1",
+            "name": "Sample Bags"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 20,
+          "total": 3
+        }
+      }
+    },
+    {
+      "test": "List actions",
+      "method": "GET",
+      "path": "/actions",
+      "status": 200,
+      "pass": true,
+      "example": {
+        "data": [
+          {
+            "id": "1",
+            "status": "proposed",
+            "analysis_id": "1"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 20,
+          "total": 3
+        }
+      }
+    },
+    {
+      "test": "Action detail",
+      "method": "GET",
+      "path": "/actions/1",
+      "status": 200,
+      "pass": true,
+      "example": {
+        "data": {
+          "id": "1",
+          "status": "proposed",
+          "analysis_id": "1"
+        }
+      }
+    },
+    {
+      "test": "Append-only action history",
+      "method": "GET",
+      "path": "/actions/1/history",
+      "status": 200,
+      "pass": true,
+      "example": {
+        "data": [
+          {
+            "id": "1",
+            "event_type": "created"
+          }
+        ],
+        "pagination": {
+          "page": 1,
+          "limit": 20,
+          "total": 1
+        }
+      }
+    },
+    {
+      "test": "Stale action update rejected",
+      "method": "PATCH",
+      "path": "/actions/1",
+      "status": 409,
+      "pass": true,
+      "example": {
+        "error": {
+          "code": "STALE_VERSION",
+          "message": "Action changed; reload and retry with the current updated_at"
+        }
+      }
+    },
+    {
+      "test": "Rejection needs a reason",
+      "method": "PATCH",
+      "path": "/actions/1",
+      "status": 422,
+      "pass": true,
+      "example": {
+        "error": {
+          "code": "VALIDATION_ERROR",
+          "message": "decision_reason is required when rejecting an action"
+        }
+      }
+    },
+    {
+      "test": "Immutable analyses reject edits",
+      "method": "PATCH",
+      "path": "/analyses/1",
+      "status": 405,
+      "pass": true,
+      "example": {
+        "error": {
+          "code": "METHOD_NOT_ALLOWED",
+          "message": "Method not allowed for this resource"
+        }
+      }
+    },
+    {
+      "test": "Immutable history rejects mutation",
+      "method": "POST",
+      "path": "/actions/1/history",
+      "status": 405,
+      "pass": true,
+      "example": {
+        "error": {
+          "code": "METHOD_NOT_ALLOWED",
+          "message": "Method not allowed for this resource"
+        }
+      }
+    },
+    {
+      "test": "Nonexistent product",
+      "method": "GET",
+      "path": "/products/9223372036854775807",
+      "status": 404,
+      "pass": true,
+      "example": {
+        "error": {
+          "code": "NOT_FOUND",
+          "message": "Record not found"
+        }
+      }
+    },
+    {
+      "test": "Nonexistent analysis",
+      "method": "GET",
+      "path": "/analyses/9223372036854775807",
+      "status": 404,
+      "pass": true,
+      "example": {
+        "error": {
+          "code": "NOT_FOUND",
+          "message": "Record not found"
+        }
+      }
+    },
+    {
+      "test": "Invalid product",
+      "method": "POST",
+      "path": "/products",
+      "status": 422,
+      "pass": true,
+      "example": {
+        "error": {
+          "code": "VALIDATION_ERROR",
+          "message": "Invalid request input",
+          "details": [
+            {
+              "field": "name",
+              "message": "Too small: expected string to have >=1 characters"
+            },
+            {
+              "field": "price",
+              "message": "Too small: expected number to be >=0"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "test": "Invalid page size",
+      "method": "GET",
+      "path": "/products?limit=101",
+      "status": 422,
+      "pass": true,
+      "example": {
+        "error": {
+          "code": "VALIDATION_ERROR",
+          "message": "Invalid request input",
+          "details": [
+            {
+              "field": "limit",
+              "message": "Too big: expected number to be <=100"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "test": "SQL-like ID rejected",
+      "method": "GET",
+      "path": "/products/1%20OR%201=1",
+      "status": 422,
+      "pass": true,
+      "example": {
+        "error": {
+          "code": "VALIDATION_ERROR",
+          "message": "Invalid request input",
+          "details": [
+            {
+              "field": "",
+              "message": "Expected a positive record ID"
+            },
+            {
+              "field": "",
+              "message": "Record ID exceeds bigint range"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "test": "No arbitrary SQL route",
+      "method": "POST",
+      "path": "/sql",
+      "status": 404,
+      "pass": true,
+      "example": {
+        "error": {
+          "code": "NOT_FOUND",
+          "message": "Record not found"
+        }
+      }
+    },
+    {
+      "test": "Unapproved browser origin",
+      "method": "GET",
+      "path": "/health",
+      "status": 403,
+      "pass": true,
+      "example": {
+        "error": {
+          "code": "ORIGIN_DENIED",
+          "message": "Origin is not allowed"
+        }
+      }
+    },
+    {
+      "test": "Configured CORS preflight",
+      "method": "OPTIONS",
+      "path": "/products",
+      "status": 204,
+      "pass": true,
+      "example": {}
+    },
+    {
+      "test": "Create disposable category",
+      "method": "POST",
+      "path": "/categories",
+      "status": 201,
+      "pass": true,
+      "example": {
+        "data": {
+          "id": "8",
+          "name": "HTTP Test Category"
+        }
+      }
+    },
+    {
+      "test": "Create disposable product",
+      "method": "POST",
+      "path": "/products",
+      "status": 201,
+      "pass": true,
+      "example": {
+        "data": {
+          "id": "15",
+          "name": "Disposable HTTP Test Product",
+          "category_id": "8"
+        }
+      }
+    },
+    {
+      "test": "Update disposable product",
+      "method": "PATCH",
+      "path": "/products/15",
+      "status": 200,
+      "pass": true,
+      "example": {
+        "data": {
+          "id": "15",
+          "name": "Disposable HTTP Test Product",
+          "category_id": "8"
+        }
+      }
+    },
+    {
+      "test": "Referenced category deletion blocked",
+      "method": "DELETE",
+      "path": "/categories/8",
+      "status": 409,
+      "pass": true,
+      "example": {
+        "error": {
+          "code": "RELATION_CONFLICT",
+          "message": "Related record is missing or still referenced"
+        }
+      }
+    },
+    {
+      "test": "Delete disposable product",
+      "method": "DELETE",
+      "path": "/products/15",
+      "status": 200,
+      "pass": true,
+      "example": {
+        "data": {
+          "id": "15"
+        }
+      }
+    },
+    {
+      "test": "Delete disposable category",
+      "method": "DELETE",
+      "path": "/categories/8",
+      "status": 200,
+      "pass": true,
+      "example": {
+        "data": {
+          "id": "8"
+        }
+      }
+    },
+    {
+      "test": "Last active administrator protected",
+      "method": "PATCH",
+      "path": "/accounts/3",
+      "status": 409,
+      "pass": true,
+      "example": {
+        "error": {
+          "code": "LAST_ADMIN",
+          "message": "The last active administrator cannot be suspended or demoted"
+        }
+      }
+    },
+    {
+      "test": "Logout revokes session",
+      "method": "POST",
+      "path": "/auth/logout",
+      "status": 200,
+      "pass": true,
+      "example": {
+        "data": {
+          "logged_out": true
+        }
+      }
+    },
+    {
+      "test": "Logout revokes session",
+      "method": "POST",
+      "path": "/auth/logout",
+      "status": 200,
+      "pass": true,
+      "example": {
+        "data": {
+          "logged_out": true
+        }
+      }
+    },
+    {
+      "test": "Logout revokes session",
+      "method": "POST",
+      "path": "/auth/logout",
+      "status": 200,
+      "pass": true,
+      "example": {
+        "data": {
+          "logged_out": true
+        }
+      }
+    },
+    {
+      "test": "Revoked session rejected",
+      "method": "GET",
+      "path": "/products",
+      "status": 401,
+      "pass": true,
+      "example": {
+        "error": {
+          "code": "UNAUTHENTICATED",
+          "message": "Authentication required"
+        }
+      }
+    }
+  ]
+}
