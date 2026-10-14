@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 
 async function login(page: Page, role: "admin" | "user") {
-  await page.goto("/preview/login");
+  await page.goto("/preview/demo-login");
   await page
     .getByRole("button", {
       name:
@@ -20,7 +20,7 @@ test("invalid demo credentials show an error; both actors reach all four pages a
 }, testInfo) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
-  await page.goto("/");
+  await page.goto("/preview/demo-login");
   await page.getByLabel("Địa chỉ email").fill("unknown@sellens.demo");
   await page.getByLabel("Mật khẩu", { exact: true }).fill("wrong-password");
   await page.getByRole("button", { name: "Đăng nhập", exact: true }).click();
@@ -59,7 +59,7 @@ test("invalid demo credentials show an error; both actors reach all four pages a
       });
     }
     await page.getByRole("button", { name: "Đăng xuất demo" }).click();
-    await expect(page).toHaveURL(/\/preview\/login/);
+    await expect(page).toHaveURL(/\/preview\/demo-login/);
   }
   expect(errors).toEqual([]);
 });

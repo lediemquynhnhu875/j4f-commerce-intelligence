@@ -23,7 +23,7 @@ export function AppShell({
   const [notifications, setNotifications] = useState(false);
   function logout() {
     setDemoRole(null);
-    router.push("/preview/login");
+    router.push("/preview/demo-login");
   }
   if (selectedRole !== role)
     return (
@@ -46,7 +46,7 @@ export function AppShell({
           href={
             selectedRole
               ? `/preview/${selectedRole}/overview`
-              : "/preview/login"
+              : "/preview/demo-login"
           }
         >
           {selectedRole ? "Về không gian của tôi" : "Đăng nhập demo"}
