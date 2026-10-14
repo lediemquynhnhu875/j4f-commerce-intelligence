@@ -6,6 +6,11 @@ All contributors and AI agents read and update the same documents in this reposi
 | --- | --- |
 | [AGENTS.md](../AGENTS.md) | Shared working rules, task ownership, verification, and review |
 | [CURRENT_STATE.md](CURRENT_STATE.md) | Current project state and handoff notes |
+| [Backend setup](../backend/README.md) | Neon migration, seeds, REST endpoints and runtime commands |
+| [Backend verification](verification/sellens-backend.md) | Executed PostgreSQL/HTTP evidence, sanitized responses and limits |
+| [Frontend integration](verification/sellens-frontend-integration.md) | Connected UI browser verification, private session proxy and schema/UI conflicts |
+| [Supplied database architecture](architecture/sellens-shared-catalog.dbml) | Preserved six-table MVP input; PostgreSQL/shared-catalog amendment in ADR 0004 |
+| [Proposed multi-store architecture](architecture/sellens-multi-store.md) | Mermaid/full DBML and staged SQL; one User owns multiple stores; unapplied |
 | [PROJECT_BACKLOG.md](PROJECT_BACKLOG.md) | Eight feature boundaries, dependencies and suggested first tasks |
 | [Planning evidence audit](verification/planning-audit.md) | Inspected code, failed runtime verification and remaining gaps |
 | [repository-structure.md](rules/repository-structure.md) | Code placement and ownership |

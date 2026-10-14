@@ -2,25 +2,32 @@
 
 ## Agreed stack and component boundaries
 
-- Next.js serves the frontend and web backend in the planned `frontend/` web application.
+- Next.js serves the connected frontend and isolated previews in `frontend/` and web API in `backend/`.
 - The web backend owns application logic, PostgreSQL access on Neon, and user actions.
-- Python/FastAPI in `backend/` serves model inference and reuses `ml/src/`.
-- These are target responsibilities; the existing scaffolds are not complete runtimes.
-- See [the stack decision](../decisions/0001-web-database-model-stack.md).
+- Python/FastAPI model serving remains pending and reuses `ml/src/`; no service was moved.
+- The backend has a verified PostgreSQL REST runtime; the frontend uses a same-origin cookie proxy.
+- See [the current scope amendment](../decisions/0004-shared-catalog-backend.md).
 
 ## `backend/` - Mai, with Nhung for model integration
 
-- `app/api/`: model-service HTTP routes only; service logic stays in services.
-- `app/core/`: configuration, logging, and shared application setup.
-- `app/db/`: existing scaffold; web persistence belongs to the Next.js backend.
-- `app/schemas/`: model-service request and response contracts.
-- `app/services/`: model loading, inference, and scoring integration.
-- `tests/`: model-service unit and API tests.
+- `src/app/api/v1/`: thin Next.js HTTP route; delegates to server router/services.
+- `src/server/config.ts`, `db.ts`, `auth.ts`: configuration, pooled SQL and sessions.
+- `src/server/validation.ts`, `errors.ts`: strict input and safe error contracts.
+- `src/server/services/`: catalog/accounts, immutable analyses and audited actions.
+- `db/migrations/`: checksummed additive SQL; never edit an applied migration.
+- `scripts/`: schema inspection, migration, repeatable seeds and real HTTP verification.
+- `tests/`: backend unit checks; integration report stored under `docs/verification/`.
 
 ## `frontend/` - Huy (UI), Mai (web backend and database)
 
-- Planned Next.js application with frontend and web backend code; initialize its
-  framework structure when implementation begins.
+- The contributor's later integration request supersedes the earlier disconnected
+  scope. Live `/user/*` and `/admin/*` use APIs; preview workspace pages stay
+  synthetic. `/preview` and `/preview/login` use real login; mock login lives at
+  the explicitly named `/preview/demo-login`.
+- `src/app/api/backend/`: server-side HTTP proxy; opaque session token stays in HttpOnly cookies.
+- `src/features/connected/`: real catalog, analyses, actions/audit and Admin management.
+- `src/components/live-*.tsx`, `src/lib/api-client.ts`, `use-live-session.ts` and
+  `src/types/api.ts`: live workspace/session composition, client and DTOs.
 - `src/components/`: reusable UI components; `layout/header.tsx` and
   `layout/sidebar.tsx` are composed by `layout/app-shell.tsx`.
 - `src/features/admin/`: four Admin screen files: `overview.tsx`, `stores.tsx`,

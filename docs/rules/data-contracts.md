@@ -2,6 +2,48 @@
 
 This document is the initial interface between the data, ML, backend, and frontend workstreams. Column names may evolve, but changes must be reviewed by all affected owners.
 
+## Shared-catalog backend amendment
+
+The separately implemented backend follows the contributor's later shared-catalog
+schema. See [scope amendment](../decisions/0004-shared-catalog-backend.md),
+[REST contract](../../backend/README.md) and [verification](../verification/sellens-backend.md).
+Its six tables are `users`, `categories`, `products`, `product_analyses`,
+`improvement_actions`, `action_history`; PostgreSQL uses timestamptz/jsonb/numeric.
+Regular API role `user` maps to database `reviewer`. All active accounts share the
+catalog; admins manage accounts/catalog and append analyses. This supersedes store
+ownership only for this backend deliverable, leaving frontend mocks and older
+feature acceptance untouched. The nine supplied analysis statuses are preserved
+in the migration/validator; they are not renamed ML statuses. No CSV or ML enum
+was changed. Saved inputs/original suggestions/history are immutable. Nullable
+sales/observation values remain unknown; sample analyses are synthetic records
+with insufficient basis, no inference and no eligibility claim. Lists use bounded
+pagination, ID/numeric output strings, strict input and safe errors. Mai/Huy/Nhung
+must review these changed interfaces before frontend/model integration.
+
+The contributor subsequently authorized frontend integration; see
+[ADR 0005](../decisions/0005-frontend-api-integration.md). Live pages fetch the
+existing DTOs through `/api/backend/*`; the frontend proxy removes `access_token`
+and `token_type` from successful login JSON and saves the token in an HttpOnly,
+SameSite cookie. It forwards Bearer authorization server-side; backend active/role
+checks remain authoritative. No database URL reaches the browser. Configuration
+uses server-only BACKEND_API_URL and optional public FRONTEND_ORIGIN for HTTPS.
+Main pages use the exact nine statuses and nullable/frozen evidence, without mock
+fallback. Unsupported stores, inference jobs and model/config writes are explicit.
+Preview fixtures stay under `/preview/*` and cannot grant real permissions. Work
+updates use `expected_updated_at` and immutable originals/history. Original
+store/model/human-review acceptance remains pending despite this direct authorization.
+
+## Multi-store ownership proposal (not applied)
+
+Latest user-confirmed ownership proposal: one User owns multiple stores and each
+application product/listing belongs to one store. See [ADR 0006](../decisions/0006-user-multiple-stores.md)
+and [schema proposal](../architecture/sellens-multi-store.md). Proposed fields are
+stores.owner_user_id and products.store_id; actor IDs/seller metadata are not
+ownership. Initial legacy membership is nullable until explicitly assigned, then
+required. Store-owner/product-store reassignment is guarded to preserve history.
+No SQL has been applied and current APIs still use shared-catalog scope; tenant
+enforcement is pending, not implied by foreign keys. ML imports remain deferred.
+
 ## Clean products
 
 Path: `data/processed/clean_products.csv`

@@ -17,20 +17,25 @@ The system provides decision-support hypotheses. It does not claim causal effect
 | Database | PostgreSQL on Neon |
 | Model service | Python / FastAPI |
 
-The planned Next.js application in `frontend/` serves the UI and web APIs.
-The Python service in `backend/` serves model inference using `ml/src/`.
+The Next.js application in `frontend/` serves the connected UI and isolated mock
+previews. The separate
+Next.js application in `backend/` serves real Neon-backed web APIs.
+Python/FastAPI model serving using `ml/src/` remains pending.
 The frontend now has eight synthetic User/Admin pages and a demo login; see
-[frontend setup](frontend/README.md). Real authentication, database and model
-integration remain pending. The current separate Next.js `backend/` scaffold
-needs its model-service boundary reconciled before integration. See
-[the architecture decision](docs/decisions/0001-web-database-model-stack.md).
+[frontend setup](frontend/README.md). Main pages now use real backend authentication,
+PostgreSQL catalog data and saved work/history; `/preview/*` remains isolated mock.
+Model inference is still pending. See
+[backend setup](backend/README.md) and [verification](docs/verification/sellens-backend.md).
+The contributor's supplied shared-catalog architecture supersedes the older
+store plan for this backend deliverable; see
+[the scope amendment](docs/decisions/0004-shared-catalog-backend.md).
 
 ## Repository structure
 
 ```text
 .
-|-- backend/              # Python/FastAPI model-service scaffold
-|-- frontend/             # Planned Next.js frontend and web backend
+|-- backend/              # Next.js / TypeScript web API and PostgreSQL persistence
+|-- frontend/             # Next.js connected UI and isolated synthetic previews
 |-- ml/                   # Data preparation, peer groups, models, scoring
 |-- data/                 # Local datasets (large/sensitive files are ignored)
 |-- docs/                 # Architecture, contracts, decisions, and reports
@@ -79,9 +84,10 @@ Raw CSV files
 5. Use clearly labeled mocks only for the planned UI tasks; real integration
    requires verified source/artifacts and acceptance evidence.
 
-Admin provisions email/password accounts; each User has one explicit store.
-User access is enforced server-side; Admin manages the system. Demo assignments
-do not derive account ownership from source seller metadata.
+Admin provisions email/password accounts. The new backend uses the supplied
+shared admin/reviewer catalog; the older frontend previews still show stores.
+Server-side role/active-account checks protect the API. Seller metadata is not
+an application account or ownership claim.
 
 Spec Kit and the constitution are initialized. Eight feature plans contain 110
 unchecked tasks. Existing ML runtime readiness remains unverified: the current
