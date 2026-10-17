@@ -8,7 +8,7 @@ The single `src/server/api.ts` file declares endpoints explicitly as
 table; a shared matcher resolves `:id`, authorization, 404/405 and response handling.
 The existing Next.js catch-all route remains the HTTP entry point; no per-endpoint
 files or Express dependency are required.
-The frontend and its mock data remain unchanged and disconnected.
+The live frontend consumes these APIs; isolated preview pages retain mock data.
 
 The supplied six-table architecture defines one shared admin/reviewer catalog.
 API role `user` maps to database `reviewer`; provisioning accepts either spelling.
@@ -71,6 +71,34 @@ minimum; API provisioning/password changes require 12. Emails must be valid/dist
 Seed analyses explicitly have insufficient basis, unverified sales labels/peers,
 null reference, unknown observation time and unavailable prediction origin. They
 make no model, forecast or causal claim.
+
+## Import the bounded real ML sample
+
+Place the supplied `products_full.json` in root `data/processed/` (ignored).
+From `backend/`:
+
+```sh
+npm run db:migrate
+npm run import:ml-sample -- --dry-run
+npm run import:ml-sample -- --apply
+```
+
+Imports exactly 100 products across five types (20 each), 100 saved analyses and
+matching suggestions/history. All writes are atomic. Exact reruns insert nothing;
+different source bytes under the fixed run key stop without overwriting. Preserve
+the original input for verification. This uses the shared catalog and preserves
+old seeds; stores and live inference remain pending. Results are experimental.
+See [scope](../docs/decisions/0007-bounded-ml-sample-import.md).
+
+With the backend running, verify the source, database and real HTTP responses:
+
+```sh
+npm run test:ml-sample
+```
+
+Uses local SEED_USER1 credentials and writes sanitized results to ignored
+`tmp/ml-sample-http.json`. `npm test` checks selection and source/status validation.
+The migration runner discovers ordered numbered SQL files and checks each checksum.
 
 ## Start
 

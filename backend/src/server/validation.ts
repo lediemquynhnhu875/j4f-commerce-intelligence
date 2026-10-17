@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ApiError } from "./errors";
+import { mlStatuses } from "./ml-sample";
 
 export const id = z
   .string()
@@ -133,7 +134,25 @@ export const analysisSchema = z
       .max(1)
       .nullable()
       .optional(),
-    status: z.enum(analysisStatuses).optional(),
+    status: z.enum([...analysisStatuses, ...mlStatuses]).optional(),
+    status_schema_version: z.enum(["legacy_v1", "ml_v2"]).optional(),
+    status_reason: optionalText(),
+    product_type: optionalText(150),
+    taxonomy_version: optionalText(100),
+    prediction_lower: z
+      .number()
+      .finite()
+      .min(0)
+      .max(999999999999999)
+      .nullable()
+      .optional(),
+    prediction_upper: z
+      .number()
+      .finite()
+      .min(0)
+      .max(999999999999999)
+      .nullable()
+      .optional(),
     is_eligible: z.boolean().optional(),
     needs_review: z.boolean().optional(),
     priority_score: z
@@ -150,7 +169,29 @@ export const analysisSchema = z
     config_json: json,
     limitation_note: optionalText(),
   })
-  .strict();
+  .strict()
+  .superRefine((value, ctx) => {
+    const version = value.status_schema_version ?? "legacy_v1";
+    const status = value.status ?? "insufficient_basis";
+    const allowed: readonly string[] =
+      version === "ml_v2" ? mlStatuses : analysisStatuses;
+    if (!allowed.includes(status))
+      ctx.addIssue({
+        code: "custom",
+        path: ["status"],
+        message: "Status does not match status_schema_version",
+      });
+    if (
+      value.prediction_lower != null &&
+      value.prediction_upper != null &&
+      value.prediction_lower > value.prediction_upper
+    )
+      ctx.addIssue({
+        code: "custom",
+        path: ["prediction_upper"],
+        message: "Upper reference must not be below lower reference",
+      });
+  });
 export const actionStatuses = [
   "proposed",
   "accepted",
@@ -166,6 +207,8 @@ export const actionSchema = z
       "review_price",
       "complete_description",
       "review_images_or_video",
+      "review_images",
+      "review_video",
       "inspect_reviews",
       "verify_listing_and_stock",
       "verify_exposure",

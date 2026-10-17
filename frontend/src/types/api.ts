@@ -7,6 +7,8 @@ export type Product = {
 };
 export type Category = { id: string; code: string; name: string; description: string | null };
 export type Analysis = {
+  run_id?:string|null;status_schema_version?:string;status_reason?:string|null;product_type?:string|null;
+  scored_at?:string|null;prediction_lower?:string|null;prediction_upper?:string|null;taxonomy_version?:string|null;
   id: string; product_id: string; analyzed_by: string | null; status: string; reference_sold: string | null;
   sales_gap: string | null; is_eligible: boolean; needs_review: boolean; pipeline_version: string;
   model_version: string | null; analyzed_at: string; input_snapshot_json: Record<string, unknown>;
@@ -15,6 +17,7 @@ export type Analysis = {
   product: { id: string; name: string }; analyst: { id: string; full_name: string } | null;
 };
 export type Action = {
+  origin?:string;rule_id?:string|null;
   id: string; analysis_id: string; type: string; title: string; description: string | null;
   original_suggestion_json: Record<string, unknown>; information_needed: string | null;
   status: string; assigned_to: string | null; decision_reason: string | null; outcome_note: string | null;

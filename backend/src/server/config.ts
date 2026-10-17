@@ -12,5 +12,8 @@ export function requiredEnv(name: string): string {
 }
 
 export function allowedOrigins(): string[] {
-  return (process.env.CORS_ORIGINS ?? "").split(",").map(s => s.trim()).filter(Boolean);
+  return (process.env.CORS_ORIGINS ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
 }
