@@ -1,9 +1,20 @@
 export type Account = { id: string; full_name: string; email: string; role: "user" | "admin"; is_active: boolean };
+export type ProductImage = {
+  base_url: string | null; large_url: string | null; medium_url: string | null;
+  small_url: string | null; thumbnail_url: string | null; position: number | null;
+};
+/** Provenance of the live media fetch; media is a display asset, not snapshot evidence. */
+export type ProductMediaSource = {
+  source: string; fetched_at: string | null; http_status: number | null; resolved: boolean;
+  primary_image_url: string | null; gallery_is_placeholder: boolean | null;
+  api_image_count: number | null; product_url: string | null; note?: string;
+};
 export type Product = {
   id: string; category_id: string | null; name: string; description: string | null; brand: string | null;
   price: string | null; currency: string; quantity_sold: string | null; rating_average: string | null;
   review_count: number | null; thumbnail_url: string | null; observed_at: string | null;
   sales_scope: string; sales_label_verified: boolean; number_of_images: number | null; has_video: boolean | null;
+  video_url?: string | null; image_urls?: ProductImage[] | null; media_source_json?: ProductMediaSource | null;
 };
 export type Category = { id: string; code: string; name: string; description: string | null };
 export type Analysis = {

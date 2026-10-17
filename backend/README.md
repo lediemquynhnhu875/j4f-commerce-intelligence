@@ -100,6 +100,35 @@ Uses local SEED_USER1 credentials and writes sanitized results to ignored
 `tmp/ml-sample-http.json`. `npm test` checks selection and source/status validation.
 The migration runner discovers ordered numbered SQL files and checks each checksum.
 
+## Import real product media
+
+The source CSVs hold no media URLs, so real images and video come from the public
+Tiki product API, fetched offline into `data/external/tiki_media_sample.json`
+(schema `j4f-tiki-media-v1`, ignored). The fetch scripts live in the data checkout
+under `ml/src/export/media/`. From `backend/`:
+
+```sh
+npm run db:migrate
+npm run import:media -- --dry-run
+npm run import:media -- --apply
+```
+
+Migration `003_product_media.sql` adds nullable `video_url`, `image_urls` and
+`media_source_json` to `products`. The import matches products on
+(`source_system`, `source_product_id`), writes only those columns plus
+`thumbnail_url`, and is idempotent: a rerun reports `rows_changed: 0`. It rejects
+any URL that is not `https`, stops when the media columns are missing, and never
+touches `has_video`, `number_of_images` or `product_url`, which remain the
+snapshot's own values.
+
+Of the 100 sample products, 92 resolve to a verified image and 3 carry a video;
+8 return HTTP 404 because their listings were delisted after 2023, keep null media
+and are rendered with the existing placeholder tile. These URLs are external CDN
+links, are not archived locally, may break at any time, and are display assets
+only: they are never analysis input. See
+[data contracts](../docs/rules/data-contracts.md) and
+[verification](../docs/verification/product-media.md).
+
 ## Start
 
 ```sh

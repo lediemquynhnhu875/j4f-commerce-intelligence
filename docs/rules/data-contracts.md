@@ -65,6 +65,32 @@ suggestion's evidence/hypothesis/action/validation_needed is a string. Missing
 references remain null; feedback-only insufficient_data may retain a reference.
 No synthetic image, capture time, sales scope or quality acceptance is inferred.
 
+## Live product media (2026-10-17)
+
+Directly requested so the application shows real product images. Migration
+`003_product_media.sql` adds nullable `video_url`, `image_urls` (jsonb array) and
+`media_source_json` (jsonb object) to `products`, and `backend/scripts/import-media.ts`
+fills them plus the existing `thumbnail_url` for the imported sample, matched on
+(`source_system`, `source_product_id`). Product DTOs expose all four fields;
+products without media keep them null. The Product type in the frontend marks
+them optional so older responses stay valid.
+
+The six 2023 source CSVs contain no media URLs. These URLs come from the public
+Tiki product API fetched on 2026-10-17, so they describe the listing today, not
+at snapshot time. They are display assets and must never be read back as snapshot
+evidence or analysis input. Snapshot `has_video` and `number_of_images` stay
+canonical and are not recomputed from live media; the live API agreed with
+`has_video` for all 92 resolved products, while live image counts differ for 33.
+
+`image_urls` entries carry `base_url`, `large_url`, `medium_url`, `small_url`,
+`thumbnail_url` and `position`. `media_source_json` records `source`, `fetched_at`,
+`http_status`, `resolved`, `primary_image_url`, `primary_image_http_status`,
+`gallery_is_placeholder`, `api_image_count`, `product_url` and the media file's
+SHA-256. Only `https` URLs are stored. Eight sample products return HTTP 404
+because their listings were delisted; they keep null media and `resolved: false`,
+and the UI shows the existing placeholder tile with the reason. `products.product_url`
+stays null, unchanged by this import.
+
 ## Clean products
 
 Path: `data/processed/clean_products.csv`

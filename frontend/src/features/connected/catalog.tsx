@@ -12,6 +12,10 @@ import {
 } from "@/lib/api-client";
 import type { Dataset, Product, Analysis } from "@/types/api";
 import { Badge, Empty, Icon, Modal, Panel, Stat } from "@/components/ui";
+import {
+  ProductGallery,
+  ProductThumb,
+} from "@/components/products/product-media";
 
 function latest(data: Dataset, productId: string) {
   return data.analyses
@@ -288,9 +292,7 @@ export function LiveCatalog({
                 <tr key={product.id}>
                   <td>
                     <div className="product-cell">
-                      <span className="tile-icon">
-                        <Icon name="box" />
-                      </span>
+                      <ProductThumb product={product} />
                       <div>
                         <strong>{product.name}</strong>
                       </div>
@@ -543,6 +545,7 @@ export function LiveAnalysis({
       ) : (
         <>
           <Panel title={product.name} subtitle={`Mã sản phẩm ${product.id}`}>
+            <ProductGallery product={product} />
             <p>{product.description}</p>
             <p>
               Giá hiện tại: {price(product.price, product.currency)} · Số bán

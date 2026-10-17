@@ -13,10 +13,21 @@ records remain. Imported results show the six ML status labels and an experiment
 notice; image URLs are unavailable, so the existing icon placeholder is used.
 See [verification](../docs/verification/ml-sample-import.md).
 
+Imported sample products now show their real Tiki images, a gallery and, where the
+listing has one, the product video. Eight delisted listings keep the placeholder
+tile and state why. Media is fetched by `npm run import:media` in `backend/` and
+is a display asset only: analysis still uses the snapshot's `number_of_images`
+and `has_video`. Images render unoptimized from the hosts allowed in
+[`next.config.ts`](next.config.ts), so the frontend server never proxies external
+assets. See [verification](../docs/verification/product-media.md).
+
 Run the sample browser check after building the frontend and starting backend:
 set `CONNECTED_BACKEND_API_URL=http://127.0.0.1:3001/api/v1` and supply
 `SEED_USER1_EMAIL`/`SEED_USER1_PASSWORD` through the local process environment,
 then run `npm run test:connected -- ml-sample.spec.ts` from `frontend/`.
+The media check additionally needs `MEDIA_VIDEO_PRODUCT_ID` and
+`MEDIA_MISSING_PRODUCT_ID` (a product with a video and a delisted one):
+`npm run test:connected -- media.spec.ts`.
 
 From the repository root:
 

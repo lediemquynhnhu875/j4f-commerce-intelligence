@@ -2615,3 +2615,59 @@ td > strong {
 .connected-form input[type=checkbox] { width: auto; }
 .connected-form textarea { min-height: 80px; resize: vertical; }
 .connected-json { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; max-height: 360px; overflow: auto; padding: 12px; background: #f8fafc; border-radius: 10px; }
+
+.product-media {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.product-media.empty {
+  grid-template-columns: 33px 1fr;
+  align-items: center;
+}
+.product-media.empty p {
+  color: #95879f;
+  font-size: 11px;
+}
+.product-media-main {
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+  border-radius: 14px;
+  background: #f5f0fa;
+  object-fit: cover;
+}
+.product-media-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.product-media-strip button {
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  background: none;
+  cursor: pointer;
+  line-height: 0;
+}
+.product-media-strip button.active {
+  border-color: #9a48f7;
+}
+.product-media-strip img {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #f5f0fa;
+}
+.product-media-video {
+  width: 100%;
+  max-width: 320px;
+  border-radius: 14px;
+  background: #000;
+}
+.product-media-note {
+  color: #95879f;
+  font-size: 10px;
+  max-width: 460px;
+}

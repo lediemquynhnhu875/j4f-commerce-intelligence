@@ -75,6 +75,41 @@ session started clean, fetched remote refs and branched from `origin/main`.
 
 ## Latest Handoff
 
+### Real Product Media in the Catalog - 2026-10-17
+
+- Direct user request: show real product images in the application. Continues the
+  existing F002 catalog and F005 analysis-display amendments; no new feature or
+  task ID was invented and no acceptance checkbox was changed.
+- Owner: requesting contributor, Claude-assisted. Branched from clean synchronized
+  `main` as `feature/catalog-media-display`. No pull, stash, merge, commit or push.
+- The 2023 source CSVs hold no media URLs, so images and video were fetched
+  offline from the public Tiki product API into ignored
+  `data/external/tiki_media_sample.json` and merged into the data checkout's
+  `products_full.json` in the preceding session.
+- Applied additive migration `003_product_media` (nullable `video_url`,
+  `image_urls`, `media_source_json` on `products`) and added
+  `backend/scripts/import-media.ts` / `npm run import:media`. Matched 100 of 100
+  sample products; stored 92 image URLs, 3 video URLs and provenance for all 100.
+  Eight delisted listings keep null media. The 10 older seed products are untouched,
+  and `has_video`, `number_of_images` and `product_url` were not modified.
+- Added `ProductThumb` and `ProductGallery`; the connected catalog table and the
+  analysis detail panel now render real images, a gallery, the video and an
+  explicit note that media is a display asset, not analysis evidence. Delisted
+  listings keep the existing placeholder tile and state the reason.
+- Checks passed: migration; import dry run, apply (`rows_changed: 100`) and
+  idempotent rerun (`rows_changed: 0`); backend typecheck, 8 unit tests and build;
+  frontend typecheck, lint and build; an authenticated full-catalog API field
+  check; a new browser test asserting decoded image bitmaps, gallery switching,
+  the video element and the delisted-product fallback; and the existing ML sample
+  browser regression. All 92 image and 3 video URLs returned HTTP 200 when fetched.
+- `tests/connected/sellens.spec.ts` was deliberately not run: it creates/deletes
+  products and suspends an account in the shared database and does not cover this
+  change. No human acceptance, design review or production-readiness claim. Media
+  for the remaining 41,476 products was not fetched, external CDN assets are not
+  archived, and model serving remains unimplemented.
+- See [verification](verification/product-media.md),
+  [data contracts](rules/data-contracts.md) and [backend README](../backend/README.md).
+
 ### Bounded ML Sample Import - 2026-10-16
 
 - Direct user request: import 100 real source products in five product-type groups
