@@ -40,52 +40,201 @@ const url = z
   .nullable()
   .optional();
 const timestamp = z.iso.datetime({ offset: true }).nullable().optional();
-export const productSchema = z.object({
-  category_id: fk, name: text(500), description: optionalText(100000), brand: optionalText(255),
-  product_url: url, thumbnail_url: url, currency: z.string().regex(/^[A-Z]{3}$/).optional(),
-  price: money, original_price: money, quantity_sold: count,
-  rating_average: z.number().finite().min(0).max(5).multipleOf(0.01).nullable().optional(),
-  review_count: z.number().int().min(0).max(2147483647).nullable().optional(),
-  number_of_images: z.number().int().min(0).max(2147483647).nullable().optional(), has_video: z.boolean().nullable().optional(),
-  sales_scope: z.enum(["unknown","listing","product_page"]).optional(), sales_label_verified: z.boolean().optional(),
-  source_data_json: json.nullable().optional(), observed_at: timestamp,
-}).strict();
-export const categorySchema = z.object({ code: text(80).regex(/^[a-z0-9_]+$/), name: text(150), description: optionalText() }).strict();
-export const accountSchema = z.object({ full_name: text(150), email: z.email().max(254).transform(v=>v.toLowerCase()),
-  password: z.string().min(12).max(128), role: z.enum(["admin","user","reviewer"]).optional(), is_active: z.boolean().optional() }).strict();
-export const loginSchema = z.object({ email: z.email().max(254).transform(v=>v.toLowerCase()), password: z.string().min(1).max(128) }).strict();
-export const analysisStatuses = ["positive_feedback_below_reference","low_rating_below_reference","at_or_above_reference",
-  "zero_sales_needs_investigation","zero_sales_no_priority_signal","below_reference_insufficient_reviews","monitor_gap","undecided","insufficient_basis"] as const;
-export const analysisSchema = z.object({
-  product_id: id, reference_sold: z.number().finite().min(0).max(999999999999999).nullable().optional(),
-  probability_positive_sales: z.number().finite().min(0).max(1).nullable().optional(),
-  status: z.enum([...analysisStatuses,...mlStatuses]).optional(),
-  status_schema_version:z.enum(["legacy_v1","ml_v2"]).optional(),
-  status_reason:optionalText(),product_type:optionalText(150),taxonomy_version:optionalText(100),
-  prediction_lower:z.number().finite().min(0).max(999999999999999).nullable().optional(),
-  prediction_upper:z.number().finite().min(0).max(999999999999999).nullable().optional(),
-  is_eligible: z.boolean().optional(), needs_review: z.boolean().optional(),
-  priority_score: z.number().finite().min(-999999).max(999999).nullable().optional(), model_version: optionalText(100),
-  pipeline_version: text(100), comparison_json: json.nullable().optional(), evidence_json: json.nullable().optional(),
-  config_json: json, limitation_note: optionalText(),
-}).strict().superRefine((value,ctx)=>{
-  const version=value.status_schema_version??"legacy_v1";
-  const status=value.status??"insufficient_basis";
-  const allowed:readonly string[]=version==="ml_v2"?mlStatuses:analysisStatuses;
-  if(!allowed.includes(status)) ctx.addIssue({code:"custom",path:["status"],message:"Status does not match status_schema_version"});
-  if(value.prediction_lower!=null && value.prediction_upper!=null && value.prediction_lower>value.prediction_upper)
-    ctx.addIssue({code:"custom",path:["prediction_upper"],message:"Upper reference must not be below lower reference"});
-});
-export const actionStatuses = ["proposed","accepted","in_progress","completed","rejected","cancelled"] as const;
-export const actionSchema = z.object({ analysis_id: id,
-  type: z.enum(["review_price","complete_description","review_images_or_video","review_images","review_video","inspect_reviews","verify_listing_and_stock","verify_exposure","other"]),
-  title: text(255), description: optionalText(), original_suggestion_json: json,
-  information_needed: optionalText(), assigned_to: fk, due_at: timestamp,
-}).strict();
-export const actionPatchSchema = z.object({ title: text(255).optional(), description: optionalText(), information_needed: optionalText(),
-  status: z.enum(actionStatuses).optional(), assigned_to: fk, decision_reason: optionalText(), due_at: timestamp, outcome_note: optionalText(),
-  expected_updated_at: z.iso.datetime({ offset: true }),
-}).strict();
+export const productSchema = z
+  .object({
+    category_id: fk,
+    name: text(500),
+    description: optionalText(100000),
+    brand: optionalText(255),
+    product_url: url,
+    thumbnail_url: url,
+    currency: z
+      .string()
+      .regex(/^[A-Z]{3}$/)
+      .optional(),
+    price: money,
+    original_price: money,
+    quantity_sold: count,
+    rating_average: z
+      .number()
+      .finite()
+      .min(0)
+      .max(5)
+      .multipleOf(0.01)
+      .nullable()
+      .optional(),
+    review_count: z.number().int().min(0).max(2147483647).nullable().optional(),
+    number_of_images: z
+      .number()
+      .int()
+      .min(0)
+      .max(2147483647)
+      .nullable()
+      .optional(),
+    has_video: z.boolean().nullable().optional(),
+    sales_scope: z.enum(["unknown", "listing", "product_page"]).optional(),
+    sales_label_verified: z.boolean().optional(),
+    source_data_json: json.nullable().optional(),
+    observed_at: timestamp,
+  })
+  .strict();
+export const categorySchema = z
+  .object({
+    code: text(80).regex(/^[a-z0-9_]+$/),
+    name: text(150),
+    description: optionalText(),
+  })
+  .strict();
+export const accountSchema = z
+  .object({
+    full_name: text(150),
+    email: z
+      .email()
+      .max(254)
+      .transform((v) => v.toLowerCase()),
+    password: z.string().min(12).max(128),
+    role: z.enum(["admin", "user", "reviewer"]).optional(),
+    is_active: z.boolean().optional(),
+  })
+  .strict();
+export const loginSchema = z
+  .object({
+    email: z
+      .email()
+      .max(254)
+      .transform((v) => v.toLowerCase()),
+    password: z.string().min(1).max(128),
+  })
+  .strict();
+export const analysisStatuses = [
+  "positive_feedback_below_reference",
+  "low_rating_below_reference",
+  "at_or_above_reference",
+  "zero_sales_needs_investigation",
+  "zero_sales_no_priority_signal",
+  "below_reference_insufficient_reviews",
+  "monitor_gap",
+  "undecided",
+  "insufficient_basis",
+] as const;
+export const analysisSchema = z
+  .object({
+    product_id: id,
+    reference_sold: z
+      .number()
+      .finite()
+      .min(0)
+      .max(999999999999999)
+      .nullable()
+      .optional(),
+    probability_positive_sales: z
+      .number()
+      .finite()
+      .min(0)
+      .max(1)
+      .nullable()
+      .optional(),
+    status: z.enum([...analysisStatuses, ...mlStatuses]).optional(),
+    status_schema_version: z.enum(["legacy_v1", "ml_v2"]).optional(),
+    status_reason: optionalText(),
+    product_type: optionalText(150),
+    taxonomy_version: optionalText(100),
+    prediction_lower: z
+      .number()
+      .finite()
+      .min(0)
+      .max(999999999999999)
+      .nullable()
+      .optional(),
+    prediction_upper: z
+      .number()
+      .finite()
+      .min(0)
+      .max(999999999999999)
+      .nullable()
+      .optional(),
+    is_eligible: z.boolean().optional(),
+    needs_review: z.boolean().optional(),
+    priority_score: z
+      .number()
+      .finite()
+      .min(-999999)
+      .max(999999)
+      .nullable()
+      .optional(),
+    model_version: optionalText(100),
+    pipeline_version: text(100),
+    comparison_json: json.nullable().optional(),
+    evidence_json: json.nullable().optional(),
+    config_json: json,
+    limitation_note: optionalText(),
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    const version = value.status_schema_version ?? "legacy_v1";
+    const status = value.status ?? "insufficient_basis";
+    const allowed: readonly string[] =
+      version === "ml_v2" ? mlStatuses : analysisStatuses;
+    if (!allowed.includes(status))
+      ctx.addIssue({
+        code: "custom",
+        path: ["status"],
+        message: "Status does not match status_schema_version",
+      });
+    if (
+      value.prediction_lower != null &&
+      value.prediction_upper != null &&
+      value.prediction_lower > value.prediction_upper
+    )
+      ctx.addIssue({
+        code: "custom",
+        path: ["prediction_upper"],
+        message: "Upper reference must not be below lower reference",
+      });
+  });
+export const actionStatuses = [
+  "proposed",
+  "accepted",
+  "in_progress",
+  "completed",
+  "rejected",
+  "cancelled",
+] as const;
+export const actionSchema = z
+  .object({
+    analysis_id: id,
+    type: z.enum([
+      "review_price",
+      "complete_description",
+      "review_images_or_video",
+      "review_images",
+      "review_video",
+      "inspect_reviews",
+      "verify_listing_and_stock",
+      "verify_exposure",
+      "other",
+    ]),
+    title: text(255),
+    description: optionalText(),
+    original_suggestion_json: json,
+    information_needed: optionalText(),
+    assigned_to: fk,
+    due_at: timestamp,
+  })
+  .strict();
+export const actionPatchSchema = z
+  .object({
+    title: text(255).optional(),
+    description: optionalText(),
+    information_needed: optionalText(),
+    status: z.enum(actionStatuses).optional(),
+    assigned_to: fk,
+    decision_reason: optionalText(),
+    due_at: timestamp,
+    outcome_note: optionalText(),
+    expected_updated_at: z.iso.datetime({ offset: true }),
+  })
+  .strict();
 export function parse<T>(schema: z.ZodType<T>, value: unknown): T {
   const result = schema.safeParse(value);
   if (!result.success)

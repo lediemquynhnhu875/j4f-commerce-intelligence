@@ -22,7 +22,10 @@ import {
   analysisSchema,
   actionSchema,
   actionPatchSchema,
+<<<<<<< HEAD
   productFilterSchema,
+=======
+>>>>>>> bf7a88e (fix prettier)
 } from "./validation";
 import * as catalog from "./services/catalog";
 import * as analyses from "./services/analyses";
