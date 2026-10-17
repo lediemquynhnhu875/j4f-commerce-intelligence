@@ -2,15 +2,43 @@ import { z } from "zod";
 import { ApiError } from "./errors";
 import { mlStatuses } from "./ml-sample";
 
-export const id = z.string().regex(/^[1-9][0-9]{0,18}$/, "Expected a positive record ID")
-  .refine(v => /^[1-9][0-9]{0,18}$/.test(v) && BigInt(v) <= BigInt("9223372036854775807"), "Record ID exceeds bigint range");
+export const id = z
+  .string()
+  .regex(/^[1-9][0-9]{0,18}$/, "Expected a positive record ID")
+  .refine(
+    (v) =>
+      /^[1-9][0-9]{0,18}$/.test(v) &&
+      BigInt(v) <= BigInt("9223372036854775807"),
+    "Record ID exceeds bigint range",
+  );
 const fk = id.nullable().optional();
 const text = (max: number) => z.string().trim().min(1).max(max);
-const optionalText = (max = 10000) => z.string().trim().max(max).nullable().optional();
-const money = z.number().finite().min(0).max(999999999999999).multipleOf(0.01).nullable().optional();
-const count = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER).nullable().optional();
+const optionalText = (max = 10000) =>
+  z.string().trim().max(max).nullable().optional();
+const money = z
+  .number()
+  .finite()
+  .min(0)
+  .max(999999999999999)
+  .multipleOf(0.01)
+  .nullable()
+  .optional();
+const count = z
+  .number()
+  .int()
+  .min(0)
+  .max(Number.MAX_SAFE_INTEGER)
+  .nullable()
+  .optional();
 const json = z.record(z.string(), z.json());
-const url = z.url().refine(v => ["http:","https:"].includes(new URL(v).protocol), "Only HTTP(S) URLs are allowed").nullable().optional();
+const url = z
+  .url()
+  .refine(
+    (v) => ["http:", "https:"].includes(new URL(v).protocol),
+    "Only HTTP(S) URLs are allowed",
+  )
+  .nullable()
+  .optional();
 const timestamp = z.iso.datetime({ offset: true }).nullable().optional();
 export const productSchema = z.object({
   category_id: fk, name: text(500), description: optionalText(100000), brand: optionalText(255),
@@ -60,20 +88,62 @@ export const actionPatchSchema = z.object({ title: text(255).optional(), descrip
 }).strict();
 export function parse<T>(schema: z.ZodType<T>, value: unknown): T {
   const result = schema.safeParse(value);
-  if (!result.success) throw new ApiError(422, "VALIDATION_ERROR", "Invalid request input",
-    result.error.issues.map(i=>({ field: i.path.join("."), message: i.message })));
+  if (!result.success)
+    throw new ApiError(
+      422,
+      "VALIDATION_ERROR",
+      "Invalid request input",
+      result.error.issues.map((i) => ({
+        field: i.path.join("."),
+        message: i.message,
+      })),
+    );
   return result.data;
 }
 export function nonempty(data: Record<string, unknown>) {
-  if (!Object.keys(data).length) throw new ApiError(422,"VALIDATION_ERROR","Provide at least one editable field");
+  if (!Object.keys(data).length)
+    throw new ApiError(
+      422,
+      "VALIDATION_ERROR",
+      "Provide at least one editable field",
+    );
 }
 export async function body(request: Request) {
   const raw = await request.text();
-  if (Buffer.byteLength(raw)>262144) throw new ApiError(413,"PAYLOAD_TOO_LARGE","JSON body must be at most 256 KiB");
-  if (!(request.headers.get("content-type")??"").toLowerCase().includes("application/json")) throw new ApiError(415,"UNSUPPORTED_MEDIA_TYPE","Use application/json");
-  try { return JSON.parse(raw); } catch { throw new ApiError(400,"INVALID_JSON","Malformed JSON body"); }
+  if (Buffer.byteLength(raw) > 262144)
+    throw new ApiError(
+      413,
+      "PAYLOAD_TOO_LARGE",
+      "JSON body must be at most 256 KiB",
+    );
+  if (
+    !(request.headers.get("content-type") ?? "")
+      .toLowerCase()
+      .includes("application/json")
+  )
+    throw new ApiError(415, "UNSUPPORTED_MEDIA_TYPE", "Use application/json");
+  try {
+    return JSON.parse(raw);
+  } catch {
+    throw new ApiError(400, "INVALID_JSON", "Malformed JSON body");
+  }
 }
 export function pagination(url: URL) {
-  const schema = z.object({ page: z.coerce.number().int().min(1).max(1000000), limit: z.coerce.number().int().min(1).max(100) });
-  return parse(schema,{ page:url.searchParams.get("page")??1,limit:url.searchParams.get("limit")??20 });
+  const schema = z.object({
+    page: z.coerce.number().int().min(1).max(1000000),
+    limit: z.coerce.number().int().min(1).max(100),
+  });
+  return parse(schema, {
+    page: url.searchParams.get("page") ?? 1,
+    limit: url.searchParams.get("limit") ?? 20,
+  });
 }
+
+export const productFilterSchema = z.object({
+  search: z.string().max(200).optional(),
+  category_id: id.optional(),
+  min_price: z.coerce.number().min(0).optional(),
+  max_price: z.coerce.number().min(0).optional(),
+  min_sold: z.coerce.number().int().min(0).optional(),
+  min_rating: z.coerce.number().min(0).max(5).optional(),
+});
