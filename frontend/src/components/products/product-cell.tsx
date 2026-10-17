@@ -1,5 +1,5 @@
 "use client";
-import Image from "next/image";
+import { ProductIdentity } from "./product-identity";
 import {
   statusLabels,
   type Product,
@@ -9,13 +9,11 @@ import { Badge } from "../ui";
 
 export function ProductCell({ product }: { product: Product }) {
   return (
-    <div className="product-cell">
-      <Image src={product.image} alt={product.name} width={52} height={52} />
-      <div>
-        <strong>{product.name}</strong>
-        <small>{product.detail}</small>
-      </div>
-    </div>
+    <ProductIdentity
+      name={product.name}
+      image={product.image}
+      detail={product.detail}
+    />
   );
 }
 export function ProductBadge({ status }: { status: ProductStatus }) {

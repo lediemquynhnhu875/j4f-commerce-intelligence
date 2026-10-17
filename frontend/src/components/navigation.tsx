@@ -6,10 +6,16 @@ export function Navigation({
   role,
   current,
   onNavigate,
+  pages = rolePages[role],
+  basePath = "/preview",
+  suggestionCount = 4,
 }: {
   role: Role;
   current: string;
   onNavigate: () => void;
+  pages?:{slug:string;label:string;icon:string}[];
+  basePath?:string;
+  suggestionCount?:number;
 }) {
   return (
     <nav
@@ -21,10 +27,10 @@ export function Navigation({
         {role === "admin" ? "PHÂN HỆ QUẢN TRỊ" : "PHÂN HỆ CHỦ CỬA HÀNG"}
         <span className="dot" />
       </p>
-      {rolePages[role].map((page) => (
+      {pages.map((page) => (
         <Link
           key={page.slug}
-          href={`/preview/${role}/${page.slug}`}
+          href={`${basePath}/${role}/${page.slug}`}
           onClick={onNavigate}
           aria-current={current === page.slug ? "page" : undefined}
           className={`nav-link ${current === page.slug ? "active" : ""}`}
@@ -33,7 +39,7 @@ export function Navigation({
           <span>{page.label}</span>
           {page.slug === "suggestions" && (
             <span className="nav-count" aria-hidden="true">
-              4
+              {suggestionCount}
             </span>
           )}
         </Link>

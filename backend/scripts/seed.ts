@@ -8,6 +8,8 @@ const names = ["Canvas Everyday Tote","Classic Leather Handbag","Lightweight Run
   "Linen Summer Shirt","Cotton Polo Shirt","Straight Leg Denim Jeans","Pleated Midi Skirt","Minimal Leather Wallet","Comfort Strap Sandals"];
 try {
   if (process.env.APP_ENV !== "development") throw new Error("Seeding requires APP_ENV=development");
+  if ((await pool().query("SELECT 1 FROM sellens_seed_records WHERE seed_key=$1 AND entity='retired_seed_set'",["sellens-mvp-v1:catalog-retired"])).rowCount)
+    throw new Error("SAMPLE_CATALOG_RETIRED");
   const accounts=await Promise.all(["USER1","USER2","ADMIN"].map(async (label,index)=>{
     const email=z.email().max(254).parse(requiredEnv(`SEED_${label}_EMAIL`).toLowerCase());
     // User-supplied sample passwords allowed only in the development seed command.
@@ -17,6 +19,8 @@ try {
   if (new Set(accounts.map(a=>a.email)).size !== 3) throw new Error("Sample account emails must be distinct");
   const results=await transaction(async client=>{
     await client.query("SELECT pg_advisory_xact_lock(736551003)");
+    if ((await client.query("SELECT 1 FROM sellens_seed_records WHERE seed_key=$1 AND entity='retired_seed_set'",["sellens-mvp-v1:catalog-retired"])).rowCount)
+      throw new Error("SAMPLE_CATALOG_RETIRED");
     const counts:Record<string,{inserted:number;reused:number}>={};
     async function ensure(key:string,entity:string,data:Record<string,unknown>) {
       counts[entity]??={inserted:0,reused:0};
@@ -78,5 +82,5 @@ try {
     return {counts,product_ids:products.map(p=>p.id),analysis_ids:analysisIds,account_roles:["user","user","admin"]};
   });
   console.log(JSON.stringify({status:"seeded",...results},null,2));
-} catch { console.error("Seed failed; transaction rolled back. Check development environment, valid distinct emails, sample passwords and seed conflicts locally. Existing records were not overwritten.");process.exitCode=1; }
+} catch (error) { console.error(error instanceof Error && error.message === "SAMPLE_CATALOG_RETIRED" ? "Sample catalog was intentionally retired. Full development seeding is disabled to prevent restoring the test products; existing accounts are preserved." : "Seed failed; transaction rolled back. Check development environment, valid distinct emails, sample passwords and seed conflicts locally. Existing records were not overwritten.");process.exitCode=1; }
 finally { await pool().end().catch(()=>{}); }

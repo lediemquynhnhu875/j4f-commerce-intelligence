@@ -100,6 +100,55 @@ Uses local SEED_USER1 credentials and writes sanitized results to ignored
 `tmp/ml-sample-http.json`. `npm test` checks selection and source/status validation.
 The migration runner discovers ordered numbered SQL files and checks each checksum.
 
+## Remove the original API-test products
+
+The prepared CLI retires only the ten original registered synthetic products and
+their verified seed/integration-test dependents. Existing accounts, categories,
+real imported products, ML runs and unrelated history are preserved. No HTTP
+backend needs to be running. Root `.env` needs DATABASE_URL and APP_ENV=development;
+sample-account passwords are not needed for cleanup.
+
+From `backend/`, preview first:
+
+```powershell
+npm run db:cleanup-samples
+```
+
+This uses a read-only transaction. Review `targets`, `delete` and
+`products_remaining`. The preparation run found 10 products, 3 analyses, 6 test
+actions and 13 history events to remove, leaving 100 products. The command prints
+an `apply_command` with the fingerprint of the exact records reviewed. Copy and
+run that entire command to perform the deletion; its form is:
+
+```powershell
+npm run db:cleanup-samples -- --apply --confirm PLAN_HASH_FROM_PREVIEW
+```
+
+Applying first writes and syncs a backup under root `tmp/seed-cleanup/`, which Git
+ignores. It then deletes in dependency order within a locked transaction, restores
+the two named history protections and checks remaining counts before committing.
+The database role must own/manage those tables. Changed targets, unrecognized
+human work, unexpected real-source records or missing protections stop cleanup.
+If a transaction fails, PostgreSQL rolls back its data and trigger changes; a
+backup file may remain. A lost connection during commit requires inspecting the
+database before retrying, as with any database commit.
+
+Success prints `status: cleaned`, deleted/remaining counts and the backup path.
+Run the preview command again to confirm `already-cleaned`, then reload the web
+UI. The retirement marker blocks full `db:seed` from reintroducing sample products;
+it leaves existing login accounts untouched. Keep the backup private and outside
+Git. No identity sequences, tables or unrelated records are reset.
+
+Legacy HTTP/browser tests that require the ten seed products, including their
+seed-preservation assertions, need a separate seeded development database after
+retirement. They are not post-cleanup acceptance tests for a real-data-only catalog.
+Scope/exception: [ADR 0008](../docs/decisions/0008-retire-development-catalog.md).
+
+Preparation verification: 15 backend tests, production build and final typecheck
+passed. The real Neon preview passed with `changed: false`. The live apply,
+backup-write, transactional deletion and retirement paths have **not** been run
+in this instruction session; no deletion is claimed.
+
 ## Start
 
 ```sh

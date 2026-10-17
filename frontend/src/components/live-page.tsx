@@ -13,7 +13,9 @@ import type {
   Dataset,
 } from "@/types/api";
 import { LiveShell, livePages } from "./live-shell";
-import { Empty, Panel, Logo, Icon } from "./ui";
+import { Empty, Panel, Logo, Icon, Badge } from "./ui";
+import { exportSaved } from "@/lib/analysis-presentation";
+import { LiveAdminOverview,LiveStoresUnavailable } from "@/features/connected/administration";
 import {
   LiveCatalog,
   LiveOverview,
@@ -131,15 +133,18 @@ export function LivePage({
     livePages[role].find((item) => item.slug === page)?.label ??
     (page === "analysis" ? "Kết quả phân tích" : "Cửa hàng chưa khả dụng");
   return (
-    <LiveShell account={session.account} page={page}>
-      <section className="page-hero">
+    <LiveShell account={session.account} page={page} suggestionCount={data?.actions.filter(row=>row.status==="proposed").length??0}>
+      <div className="page-breadcrumb"><span>{role==="admin"?"Phân hệ quản trị":"Trang chủ"}</span><Icon name="chevron" size={13}/><span>{title}</span><Badge tone="gradient">{role.toUpperCase()}</Badge></div>
+      <section className={`page-hero ${page==="overview"?"overview-hero":""}`}>
         <div>
-          <span className="eyebrow">SELLENS · SHARED CATALOG</span>
-          <h1>{title}</h1>
+          <span className="eyebrow">{role==="admin"?"SELLENS · SYSTEM WORKSPACE":"SELLENS · WORKSPACE"}</span>
+          <h1>{role==="user"&&page==="overview"?`Xin chào ${session.account.full_name}`:title}</h1>
           <p>
-            Đọc dữ liệu và kết quả đã lưu; giá trị chưa biết được giữ nguyên.
+            {({overview:"Theo dõi sản phẩm và ưu tiên cơ hội cải thiện hiệu quả bán hàng.",products:"Quản lý danh mục và đối chiếu tín hiệu quan sát từ snapshot.",analysis:"Đọc bằng chứng, hiểu tham chiếu và giới hạn của từng kết luận.",suggestions:"Rà soát đề xuất và chủ động theo dõi tiến độ thực hiện.",monitor:"Xem kết quả phân tích và kiểm tra dữ liệu đã lưu.",configuration:"Đối chiếu phiên bản mô hình và cấu hình của từng kết quả.",stores:"Quản trị hồ sơ cửa hàng và quyền sở hữu sản phẩm."} as Record<string,string>)[page]??"Quản lý dữ liệu đã lưu trong hệ thống."}
           </p>
         </div>
+        <div className="hero-actions"><div className="snapshot-chip"><Icon name="calendar" size={17}/><div><small>Kết quả gần nhất</small><strong>{data?.analyses.length?new Date([...data.analyses].sort((a,b)=>b.analyzed_at.localeCompare(a.analyzed_at))[0].analyzed_at).toLocaleDateString("vi-VN"):"Chưa có kết quả"}</strong></div></div>
+        <button className="button primary" disabled={!data} onClick={()=>exportSaved(`sellens-${page}`,page==="products"?data?.products:page==="suggestions"?data?.actions:data)}><Icon name="download" size={16}/>Xuất dữ liệu</button>
         <button
           className="button subtle"
           onClick={refreshData}
@@ -147,7 +152,7 @@ export function LivePage({
         >
           <Icon name="refresh" />
           Tải lại
-        </button>
+        </button></div>
       </section>
       {loading && (
         <Panel>
@@ -167,7 +172,7 @@ export function LivePage({
       {!error &&
         data &&
         (page === "overview" ? (
-          <LiveOverview data={data} role={role} />
+          role==="admin"?<LiveAdminOverview data={data}/>:<LiveOverview data={data} role={role} />
         ) : page === "products" ? (
           <LiveCatalog data={data} role={role} refresh={refreshData} />
         ) : page === "analysis" ? (
@@ -195,6 +200,8 @@ export function LivePage({
           <LiveMonitor data={data} role={role} />
         ) : page === "configuration" ? (
           <LiveConfiguration data={data} />
+        ) : page === "stores" ? (
+          <LiveStoresUnavailable data={data}/>
         ) : (
           <Empty
             title="Chưa có API cửa hàng"

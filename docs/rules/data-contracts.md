@@ -33,6 +33,15 @@ Preview fixtures stay under `/preview/*` and cannot grant real permissions. Work
 updates use `expected_updated_at` and immutable originals/history. Original
 store/model/human-review acceptance remains pending despite this direct authorization.
 
+## Retiring development data (prepared, not executed)
+
+Development maintenance exception: [ADR 0008](../decisions/0008-retire-development-catalog.md)
+defines an explicit preview/fingerprint/backup CLI for retiring the ten original
+registered synthetic products and their verified test-only dependents. It does
+not change API history immutability or ML data. No deletion was executed during
+the instruction session. A committed cleanup adds the seed-retirement marker,
+which prevents full development seed from recreating the sample catalog.
+
 ## Multi-store ownership proposal (not applied)
 
 Latest user-confirmed ownership proposal: one User owns multiple stores and each
@@ -45,6 +54,45 @@ No SQL has been applied and current APIs still use shared-catalog scope; tenant
 enforcement is pending, not implied by foreign keys. ML imports remain deferred.
 
 ## Bounded imported ML sample (2026-10-16)
+
+Presentation amendment (2026-10-17, updated by the later UI request): live overview
+always includes all API products; the ML/all source-switch controls are removed.
+Charts use the catalog product count as denominator, including a no-analysis segment.
+Only each product's latest saved analysis contributes to status/reference/work
+metrics. "Cần rà soát" counts distinct analyses with proposed/accepted/in_progress
+actions; it is not the importer's needs_review flag and is not a new ML status.
+No API field, database record or rule output is changed by this presentation.
+
+Full UI presentation amendment (2026-10-17): live User/Admin pages reuse preview
+layout primitives with explicit authenticated data. Preview fixture accounts,
+products, stores, thresholds and job metrics are never live fallback values.
+User evidence uses frozen input values and original evidence; Admin monitoring
+counts saved analysis history, not live jobs. Configuration displays saved model,
+rule and taxonomy versions read-only. Missing store APIs show an unavailable
+layout; missing image URLs show a placeholder. Suggestion list/Kanban uses actual
+action states, preserving expected_updated_at and immutable originals/history.
+Mai/Huy/Nhung should review these presentation meanings; no DTO/schema/status
+identifier or ML rule changes accompany this UI amendment.
+
+Status-color presentation: `frontend/src/lib/status-colors.ts` assigns stable,
+distinct colors to all 15 analysis identifiers, the UI-only no-analysis state and
+six work states. Live badges, status chart segments/legends, filters and Kanban
+reuse these colors. Colors do not change labels, ML decisions or API identifiers.
+
+Product display codes: live identity blocks render `SP-<source_product_id>` below
+the product information, falling back to `SP-<id>` when the source ID is absent.
+An existing SP prefix is not duplicated. This is a display convention, not a new
+SKU/database column; API paths and mutations continue to use the application ID.
+
+Evidence review-action presentation: the live evidence table retains numeric
+differences and adds links to existing actions from the selected analysis only.
+Associations use canonical action types: price -> review_price; images/video ->
+their respective review types; description length -> complete_description;
+rating/review count -> inspect_reviews; observed sales/probability -> visibility
+or stock review. Legacy combined media actions can appear on both media rows.
+No matching action displays "Chưa có đề xuất". Unknown metrics do not receive
+automatic actions; numeric differences never generate recommendations in the UI.
+These links target saved suggestion details; they do not accept or create work.
 
 [ADR 0007](../decisions/0007-bounded-ml-sample-import.md) authorizes 100 products
 in five groups of 20 in the shared catalog. Local input: `data/processed/products_full.json`
