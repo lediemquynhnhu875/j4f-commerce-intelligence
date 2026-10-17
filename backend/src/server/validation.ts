@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ApiError } from "./errors";
+import { mlStatuses } from "./ml-sample";
 
 export const id = z.string().regex(/^[1-9][0-9]{0,18}$/, "Expected a positive record ID")
   .refine(v => /^[1-9][0-9]{0,18}$/.test(v) && BigInt(v) <= BigInt("9223372036854775807"), "Record ID exceeds bigint range");
@@ -30,14 +31,26 @@ export const analysisStatuses = ["positive_feedback_below_reference","low_rating
 export const analysisSchema = z.object({
   product_id: id, reference_sold: z.number().finite().min(0).max(999999999999999).nullable().optional(),
   probability_positive_sales: z.number().finite().min(0).max(1).nullable().optional(),
-  status: z.enum(analysisStatuses).optional(), is_eligible: z.boolean().optional(), needs_review: z.boolean().optional(),
+  status: z.enum([...analysisStatuses,...mlStatuses]).optional(),
+  status_schema_version:z.enum(["legacy_v1","ml_v2"]).optional(),
+  status_reason:optionalText(),product_type:optionalText(150),taxonomy_version:optionalText(100),
+  prediction_lower:z.number().finite().min(0).max(999999999999999).nullable().optional(),
+  prediction_upper:z.number().finite().min(0).max(999999999999999).nullable().optional(),
+  is_eligible: z.boolean().optional(), needs_review: z.boolean().optional(),
   priority_score: z.number().finite().min(-999999).max(999999).nullable().optional(), model_version: optionalText(100),
   pipeline_version: text(100), comparison_json: json.nullable().optional(), evidence_json: json.nullable().optional(),
   config_json: json, limitation_note: optionalText(),
-}).strict();
+}).strict().superRefine((value,ctx)=>{
+  const version=value.status_schema_version??"legacy_v1";
+  const status=value.status??"insufficient_basis";
+  const allowed:readonly string[]=version==="ml_v2"?mlStatuses:analysisStatuses;
+  if(!allowed.includes(status)) ctx.addIssue({code:"custom",path:["status"],message:"Status does not match status_schema_version"});
+  if(value.prediction_lower!=null && value.prediction_upper!=null && value.prediction_lower>value.prediction_upper)
+    ctx.addIssue({code:"custom",path:["prediction_upper"],message:"Upper reference must not be below lower reference"});
+});
 export const actionStatuses = ["proposed","accepted","in_progress","completed","rejected","cancelled"] as const;
 export const actionSchema = z.object({ analysis_id: id,
-  type: z.enum(["review_price","complete_description","review_images_or_video","inspect_reviews","verify_listing_and_stock","verify_exposure","other"]),
+  type: z.enum(["review_price","complete_description","review_images_or_video","review_images","review_video","inspect_reviews","verify_listing_and_stock","verify_exposure","other"]),
   title: text(255), description: optionalText(), original_suggestion_json: json,
   information_needed: optionalText(), assigned_to: fk, due_at: timestamp,
 }).strict();

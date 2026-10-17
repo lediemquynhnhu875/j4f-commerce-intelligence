@@ -10,8 +10,10 @@
     "db:inspect": "tsx scripts/inspect-db.ts",
     "db:migrate": "tsx scripts/migrate.ts",
     "db:seed": "tsx scripts/seed.ts",
-    "test": "tsx --test tests/unit.test.ts",
-    "test:http": "tsx scripts/test-http.ts"
+    "import:ml-sample": "tsx scripts/import-ml-sample.ts",
+    "test": "tsx --test tests/unit.test.ts tests/ml-sample.test.ts",
+    "test:http": "tsx scripts/test-http.ts",
+    "test:ml-sample": "tsx scripts/test-ml-sample-http.ts"
   },
   "dependencies": {
     "dotenv": "^18.0.7",

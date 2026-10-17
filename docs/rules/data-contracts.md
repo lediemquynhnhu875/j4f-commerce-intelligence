@@ -44,6 +44,27 @@ required. Store-owner/product-store reassignment is guarded to preserve history.
 No SQL has been applied and current APIs still use shared-catalog scope; tenant
 enforcement is pending, not implied by foreign keys. ML imports remain deferred.
 
+## Bounded imported ML sample (2026-10-16)
+
+[ADR 0007](../decisions/0007-bounded-ml-sample-import.md) authorizes 100 products
+in five groups of 20 in the shared catalog. Local input: `data/processed/products_full.json`
+(`j4f-web-snapshot-v1`). No ownership is inferred. Product DTOs add nullable
+source_system/source_product_id. Analysis DTOs add run_id, status_schema_version
+(legacy_v1/ml_v2), status_reason, product_type, taxonomy_version, scored_at and
+nullable prediction_lower/prediction_upper. Legacy statuses remain readable;
+new imported analyses use the six ML codes. Action DTOs add origin and rule_id;
+review_images/review_video are distinct; legacy review_images_or_video stays valid.
+Original ML fields cannot be edited.
+
+Map reference_sales to reference_sold, sale_probability to probability_positive_sales,
+opportunity_score to priority_score and image_count to number_of_images. Freeze
+observed sales in input_snapshot_json; derive sales_gap from this observation.
+Imported analyzed_at/scored_at use source scoring time; analysis_runs.imported_at
+records import time. evidence_json.items holds metric evidence; each original
+suggestion's evidence/hypothesis/action/validation_needed is a string. Missing
+references remain null; feedback-only insufficient_data may retain a reference.
+No synthetic image, capture time, sales scope or quality acceptance is inferred.
+
 ## Clean products
 
 Path: `data/processed/clean_products.csv`

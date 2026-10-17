@@ -6,6 +6,18 @@ The original isolated mock interface remains under `/preview/*`.
 
 ## Install and run
 
+The 2026-10-16 bounded import adds 100 real ML products in five groups of 20.
+Use the category filter on `/user/products` or `/admin/products`, then open a
+product to inspect its frozen analysis and original suggestions. Existing seed
+records remain. Imported results show the six ML status labels and an experimental
+notice; image URLs are unavailable, so the existing icon placeholder is used.
+See [verification](../docs/verification/ml-sample-import.md).
+
+Run the sample browser check after building the frontend and starting backend:
+set `CONNECTED_BACKEND_API_URL=http://127.0.0.1:3001/api/v1` and supply
+`SEED_USER1_EMAIL`/`SEED_USER1_PASSWORD` through the local process environment,
+then run `npm run test:connected -- ml-sample.spec.ts` from `frontend/`.
+
 From the repository root:
 
 ```powershell

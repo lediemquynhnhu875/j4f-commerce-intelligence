@@ -1,6 +1,6 @@
 # Project State and Handoff
 
-Updated: 2026-10-14 (Asia/Saigon).
+Updated: 2026-10-16 (Asia/Saigon).
 
 ## Agreed Stack and MVP
 
@@ -74,6 +74,36 @@ session started clean, fetched remote refs and branched from `origin/main`.
 | F002/T002; F005/T001–T002; F007/T001 | Requesting contributor, Codex-assisted | set_up | Partial, unchecked | Visual implementation exists; loading/error states, wireframe artifacts and contract reviews remain |
 
 ## Latest Handoff
+
+### Bounded ML Sample Import - 2026-10-16
+
+- Direct user request: import 100 real source products in five product-type groups
+  of 20, including their saved ML analyses and recommendations. Same contributor,
+  Codex-assisted, dirty `feature/backend-neon-mvp`; existing frontend edits preserved.
+- Continuing F002 import/catalog and F004/F005 saved-result integration amendments;
+  no original store/human/model acceptance tasks are marked complete. Scope uses
+  the existing shared catalog; multi-store proposals remain unapplied.
+- Source `data/processed/products_full.json` validated against both result CSVs.
+  Neon read-only inspection confirms migration 001/shared catalog, no stores/runs.
+- Applied additive migration 002_ml_sample and imported 100 products/100 analyses/
+  104 suggestions/104 initial history events. Five groups of 20: men's loafers,
+  crossbody bags, backpacks, men's wallets and hats. Source IDs ordered within
+  five-per-status strata; sample is not representative of corpus proportions.
+- Repeat import returned zero inserted products. Database now has 110 products,
+  103 analyses and one import run; old seed rows remain. Legacy statuses coexist
+  with six versioned ML statuses; original suggestions and source inputs are frozen.
+- Added sample importer, run provenance, status validation and visible experimental
+  results/intervals/evidence in live pages. No brand/product URL imported; image URLs
+  remain null. No Python code, trained artifacts or store assignment changed.
+- Checks: backend typecheck/eight unit tests, backend/frontend production builds,
+  frontend lint, 32 real HTTP checks including source-to-DB/API comparisons, one
+  Chromium journey testing all five category filters and saved ML display passed.
+  Sandbox junction/font and generated frontend cache build failures were resolved;
+  successful final builds used the same project configuration.
+- See [verification](verification/ml-sample-import.md) and [ADR 0007](decisions/0007-bounded-ml-sample-import.md).
+  Detailed HTTP results are in ignored tmp/ml-sample-http.json. No commit/push.
+  Multi-store isolation, full-corpus import/performance, live inference and human
+  quality acceptance remain pending. Full legacy integration suites were not rerun.
 
 ### Legacy Login Path Correction - 2026-10-14
 

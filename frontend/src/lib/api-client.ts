@@ -32,7 +32,12 @@ export async function allPages<T>(path: string, signal?: AbortSignal): Promise<T
   }
   throw new ApiError(422, "LIST_TOO_LARGE", "Danh sách vượt giới hạn tải. Vui lòng thu hẹp bộ lọc.");
 }
+export const mlAnalysisLabels: Record<string,string> = {
+  positive_feedback_low_sales:"Phản hồi tốt nhưng bán thấp",low_rating_low_sales:"Đánh giá thấp và bán thấp",
+  performing_well:"Đang tốt",untapped_potential:"Tiềm năng chưa khai thác",difficult_to_sell:"Khó bán theo dữ liệu",insufficient_data:"Chưa đủ dữ liệu",
+};
 export const analysisLabels: Record<string, string> = {
+  ...mlAnalysisLabels,
   positive_feedback_below_reference: "Phản hồi tích cực, số bán dưới tham chiếu",
   low_rating_below_reference: "Đánh giá thấp, số bán dưới tham chiếu",
   at_or_above_reference: "Đạt hoặc vượt tham chiếu", zero_sales_needs_investigation: "Chưa có số bán, cần kiểm tra",
