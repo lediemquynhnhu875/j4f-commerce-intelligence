@@ -1,17 +1,20 @@
 "use client";
-import { useEffect, useState, type FormEvent } from "react";
+import { Fragment, useState, type FormEvent } from "react";
 import Link from "next/link";
+import { StatusBadge } from "@/components/status-badge";
+import { analysisColor } from "@/lib/status-colors";
 import { useRouter } from "next/navigation";
 import {
   api,
-  allPages,
   analysisLabels,
-  mlAnalysisLabels,
   display,
   price,
 } from "@/lib/api-client";
-import type { Dataset, Product, Analysis } from "@/types/api";
-import { Badge, Empty, Icon, Modal, Panel, Stat } from "@/components/ui";
+import type { Dataset, Product } from "@/types/api";
+import { Empty, Icon, Modal, Panel } from "@/components/ui";
+import { ProductIdentity } from "@/components/products/product-identity";
+import { productCode } from "@/lib/analysis-presentation";
+
 
 function latest(data: Dataset, productId: string) {
   return data.analyses
@@ -22,104 +25,7 @@ function latest(data: Dataset, productId: string) {
         (BigInt(a.id) > BigInt(b.id) ? -1 : 1),
     )[0];
 }
-export function LiveOverview({
-  data,
-  role,
-}: {
-  data: Dataset;
-  role: "user" | "admin";
-}) {
-  const current = data.products
-    .map((product) => latest(data, product.id))
-    .filter(Boolean);
-  const groups = Object.entries(analysisLabels)
-    .map(([status, label]) => ({
-      status,
-      label,
-      count: current.filter((row) => row.status === status).length,
-    }))
-    .filter((row) => row.count || (current.some(item=>item.status_schema_version==="ml_v2") && row.status in mlAnalysisLabels));
-  const stats = [
-    ["Tổng số sản phẩm", data.products.length],
-    ["Có kết quả đã lưu", current.length],
-    ["Cần rà soát", current.filter((row) => row.needs_review).length],
-    [
-      "Chưa đủ cơ sở",
-      current.filter((row) => ["insufficient_basis","insufficient_data"].includes(row.status)).length,
-    ],
-    [
-      "Đang thực hiện",
-      data.actions.filter((row) => row.status === "in_progress").length,
-    ],
-    [
-      role === "admin" ? "Tài khoản hoạt động" : "Đề xuất cần duyệt",
-      role === "admin"
-        ? data.accounts.filter((row) => row.is_active).length
-        : data.actions.filter((row) => row.status === "proposed").length,
-    ],
-  ] as const;
-  return (
-    <>
-      <div className="stats-grid six">
-        {stats.map(([label, value]) => (
-          <Stat
-            key={label}
-            label={label}
-            value={value}
-            note="Theo dữ liệu hiện có"
-          />
-        ))}
-      </div>
-      <div className="grid-two">
-        <Panel
-          title="Phân bố trạng thái đã lưu"
-          subtitle={`${current.length}/${data.products.length} sản phẩm có kết quả`}
-        >
-          {!groups.length && <Empty title="Chưa có kết quả phân tích" />}
-          {groups.map((row) => (
-            <div className="distribution-label" key={row.status}>
-              <span>{row.label}</span>
-              <strong>
-                {row.count} SKU (
-                {(current.length ? (row.count / current.length) * 100 : 0).toFixed(1)}%)
-              </strong>
-            </div>
-          ))}
-          <p className="muted">
-            {data.products.length - current.length} sản phẩm chưa có phân tích;
-            không tự gán trạng thái.
-          </p>
-        </Panel>
-        <Panel title="Cơ cấu danh mục" subtitle="Catalog dùng chung">
-          {data.categories.map((category) => (
-            <div className="distribution-label" key={category.id}>
-              <span>{category.name}</span>
-              <strong>
-                {
-                  data.products.filter((row) => row.category_id === category.id)
-                    .length
-                }{" "}
-                SKU
-              </strong>
-            </div>
-          ))}
-        </Panel>
-      </div>
-      <Panel
-        title="Kết quả cần rà soát"
-        subtitle="Giả thuyết từ snapshot; không đảm bảo tăng số bán"
-      >
-        <LiveMonitor
-          data={{
-            ...data,
-            analyses: current.filter((row) => row.needs_review),
-          }}
-          role={role}
-        />
-      </Panel>
-    </>
-  );
-}
+export { LiveOverview } from "./overview";
 
 export function LiveCatalog({
   data,
@@ -133,18 +39,22 @@ export function LiveCatalog({
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
   const [status, setStatus] = useState("");
+  const [sort, setSort] = useState("");
+  const [selected, setSelected] = useState<string[]>([]);
+  const router = useRouter();
   const [page, setPage] = useState(1);
   const [editor, setEditor] = useState<Product | "new" | null>(null);
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
   const rows = data.products.filter(
     (row) =>
-      `${row.name} ${row.id}`.toLowerCase().includes(search.toLowerCase()) &&
+      `${row.name} ${row.id} ${productCode(row)}`.toLowerCase().includes(search.toLowerCase()) &&
       (!category || row.category_id === category) &&
       (!status || (latest(data, row.id)?.status ?? "no_analysis") === status),
-  );
+  ).sort((a,b)=>sort==="price"?Number(a.price??Infinity)-Number(b.price??Infinity):sort==="sales"?Number(b.quantity_sold??-1)-Number(a.quantity_sold??-1):0);
   const pages = Math.max(1, Math.ceil(rows.length / 4));
   const activePage = Math.min(page, pages);
+  const pageNumbers=[...new Set([1,activePage-1,activePage,activePage+1,pages])].filter(number=>number>=1&&number<=pages).sort((a,b)=>a-b);
   const visible = rows.slice((activePage - 1) * 4, activePage * 4);
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -212,6 +122,7 @@ export function LiveCatalog({
               }}
             />
           </div>
+          <button className="button primary" disabled={!selected.length} onClick={()=>router.push(`/${role}/analysis?product=${selected[0]}`)}><Icon name="sparkles" size={17}/>Xem phân tích đã chọn {selected.length>0&&`(${selected.length})`}</button>
           {role === "admin" && (
             <button
               className="button primary"
@@ -242,6 +153,7 @@ export function LiveCatalog({
           </select>
           <select
             aria-label="Trạng thái phân tích"
+            style={status?{color:analysisColor(status)}:undefined}
             value={status}
             onChange={(event) => {
               setStatus(event.target.value);
@@ -251,7 +163,7 @@ export function LiveCatalog({
             <option value="">Trạng thái: Tất cả</option>
             <option value="no_analysis">Chưa có phân tích</option>
             {Object.entries(analysisLabels).map(([key, label]) => (
-              <option key={key} value={key}>
+              <option key={key} value={key} style={{color:analysisColor(key)}}>
                 {label}
               </option>
             ))}
@@ -262,11 +174,15 @@ export function LiveCatalog({
               setSearch("");
               setCategory("");
               setStatus("");
+              setSort("");setSelected([]);
               setPage(1);
             }}
           >
             Đặt lại
           </button>
+          <select aria-label="Sắp xếp sản phẩm" value={sort} onChange={event=>{setSort(event.target.value);setPage(1);}}>
+            <option value="">Sắp xếp: Mặc định</option><option value="price">Giá: Thấp đến cao</option><option value="sales">Số bán: Cao đến thấp</option>
+          </select>
         </div>
       </Panel>
       <div className="table-card">
@@ -274,6 +190,7 @@ export function LiveCatalog({
           <table>
             <thead>
               <tr>
+                <th><input type="checkbox" aria-label="Chọn trang sản phẩm" checked={visible.length>0&&visible.every(row=>selected.includes(row.id))} onChange={event=>setSelected(event.target.checked?[...new Set([...selected,...visible.map(row=>row.id)])]:selected.filter(id=>!visible.some(row=>row.id===id)))}/></th>
                 <th>SẢN PHẨM</th>
                 <th>DANH MỤC</th>
                 <th>GIÁ</th>
@@ -286,16 +203,9 @@ export function LiveCatalog({
             <tbody>
               {visible.map((product) => (
                 <tr key={product.id}>
+                  <td><input type="checkbox" aria-label={`Chọn ${product.id}`} checked={selected.includes(product.id)} onChange={()=>setSelected(selected.includes(product.id)?selected.filter(id=>id!==product.id):[...selected,product.id])}/></td>
                   <td>
-                    <div className="product-cell">
-                      <span className="tile-icon">
-                        <Icon name="box" />
-                      </span>
-                      <div>
-                        <strong>{product.name}</strong>
-                      </div>
-                    </div>
-                    <code className="sku-code">{product.id}</code>
+                    <ProductIdentity name={product.name} image={product.thumbnail_url} detail={latest(data,product.id)?.product_type??data.categories.find(row=>row.id===product.category_id)?.name} code={productCode(product)}/>
                   </td>
                   <td>
                     {data.categories.find(
@@ -304,15 +214,15 @@ export function LiveCatalog({
                   </td>
                   <td>{price(product.price, product.currency)}</td>
                   <td>{display(product.quantity_sold)}</td>
-                  <td>
-                    {display(product.rating_average)} (
+                  <td><span className="rating">
+                    <Icon name="star" size={14}/>{display(product.rating_average)} (
                     {display(product.review_count)})
-                  </td>
+                  </span></td>
                   <td>
-                    <Badge tone="gray">
+                    <StatusBadge status={latest(data,product.id)?.status}>
                       {analysisLabels[latest(data, product.id)?.status] ??
                         "Chưa có phân tích"}
-                    </Badge>
+                    </StatusBadge>
                   </td>
                   <td>
                     <Link
@@ -364,15 +274,16 @@ export function LiveCatalog({
             >
               ‹
             </button>
-            {Array.from({ length: pages }, (_, index) => (
-              <button
-                key={index}
-                aria-label={`Trang ${index + 1}`}
-                aria-current={activePage === index + 1 ? "page" : undefined}
-                onClick={() => setPage(index + 1)}
-              >
-                {index + 1}
-              </button>
+            {pageNumbers.map((number,index) => (
+              <Fragment key={number}>
+                {index>0&&number-pageNumbers[index-1]>1&&<span aria-hidden="true">…</span>}
+                <button
+                  aria-label={`Trang ${number}`}
+                  aria-current={activePage === number ? "page" : undefined}
+                  className={activePage===number?"active":undefined}
+                  onClick={() => setPage(number)}
+                >{number}</button>
+              </Fragment>
             ))}
             <button
               aria-label="Trang sau"
@@ -449,295 +360,6 @@ export function LiveCatalog({
   );
 }
 
-export function LiveAnalysis({
-  data,
-  role,
-  productId,
-  analysisId,
-}: {
-  data: Dataset;
-  role: "user" | "admin";
-  productId: string | null;
-  analysisId: string | null;
-}) {
-  const router = useRouter();
-  const selectedId =
-    productId ??
-    data.analyses.find((row) => row.id === analysisId)?.product_id ??
-    data.products[0]?.id;
-  const [product, setProduct] = useState<Product | null>(null);
-  const [rows, setRows] = useState<Analysis[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  useEffect(() => {
-    let active = true;
-    const controller = new AbortController();
-    async function load() {
-      setLoading(true);
-      setError("");
-      setProduct(null);
-      setRows([]);
-      try {
-        if (!selectedId) return;
-        const [detail, analyses] = await Promise.all([
-          api<{ data: Product }>(`products/${encodeURIComponent(selectedId)}`, {
-            signal: controller.signal,
-          }),
-          allPages<Analysis>(
-            `products/${encodeURIComponent(selectedId)}/analyses`,
-            controller.signal,
-          ),
-        ]);
-        if (active) {
-          setProduct(detail.data);
-          setRows(analyses);
-        }
-      } catch (err) {
-        if (active && (err as Error).name !== "AbortError")
-          setError((err as Error).message);
-      } finally {
-        if (active) setLoading(false);
-      }
-    }
-    void load();
-    return () => {
-      active = false;
-      controller.abort();
-    };
-  }, [selectedId]);
-  const analysis = analysisId
-    ? rows.find((row) => row.id === analysisId)
-    : [...rows].sort(
-        (a, b) =>
-          b.analyzed_at.localeCompare(a.analyzed_at) ||
-          (BigInt(a.id) > BigInt(b.id) ? -1 : 1),
-      )[0];
-  return (
-    <>
-      <Panel>
-        <label>
-          Sản phẩm phân tích{" "}
-          <select
-            aria-label="Sản phẩm phân tích"
-            value={selectedId ?? ""}
-            onChange={(event) =>
-              router.push(`/${role}/analysis?product=${event.target.value}`)
-            }
-          >
-            {data.products.map((row) => (
-              <option key={row.id} value={row.id}>
-                {row.name}
-              </option>
-            ))}
-          </select>
-        </label>
-      </Panel>
-      {loading ? (
-        <p role="status">Đang tải phân tích…</p>
-      ) : error ? (
-        <p className="form-error" role="alert">
-          {error}
-        </p>
-      ) : !product ? (
-        <Empty title="Catalog chưa có sản phẩm" />
-      ) : (
-        <>
-          <Panel title={product.name} subtitle={`Mã sản phẩm ${product.id}`}>
-            <p>{product.description}</p>
-            <p>
-              Giá hiện tại: {price(product.price, product.currency)} · Số bán
-              hiện tại: {display(product.quantity_sold)}
-            </p>
-            <p>
-              Phạm vi số bán: {product.sales_scope} ·{" "}
-              {product.sales_label_verified ? "Đã xác minh" : "Chưa xác minh"}
-            </p>
-          </Panel>
-          {!analysis ? (
-            <Empty
-              title={
-                analysisId
-                  ? "Không tìm thấy kết quả cho sản phẩm này"
-                  : "Chưa có phân tích"
-              }
-              description="Chưa có kết quả đã lưu. Chạy mô hình chưa được hỗ trợ; không dùng mock thay thế."
-            />
-          ) : (
-            <>
-              <Panel
-                title="Kết quả từ đầu vào đã đóng băng"
-                subtitle={`Phân tích #${analysis.id} · ${new Date(analysis.analyzed_at).toLocaleString("vi-VN")}`}
-              >
-                {analysis.status_schema_version === "ml_v2" && <p className="notice">Phân tích thử nghiệm, cần rà soát. Mức bán tham chiếu không phải dự báo doanh số tương lai.</p>}
-                <Badge tone="gray">
-                  {analysisLabels[analysis.status] ?? analysis.status}
-                </Badge>
-                {typeof analysis.evidence_json?.explanation === "string" && <p>{analysis.evidence_json.explanation}</p>}
-                <div className="stats-grid">
-                  <Stat
-                    label="Số bán khi phân tích"
-                    value={display(analysis.input_snapshot_json.quantity_sold)}
-                    note="Từ snapshot đã lưu"
-                  />
-                  <Stat
-                    label="Tham chiếu"
-                    value={display(analysis.reference_sold)}
-                    note="Null nghĩa là chưa có cơ sở"
-                  />
-                  <Stat
-                    label="Chênh lệch"
-                    value={display(analysis.sales_gap)}
-                    note="Quan sát trừ tham chiếu"
-                  />
-                  {analysis.status_schema_version === "ml_v2" && <Stat label="Khoảng tham chiếu" value={`${display(analysis.prediction_lower)} – ${display(analysis.prediction_upper)}`} note="Khoảng tham chiếu từ mô hình" />}
-                </div>
-                <div className="notice">
-                  <Icon name="info" />
-                  <span>
-                    {analysis.limitation_note ?? "Không có ghi chú giới hạn."}
-                  </span>
-                </div>
-                <p>
-                  Người phân tích: {analysis.analyst?.full_name ?? "Hệ thống"} ·
-                  Mô hình: {analysis.model_version ?? "Chưa có"} · Pipeline:{" "}
-                  {analysis.pipeline_version}
-                </p>
-              </Panel>
-              <div className="grid-two">
-                <Panel title="Bằng chứng đã lưu">
-                  <pre className="connected-json">
-                    {JSON.stringify(analysis.evidence_json, null, 2)}
-                  </pre>
-                </Panel>
-                <Panel title="So sánh / nguồn tham chiếu">
-                  <pre className="connected-json">
-                    {JSON.stringify(analysis.comparison_json, null, 2)}
-                  </pre>
-                </Panel>
-              </div>
-              <Panel title="Đề xuất liên quan">
-                {data.actions
-                  .filter((row) => row.analysis_id === analysis.id)
-                  .map((row) => (
-                    <div key={row.id}>
-                      <strong>{row.title}</strong>
-                      {row.origin === "ml_rule" && <>
-                        <p>Bằng chứng: {String(row.original_suggestion_json.evidence ?? "—")}</p>
-                        <p>Giả thuyết: {String(row.original_suggestion_json.hypothesis ?? "—")}</p>
-                        <p>Cần xác minh: {String(row.original_suggestion_json.validation_needed ?? "—")}</p>
-                      </>}
-                    </div>
-                  ))}
-                <Link
-                  className="text-link"
-                  href={
-                    role === "user" ? "/user/suggestions" : "/admin/monitor"
-                  }
-                >
-                  Theo dõi công việc
-                </Link>
-              </Panel>
-            </>
-          )}
-          <Panel title="Lịch sử kết quả">
-            {rows.map((row) => (
-              <p key={row.id}>
-                <Link
-                  className="text-link"
-                  href={`/${role}/analysis?product=${product.id}&analysis=${row.id}`}
-                >
-                  #{row.id} ·{" "}
-                  {new Date(row.analyzed_at).toLocaleString("vi-VN")} ·{" "}
-                  {analysisLabels[row.status] ?? row.status}
-                </Link>
-              </p>
-            ))}
-          </Panel>
-        </>
-      )}
-    </>
-  );
-}
-export function LiveMonitor({
-  data,
-  role,
-}: {
-  data: Dataset;
-  role: "user" | "admin";
-}) {
-  return (
-    <div className="table-card">
-      <div className="table-scroll">
-        <table>
-          <thead>
-            <tr>
-              <th>PHÂN TÍCH</th>
-              <th>SẢN PHẨM</th>
-              <th>TRẠNG THÁI</th>
-              <th>THỜI ĐIỂM</th>
-              <th>THAO TÁC</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.analyses.map((row) => (
-              <tr key={row.id}>
-                <td>#{row.id}</td>
-                <td>{row.product.name}</td>
-                <td>
-                  <Badge tone="gray">
-                    {analysisLabels[row.status] ?? row.status}
-                  </Badge>
-                </td>
-                <td>{new Date(row.analyzed_at).toLocaleString("vi-VN")}</td>
-                <td>
-                  <Link
-                    className="button subtle small"
-                    href={`/${role}/analysis?product=${row.product_id}&analysis=${row.id}`}
-                  >
-                    Xem bằng chứng
-                  </Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      {!data.analyses.length && <Empty title="Chưa có kết quả đã lưu" />}
-      <p className="muted">
-        Chỉ hiển thị kết quả đã lưu; chưa có API theo dõi job hoặc chạy ML.
-      </p>
-    </div>
-  );
-}
-export function LiveConfiguration({ data }: { data: Dataset }) {
-  return (
-    <>
-      <Panel
-        title="Cấu hình của kết quả đã lưu"
-        subtitle="Chỉ đọc; chưa có API triển khai mô hình hoặc lưu cấu hình mới"
-      >
-        <div className="notice">
-          <Icon name="info" />
-          <span>
-            Các giá trị sau thuộc từng phân tích đã lưu. Chúng không phải cấu
-            hình đang triển khai.
-          </span>
-        </div>
-        <button className="button primary" disabled>
-          Lưu cấu hình (chưa hỗ trợ)
-        </button>
-      </Panel>
-      {data.analyses.map((row) => (
-        <Panel
-          key={row.id}
-          title={`Phân tích #${row.id} · ${row.pipeline_version}`}
-        >
-          <pre className="connected-json">
-            {JSON.stringify(row.config_json, null, 2)}
-          </pre>
-        </Panel>
-      ))}
-      {!data.analyses.length && <Empty title="Chưa có cấu hình đã lưu" />}
-    </>
-  );
-}
+export { LiveAnalysis } from "./evidence";
+
+export { LiveSavedMonitor as LiveMonitor, LiveSavedConfiguration as LiveConfiguration } from "./administration";

@@ -1,8 +1,13 @@
 "use client";
 import { useState, type FormEvent } from "react";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { StatusBadge } from "@/components/status-badge";
+import { actionColor } from "@/lib/status-colors";
+import { actionTypeLabels } from "@/lib/analysis-presentation";
 import { api, allPages, actionLabels } from "@/lib/api-client";
 import type { Dataset, Action, History, Account } from "@/types/api";
-import { Badge, Empty, Modal, Panel, Stat } from "@/components/ui";
+import { Badge, Empty, Icon, Modal, Panel, Stat } from "@/components/ui";
 
 const nextStates: Record<string, string[]> = {
   proposed: ["accepted", "rejected", "cancelled"],
@@ -21,6 +26,10 @@ export function LiveActions({
   actor: Account;
   refresh: () => Promise<void>;
 }) {
+  const params=useSearchParams();
+  const [page,setPage]=useState(1);
+  const [kanban,setKanban]=useState(false);
+  const [category,setCategory]=useState("");
   const [filter, setFilter] = useState("");
   const [search, setSearch] = useState("");
   const [pending, setPending] = useState(false);
@@ -113,7 +122,7 @@ export function LiveActions({
           },
         }),
       });
-      setAdding(false);
+      setAdding(false);setPage(1);
       await refresh();
     } catch (err) {
       setError((err as Error).message);
@@ -123,138 +132,50 @@ export function LiveActions({
   }
   const rows = data.actions.filter(
     (row) =>
+      (!params.get("analysis") || row.analysis_id===params.get("analysis")) &&
+      (!category || row.type===category) &&
       (!filter || row.status === filter) &&
       `${row.title} ${row.id}`.toLowerCase().includes(search.toLowerCase()),
   );
-  return (
-    <>
-      <div className="stats-grid">
-        {["proposed", "accepted", "in_progress", "completed"].map((status) => (
-          <Stat
-            key={status}
-            label={actionLabels[status]}
-            value={data.actions.filter((row) => row.status === status).length}
-            note="Tiến độ công việc, không phải số bán tăng"
-          />
-        ))}
-      </div>
-      <Panel className="filters">
-        <div className="filter-row">
-          <input
-            aria-label="Tìm công việc"
-            value={search}
-            placeholder="Tìm công việc…"
-            onChange={(event) => setSearch(event.target.value)}
-          />
-          <select
-            aria-label="Trạng thái công việc"
-            value={filter}
-            onChange={(event) => setFilter(event.target.value)}
-          >
-            <option value="">Tất cả trạng thái</option>
-            {Object.entries(actionLabels).map(([key, value]) => (
-              <option key={key} value={key}>
-                {value}
-              </option>
-            ))}
-          </select>
-          <button
-            className="button primary"
-            disabled={!data.analyses.length}
-            onClick={() => {
-              setAdding(true);
-              setError("");
-            }}
-          >
-            Thêm công việc
-          </button>
-        </div>
-      </Panel>
-      {error && !editor && !adding && (
-        <p className="form-error" role="alert">
-          {error}
-        </p>
-      )}
-      <div className="grid-two">
-        {rows.map((action) => (
-          <Panel
-            key={action.id}
-            title={action.title}
-            subtitle={`#${action.id} · Phân tích #${action.analysis_id}`}
-            action={
-              <Badge tone="gray">
-                {actionLabels[action.status] ?? action.status}
-              </Badge>
-            }
-          >
-            <p>{action.description}</p>
-            {action.origin === "ml_rule" && <div>
-              <p className="notice">Đề xuất thử nghiệm từ ML, cần rà soát.</p>
-              <p>Bằng chứng: {String(action.original_suggestion_json.evidence ?? "—")}</p>
-              <p>Cần xác minh: {String(action.original_suggestion_json.validation_needed ?? "—")}</p>
-            </div>}
-            <p>
-              Sản phẩm:{" "}
-              {data.analyses.find((row) => row.id === action.analysis_id)
-                ?.product.name ?? "Chưa biết"}
-            </p>
-            <p>
-              Người thực hiện:{" "}
-              {action.assigned_to === actor.id
-                ? actor.full_name
-                : (action.assigned_to ?? "Chưa giao")}
-            </p>
-            {action.decision_reason && <p>Lý do: {action.decision_reason}</p>}
-            {action.outcome_note && (
-              <p>Ghi chú thực hiện: {action.outcome_note}</p>
-            )}
-            <details>
-              <summary>Đề xuất gốc và bằng chứng (không sửa)</summary>
-              <pre className="connected-json">
-                {JSON.stringify(action.original_suggestion_json, null, 2)}
-              </pre>
-            </details>
-            <div className="filter-row">
-              {nextStates[action.status]?.map((status) => (
-                <button
-                  key={status}
-                  className="button subtle small"
-                  disabled={pending}
-                  onClick={() => change(action, status)}
-                >
-                  {actionLabels[status]}
-                </button>
-              ))}
-              <button
-                className="button subtle small"
-                disabled={pending}
-                onClick={() => {
-                  setRejecting(false);
-                  setEditor(action);
-                  setError("");
-                }}
-              >
-                Sửa công việc
-              </button>
-              <button
-                className="button subtle small"
-                disabled={pending}
-                onClick={() => history(action)}
-              >
-                Lịch sử
-              </button>
-              <button
-                className="button subtle small"
-                disabled={pending || action.assigned_to === actor.id}
-                onClick={() => mutate(action, { assigned_to: actor.id })}
-              >
-                Giao cho tôi
-              </button>
-            </div>
-          </Panel>
-        ))}
-      </div>
-      {!rows.length && <Empty title="Chưa có công việc phù hợp" />}
+  const sortedRows=[...rows].sort((a,b)=>b.updated_at.localeCompare(a.updated_at)||(BigInt(a.id)>BigInt(b.id)?-1:1));
+  const pages=Math.max(1,Math.ceil(rows.length/12)),activePage=Math.min(page,pages);
+  const visible=sortedRows.slice((activePage-1)*12,activePage*12);
+  const renderCard=(action:Action)=> {
+    const analysis=data.analyses.find(row=>row.id===action.analysis_id);
+    return <article className="suggestion-card" key={action.id}>
+      <div className="suggestion-heading"><Badge>#{action.id}</Badge><Badge tone={action.origin==="ml_rule"?"amber":"blue"}>{actionTypeLabels[action.type]??action.type}</Badge></div>
+      <h3>{action.title}</h3><p className="suggestion-product"><Icon name="box" size={15}/>{analysis?.product.name??"Chưa biết"} · Phân tích #{action.analysis_id}</p>
+      <p>{action.description}</p>
+      <div className="evidence"><span><Icon name="info" size={15}/>BẰNG CHỨNG ĐÃ LƯU</span><p>Bằng chứng: {String(action.original_suggestion_json.evidence??action.information_needed??"Chưa có bằng chứng chi tiết")}</p></div>
+      {action.origin==="ml_rule"&&<><p className="muted">Đề xuất thử nghiệm từ ML, cần rà soát.</p><p>Cần xác minh: {String(action.original_suggestion_json.validation_needed??"—")}</p></>}
+      {action.decision_reason&&<p className="rejection-note">Lý do: {action.decision_reason}</p>}
+      {action.outcome_note&&<p>Ghi chú thực hiện: {action.outcome_note}</p>}
+      <div className="suggestion-actions"><StatusBadge kind="action" status={action.status}/><div>
+        {nextStates[action.status]?.filter(status=>status!=="cancelled").map(status=><button key={status} className={`button ${status==="rejected"?"subtle":"primary"} small`} disabled={pending} onClick={()=>change(action,status)}>{status==="accepted"?"Chấp nhận":status==="rejected"?"Từ chối":status==="in_progress"?"Bắt đầu thực hiện":status==="completed"?"Đánh dấu hoàn thành":actionLabels[status]}</button>)}
+      </div></div>
+      <details className="audit-details"><summary>Quản lý công việc & lịch sử</summary><p>Người thực hiện: {action.assigned_to===actor.id?actor.full_name:action.assigned_to??"Chưa giao"}</p>
+        <div className="filter-row"><button className="button subtle small" disabled={pending} onClick={()=>{setRejecting(false);setEditor(action);setError("");}}>Sửa công việc</button><button className="button subtle small" disabled={pending} onClick={()=>history(action)}>Lịch sử</button><button className="button subtle small" disabled={pending||action.assigned_to===actor.id} onClick={()=>mutate(action,{assigned_to:actor.id})}>Giao cho tôi</button>{nextStates[action.status]?.includes("cancelled")&&<button className="button subtle small" disabled={pending} onClick={()=>change(action,"cancelled")}>Hủy công việc</button>}</div>
+        <details><summary>Đề xuất gốc (không sửa)</summary><pre className="connected-json">{JSON.stringify(action.original_suggestion_json,null,2)}</pre></details>
+      </details>
+    </article>;
+  };
+  return <>
+    <div className="stats-grid five">
+      <Stat label="Tổng đề xuất" value={data.actions.length} note="Công việc và đề xuất đã lưu" icon="sparkles"/>
+      <Stat label="Mới phát hiện" value={data.actions.filter(a=>a.status==="proposed").length} note="Chờ duyệt hành động" tone="pink"/>
+      <Stat label="Đang theo dõi" value={data.actions.filter(a=>["accepted","in_progress"].includes(a.status)).length} note="Đã chấp nhận / đang làm" tone="blue" icon="clock"/>
+      <Stat label="Đã hoàn thành" value={data.actions.filter(a=>a.status==="completed").length} note="Hoàn thành việc, chưa đo hiệu quả" tone="green" icon="check"/>
+      <Stat label="Đã từ chối" value={data.actions.filter(a=>a.status==="rejected").length} note="Giữ nguyên bằng chứng" tone="gray"/>
+    </div>
+    <Panel className="filters"><div className="filter-row"><div className="search-field"><Icon name="search" size={17}/><input aria-label="Tìm công việc" value={search} placeholder="Tìm đề xuất, mã công việc…" onChange={event=>{setSearch(event.target.value);setPage(1);}}/></div>
+      <select aria-label="Trạng thái công việc" style={filter?{color:actionColor(filter)}:undefined} value={filter} onChange={event=>{setFilter(event.target.value);setPage(1);}}><option value="">Tất cả trạng thái</option>{Object.entries(actionLabels).map(([key,label])=><option key={key} value={key} style={{color:actionColor(key)}}>{label}</option>)}</select>
+      <div className="segmented"><button aria-pressed={!kanban} className={!kanban?"selected":""} onClick={()=>setKanban(false)}><Icon name="grid" size={16}/>Danh sách</button><button aria-pressed={kanban} className={kanban?"selected":""} onClick={()=>setKanban(true)}><Icon name="chart" size={16}/>Kanban</button></div>
+      <button className="button primary" disabled={!data.analyses.length} onClick={()=>{setAdding(true);setError("");}}><Icon name="plus" size={16}/>Thêm công việc</button>
+    </div><div className="filter-chips live-category-chips"><button className={!category?"selected":""} onClick={()=>{setCategory("");setPage(1);}}>Tất cả</button>{[...new Set(data.actions.map(a=>a.type))].map(type=><button key={type} className={category===type?"selected":""} onClick={()=>{setCategory(type);setPage(1);}}>{actionTypeLabels[type]??type}</button>)}</div></Panel>
+    {params.get("analysis")&&<p className="notice">Đang xem đề xuất của phân tích #{params.get("analysis")}. <Link className="text-link" href={`/${actor.role}/suggestions`}>Xem tất cả</Link></p>}
+    {error&&!editor&&!adding&&<p className="form-error" role="alert">{error}</p>}
+    {!rows.length?<Panel><Empty title="Chưa có công việc phù hợp"/></Panel>:kanban?<div className="kanban">{Object.entries(actionLabels).map(([status,label])=><section className="kanban-column" key={status} style={{borderTop:`3px solid ${actionColor(status)}`}}><h3 style={{color:actionColor(status)}}>{label}<span>{rows.filter(row=>row.status===status).length}</span></h3>{rows.filter(row=>row.status===status).map(renderCard)}</section>)}</div>:<><div className="grid-two">{visible.map(renderCard)}</div><div className="table-footer"><span>{rows.length?`${(activePage-1)*12+1}–${Math.min(activePage*12,rows.length)}`:"0"} / {rows.length} đề xuất</span><div className="pagination"><button aria-label="Trang đề xuất trước" disabled={activePage<=1} onClick={()=>setPage(activePage-1)}>‹</button><button aria-label="Trang đề xuất sau" disabled={activePage>=pages} onClick={()=>setPage(activePage+1)}>›</button></div></div></>}
+    <div className="opportunity-banner"><span className="brand-mark"><Icon name="sparkles" size={26}/></span><div><h2>Biến bằng chứng thành hành động phù hợp</h2><p>Rà soát thông tin, kiểm chứng giả thuyết và theo dõi công việc. Hoàn thành đề xuất không đồng nghĩa tăng doanh số.</p></div></div>
       {editor && (
         <Modal
           title="Sửa / quyết định công việc"
@@ -384,6 +305,5 @@ export function LiveActions({
           {!audit.rows.length && <Empty title="Chưa có lịch sử" />}
         </Modal>
       )}
-    </>
-  );
+    </>;
 }

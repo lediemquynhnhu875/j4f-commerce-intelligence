@@ -4,6 +4,32 @@ Next.js 16.4.0 / React 19.3.0 / TypeScript / Tailwind. UI owner: Huy; API/databa
 Mai; reviewer: Như. The main entry point now uses the real shared-catalog backend.
 The original isolated mock interface remains under `/preview/*`.
 
+The connected User/Admin pages share the preview's Header, Sidebar, Navigation,
+product identity, cards, charts, tables, filters and responsive styles. Catalog
+selection opens saved evidence; suggestions offer list/Kanban views and the real
+versioned work API. Admin overview/monitor/configuration display saved metadata.
+Accounts and catalog management retain their existing backend operations.
+All counts and percentages adapt to API data. User overview always covers the whole
+catalog with no source-switch controls. Stores remain an unavailable empty
+state, configuration is read-only, and absent image URLs use placeholders.
+Preview records are hardcoded in `src/lib/preview-fixtures.ts`; live pages do not
+read those records or substitute them when requests fail. PostgreSQL development
+seed records are separate from these preview fixtures.
+
+Live status colors are centralized in `src/lib/status-colors.ts` and rendered by
+`src/components/status-badge.tsx`. Every analysis/work status has a distinct color;
+badges, distribution bars, Admin donut/legend, filters and Kanban share this map.
+No status or record is changed by the palette.
+
+Connected product identity follows name, information, then `SP-<source_product_id>`
+(or `SP-<id>` when no source ID exists). The shared `productCode` formatter avoids
+double prefixes. Catalog search accepts this code; links retain internal API IDs.
+
+Saved evidence includes a **Hành động rà soát** column, linking each supported
+metric to matching actions from that exact analysis. Clicking opens its saved
+explanation below the table. Rows with no matching action explicitly say
+"Chưa có đề xuất"; the frontend does not regenerate recommendation rules.
+
 ## Install and run
 
 The 2026-10-16 bounded import adds 100 real ML products in five groups of 20.
@@ -59,9 +85,9 @@ set Secure. Browser JavaScript never receives or stores the Bearer token.
 | --- | --- | --- |
 | Login | `/`, `/login` | POST auth/login; active account from auth/me; logout revokes session |
 | User overview | `/user/overview` | Counts from paginated products, categories, analyses and actions |
-| Catalog | `/user/products` | Product search/category/status filters and pagination over actual fetched records |
+| Catalog | `/user/products` | Search/category/status filters, sort, selection and pagination over actual records |
 | Saved analysis | `/user/analysis?product=ID&analysis=ID` | GET product detail, product analyses; frozen input/evidence, original history |
-| Work | `/user/suggestions` | GET/POST actions; PATCH transitions, edits, self-assignment; GET action history |
+| Work | `/user/suggestions?analysis=ID` | List/Kanban, filters, pagination; GET/POST actions, versioned PATCH transitions/edits, GET history |
 | Admin overview | `/admin/overview` | Shared catalog/analysis/work/account counts |
 | Accounts | `/admin/accounts` | Provision, suspend/reactivate via admin/accounts |
 | Product management | `/admin/products` | GET/POST/PATCH/DELETE products; reference-conflict errors surfaced |
@@ -72,8 +98,8 @@ set Secure. Browser JavaScript never receives or stores the Bearer token.
 
 The supplied schema uses a shared catalog, not one store per user. API regular
 role `user` maps to PostgreSQL `reviewer`; never infer ownership from seller fields.
-All nine backend analysis statuses keep their exact identifiers and translated
-display labels; they are not mapped into the five mock labels or six ML statuses.
+The nine legacy and six versioned ML analysis statuses retain their identifiers
+and translated labels. They are not converted into the five preview labels.
 Missing reference, sales, rating and timestamps stay unavailable rather than zero.
 Seven seeded products have no saved analysis; the other three have synthetic
 insufficient-basis results. Saved analyses do not perform new inference.
@@ -106,7 +132,8 @@ edits stay local. The default `/` entry point now deliberately uses real login.
   navigation, role/session guards and data loading.
 - `src/features/connected/`: catalog/overview/evidence/config, actions/history and
   Admin management using existing visual styles, cards, icons and dialogs.
-- Existing preview components/features remain isolated and intact.
+- Preview feature data and local workflows remain isolated; shared presentation
+  components accept explicit live props rather than choosing mock records.
 
 ## Checks
 
@@ -139,5 +166,18 @@ test accounts are left suspended. Seeds/unrelated records are not overwritten.
 Live traces/video are disabled to avoid recording credentials. Browser artifacts
 are ignored under `tmp/frontend-connected/`. Do not use production accounts/data.
 
+For the presentation regression subset used in the latest UI verification:
+
+```powershell
+npm run test:connected -- overview.spec.ts ml-sample.spec.ts preview-parity.spec.ts
+```
+
+This subset reads real User/Admin data without changing product/work/account
+records. Its empty-data and work-transition cases explicitly intercept HTTP with
+synthetic test responses; they do not prove PostgreSQL persistence. Login/logout
+still creates and revokes normal sessions. The full connected suite also includes
+legacy write journeys and must use a development database.
+
 Scope conflicts and authorization: [ADR 0005](../docs/decisions/0005-frontend-api-integration.md).
 Executed results and limitations: [integration verification](../docs/verification/sellens-frontend-integration.md).
+Full User/Admin presentation: [preview alignment verification](../docs/verification/live-preview-ui-alignment.md).

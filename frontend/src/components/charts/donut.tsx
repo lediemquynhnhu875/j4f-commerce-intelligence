@@ -8,6 +8,7 @@ export function Donut({
   label: string;
   segments: { value: number; color: string }[];
 }) {
+  const denominator = total > 0 ? total : 1;
   return (
     <div className="donut">
       <svg
@@ -36,7 +37,7 @@ export function Donut({
             (segments
               .slice(0, i)
               .reduce((sum, segment) => sum + segment.value, 0) /
-              total) *
+              denominator) *
             100;
           return (
             <circle
@@ -48,7 +49,7 @@ export function Donut({
               fill="none"
               stroke={s.color}
               strokeWidth="19"
-              strokeDasharray={`${(s.value / total) * 100} ${100 - (s.value / total) * 100}`}
+              strokeDasharray={`${(s.value / denominator) * 100} ${100 - (s.value / denominator) * 100}`}
               strokeDashoffset={-start}
               transform="rotate(-90 90 90)"
             />

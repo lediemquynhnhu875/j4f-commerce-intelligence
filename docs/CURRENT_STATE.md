@@ -1,6 +1,6 @@
 # Project State and Handoff
 
-Updated: 2026-10-16 (Asia/Saigon).
+Updated: 2026-10-17 (Asia/Saigon).
 
 ## Agreed Stack and MVP
 
@@ -26,12 +26,12 @@ Python model serving remains pending; no ML/service code was moved or changed.
 | --- | --- |
 | Spec Kit | Codex/Claude/Copilot integrations; constitution v1.0.0 and eight feature drafts |
 | Backlog | 110 tasks: 3 checked, 107 unchecked; a mock does not complete real feature acceptance |
-| Frontend | Connected UI at /login, /user/*, /admin/*; isolated mocks under /preview/*; lint/typecheck/build, six preview browser tests and five live journeys passed across scoped runs |
-| User UI | Four Stitch-based synthetic pages: overview, products, analysis, suggestions |
-| Admin UI | Four Stitch-based synthetic pages: overview, stores, monitor, model configuration |
+| Frontend | Connected User/Admin pages now follow preview presentation with API data; isolated fixtures under /preview/*; see latest scoped verification below |
+| User UI | Overview, catalog, frozen evidence and work list/Kanban use live records and preview layouts; counts adapt to the catalog |
+| Admin UI | Live overview, saved-result monitor and read-only configuration follow preview layouts; store empty state is honest; account/category/product management preserved |
 | Authentication | Main login uses backend accounts and HttpOnly session proxy; isolated preview login still uses public mock roles |
 | Backend/Neon | Real PostgreSQL REST API, scrypt/Bearer sessions, active/admin checks, pagination, immutable analyses and atomic action audit; see backend verification |
-| Model serving | Unimplemented; saved seed analyses are synthetic insufficient-basis fixtures, not inference |
+| Model serving | Live inference unimplemented; PostgreSQL contains imported ML snapshot results alongside synthetic development seeds; viewing saved results requires no model call |
 | ML/data | Prior pipeline results and updated taxonomy/peer code handed off from the AISC 2026 checkout; metrics in `ml/reports/metrics/`. Four synthetic pipeline tests passed in a Python 3.13 virtual environment on 2026-10-11. Independent taxonomy accuracy is 58%, below the 85% gate; full snapshot/model compatibility and serving remain unverified |
 | Human review/release | No human acceptance, independent model review or production readiness claim |
 
@@ -74,6 +74,149 @@ session started clean, fetched remote refs and branched from `origin/main`.
 | F002/T002; F005/T001–T002; F007/T001 | Requesting contributor, Codex-assisted | set_up | Partial, unchecked | Visual implementation exists; loading/error states, wireframe artifacts and contract reviews remain |
 
 ## Latest Handoff
+
+### Remove Overview Source Switch - 2026-10-17
+
+- Direct user request: remove the ML/all-product controls. Continuing F005
+  presentation amendment on the same contributor/branch with dirty work retained.
+- Overview now always includes the complete API catalog. Removed the source state,
+  controls and stale sample-data caption; statistics still derive from API rows.
+- Updated existing overview assertions and documentation. Frontend lint/build
+  passed; two Chromium cases passed: actual API-derived totals/categories/evidence
+  navigation and explicitly intercepted empty data. Desktop screenshot inspected.
+- No backend/database/ML changes or sample cleanup execution in this session.
+  Test login/logout used the second configured regular account via process-only
+  aliases. Owned temporary servers stopped; original acceptance stays unchanged.
+
+### Development Sample Cleanup Instructions - 2026-10-17
+
+- User requests instructions, not execution, for deleting the ten original API
+  sample products. Continuing the F002 shared-catalog maintenance amendment on
+  the current contributor/branch; existing dirty frontend work preserved.
+- Prepared a development-only CLI with read-only preview, target fingerprint,
+  durable local backup and transactional cleanup. Keep real imported products,
+  accounts/categories/runs and their evidence untouched. The apply step belongs
+  to the user; do not execute it in this instruction session.
+- Read-only inspection previously found 110 products, ten registered synthetic
+  targets, three linked seed analyses, six work rows and 13 audit rows. Actual CLI
+  preview confirmed those counts, 100 products remaining and unchanged accounts,
+  categories and ML runs. No live deletion has been performed.
+- Backend 15 tests, production build and final typecheck passed. Initial typecheck
+  hit stale generated Next.js route types; the build regenerated them and the
+  repeated typecheck passed. Seven cleanup guard tests cover fixture identity,
+  real-data exclusions, registry/audit relations and preview fingerprint changes.
+- Apply/rollback/backup paths are implemented but were not executed against live
+  Neon, as the user requested instructions. No migration/data writes, commit or
+  push. See [ADR 0008](decisions/0008-retire-development-catalog.md) and backend
+  README for exact commands and seed-test implications.
+
+### Evidence Review Action Column - 2026-10-17
+
+- Direct request: restore the preview's review-action column in live evidence.
+  Continuing F005 presentation amendment on the current contributor/branch;
+  existing dirty work preserved, no remote integration or backend/ML changes.
+- Link evidence metrics only to existing actions belonging to that exact saved
+  analysis. Preserve differences and show an explicit absence when no matching
+  action exists; do not rerun recommendation rules in the frontend.
+- Added a fifth evidence column with colored links to the corresponding saved
+  suggestion cards. Six imported action types map to their observed metrics;
+  legacy image/video and exposure actions remain readable. No matching action
+  shows "Chưa có đề xuất"; unknown metrics do not acquire inferred actions.
+- Frontend lint/build passed. One-off Chromium verification passed the six action
+  types, no-action rows, exact-analysis isolation, history without suggestions,
+  anchor navigation, Admin rendering and mobile containment. Responses were
+  explicitly intercepted; screenshot inspected. No new real-data acceptance
+  claim or database writes. Owned temporary frontend stopped.
+- Documentation updated; original feature acceptance remains unchecked.
+
+### Product Codes Below Product Information - 2026-10-17
+
+- Direct request: align the product identity text as name, information, then
+  SP-prefixed product code. Continuing F002/F005 presentation amendments on the
+  existing contributor/branch; existing dirty changes preserved.
+- Prefer source_product_id, falling back to the application ID for records with
+  no source identifier. Presentation only; API paths and stored IDs stay unchanged.
+- ProductIdentity now renders the code within the text column below information,
+  rather than as a separate table-cell line. User/Admin catalog, priority table,
+  saved evidence and monitor use the same formatting. Catalog search recognizes
+  the displayed code. Preview fixtures and originals are unchanged.
+- Checks: frontend lint/build passed; existing preview catalog browser regression
+  passed. One-off Chromium inspection verified alignment, source/fallback codes,
+  no double prefix, code search, internal-ID navigation, connected page placement
+  and 390px containment using explicit HTTP fixtures. Screenshot inspected.
+- No backend/database/ML/environment mutation or commit/push. Real Neon suites
+  were not rerun for this display-only change. Temporary frontend stopped;
+  original acceptance remains unchecked.
+
+### Distinct Live Status Colors - 2026-10-17
+
+- Direct user request: one distinct color for every status. Same requesting
+  contributor/branch, continuing F005/F006/F007 presentation amendments with
+  existing dirty work preserved; no remote integration, database or ML changes.
+- Added status-colors.ts and StatusBadge: 15 analysis codes, no-analysis and six
+  work states have 22 unique colors. User/Admin badges, selected status filters,
+  distribution bars/donut legends and work/Kanban use the same mappings, with
+  readable tinted backgrounds. Exact identifiers and data flow are preserved.
+- Verification: frontend lint/final build passed; two existing intercepted
+  browser regressions passed. A one-off Chromium inspection checked all 16
+  catalog states, User distribution/evidence, six work/Kanban states and all 15
+  Admin monitor/donut states. Rendered colors were unique and chart/legend colors
+  matched. Minimum computed badge contrast was 4.51:1; screenshots inspected.
+- Checks used explicit HTTP fixtures, not new Neon writes or model execution.
+  Real-data suites were not rerun for this presentation-only change. Temporary
+  frontend stopped; concurrent contributor edits retained. Original feature
+  acceptance remains unchanged. Details in the full UI verification report.
+
+### Full Live UI Alignment with Preview - 2026-10-17
+
+- User clarified the request covers all User/Admin UI and interactions, not only
+  the overview screenshot. Existing dirty changes retained, same contributor and
+  branch; F005/F006/F007 presentation amendments, no new acceptance claims.
+- Reused preview Header/Sidebar/Navigation and product identity with live props.
+  Catalog selection/sorting, frozen evidence, suggestion cards/Kanban, Admin
+  overview/monitor/configuration and store empty state now follow preview layouts.
+  Accounts/categories/catalog management retain existing API operations. All
+  counts are dynamic; no preview fixture records feed the live data flow.
+- Added bounded numbered catalog navigation, twelve-card suggestion lists and
+  ten-row monitor pages; mobile checks cover all primary User/Admin pages.
+- Store CRUD and configuration writes lack APIs: preserve their intended layouts
+  with honest disabled/read-only states. Never copy fixture products, stores,
+  synthetic thresholds, progress, job metrics or images into live data.
+- Verification: final frontend lint/build passed; six connected presentation
+  cases, three existing read-only login/authorization/outage journeys and six
+  preview regressions passed. Two presentation cases explicitly intercept data;
+  actual work writes were not rerun. Screenshots inspected and diff checked.
+  User checks used the second configured account via process-only aliases.
+- No backend/database/ML business data edits, environment edits, commits or
+  pushes. Temporary test servers stopped. Concurrent formatting-only changes in
+  use-live-session.ts were inspected and preserved. Full-corpus fetching,
+  store/model APIs and human acceptance remain pending; see
+  [full verification](verification/live-preview-ui-alignment.md).
+
+### Live Dashboard Presentation - 2026-10-17
+
+- Direct user request to make the live overview as readable as the existing mock.
+  Owner: requesting contributor, Codex-assisted, feature/backend-neon-mvp; clean
+  working tree at start. Continuing F005/T007 presentation amendment; no acceptance
+  checkboxes changed. No backend/database/ML changes or Git commit/push requested.
+- Added colored status bars, category donut/legend, all-catalog default with
+  optional ML filter, and evidence-linked review/work sections using API records.
+  All counts, percentages and category segments are dynamic; no 100-product limit
+  or fixed data values are used in production presentation. Review counts derive
+  from actual open suggestions on the latest saved analyses, not the blanket
+  experimental needs_review flag. Each chart declares its current denominator.
+- Extracted overview.tsx, retained catalog/analysis pages and updated the outdated
+  shell notice. Shared donut now handles zero totals. Unknown/unanalyzed states
+  remain distinct; technical quality acceptance is not inferred from the charts.
+- Verification: final frontend lint/build passed; three connected Chromium cases
+  (real ML regression, API-derived counts/source switching/evidence navigation,
+  intercepted empty data) and six preview regressions passed. Desktop/mobile
+  screenshots inspected; no page overflow at 390 px. First-account password was
+  absent locally, so real browser checks used the configured second regular
+  account through process-only aliases; no .env edits. Temporary test servers
+  stopped after verification. No migrations, product mutations, commits or pushes.
+- See [presentation verification](verification/live-dashboard-presentation.md).
+  Original multi-store/model/human acceptance remains pending.
 
 ### Bounded ML Sample Import - 2026-10-16
 

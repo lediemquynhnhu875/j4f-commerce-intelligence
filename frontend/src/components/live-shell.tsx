@@ -1,10 +1,11 @@
 "use client";
 import { useState, type ReactNode } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api-client";
 import type { Account } from "@/types/api";
-import { Badge, Icon, Logo } from "./ui";
+import { Header } from "./layout/header";
+import { Sidebar } from "./layout/sidebar";
+import { Icon, Modal } from "./ui";
 
 export const livePages = {
   user: [
@@ -15,6 +16,7 @@ export const livePages = {
   ],
   admin: [
     { slug: "overview", label: "Tổng quan hệ thống", icon: "grid" },
+    { slug: "stores", label: "Quản lý cửa hàng", icon: "store" },
     { slug: "accounts", label: "Quản lý tài khoản", icon: "users" },
     { slug: "products", label: "Quản lý sản phẩm", icon: "box" },
     { slug: "categories", label: "Quản lý danh mục", icon: "box" },
@@ -26,18 +28,18 @@ export function LiveShell({
   account,
   page,
   children,
+  suggestionCount = 0,
 }: {
   account: Account;
   page: string;
   children: ReactNode;
+  suggestionCount?: number;
 }) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
-  const [error, setError] = useState("");
-  const [pending, setPending] = useState(false);
+  const [open, setOpen] = useState(false),
+    [notifications, setNotifications] = useState(false),
+    [error, setError] = useState("");
   async function logout() {
-    setPending(true);
-    setError("");
     try {
       await api("auth/logout", { method: "POST" });
       window.dispatchEvent(new Event("sellens-session-changed"));
@@ -45,96 +47,40 @@ export function LiveShell({
       router.refresh();
     } catch (err) {
       setError((err as Error).message);
-    } finally {
-      setPending(false);
     }
   }
   return (
-    <div className={`app-shell ${account.role}`}>
+    <div className={`app-shell live-app-shell ${account.role}`}>
       <a className="skip-link" href="#main-content">
         Đến nội dung chính
       </a>
-      {open && (
-        <button
-          className="sidebar-backdrop"
-          aria-label="Đóng menu"
-          onClick={() => setOpen(false)}
-        />
-      )}
-      <aside className={`sidebar ${open ? "open" : ""}`}>
-        <Link className="logo-link" href={`/${account.role}/overview`}>
-          <Logo />
-        </Link>
-        <button
-          className="mobile-close icon-button"
-          aria-label="Đóng menu"
-          onClick={() => setOpen(false)}
-        >
-          <Icon name="close" />
-        </button>
-        <nav
-          aria-label={
-            account.role === "admin" ? "Phân hệ quản trị" : "Phân hệ người dùng"
-          }
-        >
-          <p className="nav-label">SELLENS WORKSPACE</p>
-          {livePages[account.role].map((item) => (
-            <Link
-              key={item.slug}
-              className={`nav-link ${page === item.slug ? "active" : ""}`}
-              href={`/${account.role}/${item.slug}`}
-              onClick={() => setOpen(false)}
-              aria-current={page === item.slug ? "page" : undefined}
-            >
-              <Icon name={item.icon} />
-              <span>{item.label}</span>
-            </Link>
-          ))}
-        </nav>
-        <div className="sidebar-bottom">
-          <div className="baseline">
-            <i className="dot" /> Catalog chung
-          </div>
-          <button className="logout-button" disabled={pending} onClick={logout}>
-            <Icon name="logout" />
-            {pending ? "Đang đăng xuất…" : "Đăng xuất"}
-          </button>
-        </div>
-      </aside>
+      <Sidebar
+        role={account.role}
+        page={page}
+        open={open}
+        onClose={() => setOpen(false)}
+        onLogout={() => void logout()}
+        live
+        pages={livePages[account.role]}
+        suggestionCount={suggestionCount}
+      />
       <div className="workspace">
-        <header className="topbar">
-          <button
-            className="menu-button icon-button"
-            aria-label="Mở menu"
-            onClick={() => setOpen(true)}
-          >
-            <Icon name="menu" />
-          </button>
-          <div className="topbar-context">
-            <span className="store-pill">
-              <Icon name="box" />
-              <strong>Catalog chung Sellens</strong>
-            </span>
-          </div>
-          <div className="topbar-right">
-            <Badge tone="green">API CONNECTED</Badge>
-            <div className="profile">
-              <div>
-                <strong>{account.full_name}</strong>
-                <small>
-                  {account.role === "admin" ? "Quản trị viên" : "Người rà soát"}
-                </small>
-              </div>
-              <span className="avatar">
-                {account.full_name.slice(0, 2).toUpperCase()}
-              </span>
-            </div>
-          </div>
-        </header>
-        <div className="preview-strip">
-          <span>Dữ liệu được tải từ PostgreSQL</span>
-          <span>Dữ liệu mẫu có nhãn minh họa · Chưa chạy ML</span>
-        </div>
+        <Header
+          role={account.role}
+          page={page}
+          onOpenMenu={() => setOpen(true)}
+          onOpenNotifications={() => setNotifications(true)}
+          live
+          pages={livePages[account.role]}
+          profile={{
+            name: account.full_name,
+            initials: account.full_name
+              .split(" ")
+              .slice(-2)
+              .map((part) => part[0])
+              .join(""),
+          }}
+        />
         <main id="main-content" className="main-content">
           {error && (
             <p className="form-error" role="alert">
@@ -143,11 +89,38 @@ export function LiveShell({
           )}
           {children}
           <footer className="app-footer">
-            <span>Sellens Decision Support Platform</span>
-            <span>Kết luận từ snapshot · Không đảm bảo tăng số bán</span>
+            <span>
+              <Icon name="shield" size={14} /> Sellens Decision Support Platform
+            </span>
+            <span>Quyết định dựa trên bằng chứng · Kết quả snapshot</span>
           </footer>
         </main>
       </div>
+      {notifications && (
+        <Modal
+          title="Đề xuất cần duyệt"
+          onClose={() => setNotifications(false)}
+        >
+          <div className="notice">
+            <Icon name="info" />
+            <span>
+              {suggestionCount} đề xuất đang chờ quyết định. Xem bằng chứng
+              trước khi chấp nhận hoặc từ chối.
+            </span>
+          </div>
+          <button
+            className="button primary"
+            onClick={() => {
+              setNotifications(false);
+              router.push(
+                `/${account.role}/${account.role === "user" ? "suggestions" : "monitor"}`,
+              );
+            }}
+          >
+            Xem chi tiết <Icon name="arrow" size={16} />
+          </button>
+        </Modal>
+      )}
     </div>
   );
 }
