@@ -75,6 +75,41 @@ session started clean, fetched remote refs and branched from `origin/main`.
 
 ## Latest Handoff
 
+### Explained "Chưa đủ dữ liệu" Results - 2026-10-18
+
+- Direct user request: `insufficient_data` products reached the interface with no
+  reference, no gap and no suggestion, which read as a broken result. Presentation
+  fix only; no model, scoring rule, schema, API field or stored analysis changed.
+  No new feature or task ID was invented and no acceptance checkbox was changed.
+- Owner: requesting contributor, Claude-assisted. Branched from clean `main` at
+  `5381af3` as `feature/insufficient-data-explained`. No pull, stash, merge or push.
+- Root cause was presentational: `status_reason` was declared in one type and
+  rendered nowhere, and none of its six values had a Vietnamese label. The saved
+  `comparison_json` and all nine `evidence_json.items` stay populated for these
+  analyses and were already available.
+- Added labels and explanations for all six reasons, each built from the stored
+  numbers; an observable-gap summary that keeps the peer comparison usable; and a
+  panel naming the one condition that would make the product analysable.
+- Catalog now offers "Chỉ hiện sản phẩm đã phân tích được" and sinks undecided and
+  unanalysed products to the end of the default order. Nothing is hidden or removed.
+- Honesty constraints kept: no recommendation is generated for an undecided
+  analysis, the unblocking panel states in the interface that it is not a sales
+  recommendation, and the observable summary states that a difference does not
+  prove a cause. Noise gaps below a relative and absolute floor are suppressed.
+- Scale note: 5,128 of 41,576 snapshot products (12.3%) are undecided, but the
+  demo catalog shows 25 of 100 because the imported sample was stratified at 25
+  per status. The demo overstates the rate by roughly double.
+- Checks passed: typecheck, lint, production build, a new browser test, and the
+  existing `ml-sample` and `overview` browser regressions. Verified on real data
+  that two different reasons render their own wording and numbers, that a
+  concluded analysis renders none of the new blocks, that the filter takes the
+  list from 100 to 75 with no undecided row left, and that walking all 25 pages
+  puts the first undecided row at index 75.
+- `preview-parity.spec.ts` fails on two tests; verified pre-existing by rerunning
+  it on clean `main` with these changes stashed. `sellens.spec.ts` was not run
+  because it mutates shared database records and does not cover this change.
+- See [verification](verification/insufficient-data-explained.md).
+
 ### Remove Overview Source Switch - 2026-10-17
 
 - Direct user request: remove the ML/all-product controls. Continuing F005

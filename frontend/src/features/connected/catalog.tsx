@@ -14,6 +14,7 @@ import type { Dataset, Product } from "@/types/api";
 import { Empty, Icon, Modal, Panel } from "@/components/ui";
 import { ProductIdentity } from "@/components/products/product-identity";
 import { productCode } from "@/lib/analysis-presentation";
+import { isInsufficient } from "@/lib/insufficient-data";
 
 
 function latest(data: Dataset, productId: string) {
@@ -40,18 +41,25 @@ export function LiveCatalog({
   const [category, setCategory] = useState("");
   const [status, setStatus] = useState("");
   const [sort, setSort] = useState("");
+  const [analysableOnly, setAnalysableOnly] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const router = useRouter();
   const [page, setPage] = useState(1);
   const [editor, setEditor] = useState<Product | "new" | null>(null);
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
+  const concluded = (product: Product) => {
+    const current = latest(data, product.id);
+    return Boolean(current) && !isInsufficient(current.status);
+  };
   const rows = data.products.filter(
     (row) =>
       `${row.name} ${row.id} ${productCode(row)}`.toLowerCase().includes(search.toLowerCase()) &&
       (!category || row.category_id === category) &&
-      (!status || (latest(data, row.id)?.status ?? "no_analysis") === status),
-  ).sort((a,b)=>sort==="price"?Number(a.price??Infinity)-Number(b.price??Infinity):sort==="sales"?Number(b.quantity_sold??-1)-Number(a.quantity_sold??-1):0);
+      (!status || (latest(data, row.id)?.status ?? "no_analysis") === status) &&
+      (!analysableOnly || concluded(row)),
+  ).sort((a,b)=>sort==="price"?Number(a.price??Infinity)-Number(b.price??Infinity):sort==="sales"?Number(b.quantity_sold??-1)-Number(a.quantity_sold??-1):Number(concluded(b))-Number(concluded(a)));
+  const undecidedCount = data.products.filter((row) => !concluded(row)).length;
   const pages = Math.max(1, Math.ceil(rows.length / 4));
   const activePage = Math.min(page, pages);
   const pageNumbers=[...new Set([1,activePage-1,activePage,activePage+1,pages])].filter(number=>number>=1&&number<=pages).sort((a,b)=>a-b);
@@ -174,12 +182,17 @@ export function LiveCatalog({
               setSearch("");
               setCategory("");
               setStatus("");
-              setSort("");setSelected([]);
+              setSort("");setSelected([]);setAnalysableOnly(false);
               setPage(1);
             }}
           >
             Đặt lại
           </button>
+          <label className="filter-toggle">
+            <input type="checkbox" checked={analysableOnly} onChange={event=>{setAnalysableOnly(event.target.checked);setPage(1);}}/>
+            Chỉ hiện sản phẩm đã phân tích được
+            {undecidedCount>0&&<span className="muted"> ({undecidedCount} chưa đủ cơ sở)</span>}
+          </label>
           <select aria-label="Sắp xếp sản phẩm" value={sort} onChange={event=>{setSort(event.target.value);setPage(1);}}>
             <option value="">Sắp xếp: Mặc định</option><option value="price">Giá: Thấp đến cao</option><option value="sales">Số bán: Cao đến thấp</option>
           </select>
