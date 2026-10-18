@@ -2,6 +2,9 @@
 
 Decision support system for e-commerce sales performance analysis and product improvement opportunity detection.
 
+For page-by-page instructions for User and Admin, read the
+[Vietnamese user guide](README_HUONG_DAN_SU_DUNG.md), located at the repository root.
+
 ## Product scope
 
 The MVP processes a Tiki fashion-product snapshot, finds comparable products, estimates reference sales, assigns an opportunity status, and presents evidence-backed improvement suggestions in a web application.
