@@ -1,6 +1,6 @@
 # Project State and Handoff
 
-Updated: 2026-10-17 (Asia/Saigon).
+Updated: 2026-10-18 (Asia/Saigon).
 
 ## Agreed Stack and MVP
 
@@ -39,6 +39,13 @@ Detailed frontend evidence: [UI verification](verification/sellens-ui-preview.md
 Historical planning evidence: [planning audit](verification/planning-audit.md).
 
 ## Active Tasks
+
+Current documentation request: requesting contributor, Codex-assisted, on
+`first_demo`. Started with a clean tree; `git fetch origin` succeeded and local
+HEAD matched `origin/first_demo` (0 ahead / 0 behind). Scope: one root-level
+Vietnamese User/Admin manual describing current pages and controls, plus index
+links and handoff. No feature task or ownership reassignment; existing feature
+acceptance remains unchanged. See the latest handoff for verification evidence.
 
 Frontend integration now explicitly authorized: requesting contributor,
 Codex-assisted, continuing dirty `feature/backend-neon-mvp` without pull/stash.
@@ -109,6 +116,30 @@ session started clean, fetched remote refs and branched from `origin/main`.
   it on clean `main` with these changes stashed. `sellens.spec.ts` was not run
   because it mutates shared database records and does not cover this change.
 - See [verification](verification/insufficient-data-explained.md).
+
+### Root-Level Vietnamese User/Admin Manual - 2026-10-18
+
+- Direct user request: write a detailed Vietnamese README for first-time users,
+  split by User/Admin, placed at the repository root for easy discovery. This
+  explicitly overrides the English documentation default for this manual only;
+  repository rules and this handoff remain English.
+- Added [the usage guide](../README_HUONG_DAN_SU_DUNG.md), with login/shared
+  controls, all four User and seven Admin menu pages, saved evidence, account
+  and catalog management, work transitions/history, exports, status meanings,
+  practical walkthroughs and troubleshooting. Added root README and docs index
+  links. Descriptions follow connected components, validators and current ADRs
+  rather than treating preview-only functionality as implemented.
+- Documented shared-catalog scope, unavailable stores/live inference, read-only
+  configuration, immutable evidence, JSON export scope and the distinction
+  between product counts, analysis history and work counts. No application,
+  API, schema, database records, model behavior or feature checkboxes changed.
+- Verification: `git diff --check` passed. A Node documentation check verified
+  all 21 internal anchor links and four local file links, unique anchors, UTF-8
+  text and balanced code fences. Page/control descriptions were compared with
+  connected components and backend validators, including action transitions,
+  pagination, JSON export scope and disabled controls. Runtime/browser checks
+  were not run for this documentation-only change; no new runtime or feature
+  acceptance claim is made. No commit or push requested.
 
 ### Remove Overview Source Switch - 2026-10-17
 
