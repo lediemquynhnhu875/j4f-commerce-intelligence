@@ -6,6 +6,7 @@ All contributors and AI agents read and update the same documents in this reposi
 | --- | --- |
 | [AGENTS.md](../AGENTS.md) | Shared working rules, task ownership, verification, and review |
 | [CURRENT_STATE.md](CURRENT_STATE.md) | Current project state and handoff notes |
+| [Vietnamese user guide](../README_HUONG_DAN_SU_DUNG.md) | Beginner instructions for current User/Admin pages, buttons, workflows and limitations; root-level README |
 | [Backend setup](../backend/README.md) | Neon migration, seeds, REST endpoints and runtime commands |
 | [Backend verification](verification/sellens-backend.md) | Executed PostgreSQL/HTTP evidence, sanitized responses and limits |
 | [Frontend integration](verification/sellens-frontend-integration.md) | Connected UI browser verification, private session proxy and schema/UI conflicts |
