@@ -3,6 +3,7 @@ import { useState, type FormEvent } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { StatusBadge } from "@/components/status-badge";
+import { ProductIdentity } from "@/components/products/product-identity";
 import { actionColor } from "@/lib/status-colors";
 import { actionTypeLabels } from "@/lib/analysis-presentation";
 import { api, allPages, actionLabels } from "@/lib/api-client";
@@ -142,9 +143,17 @@ export function LiveActions({
   const visible=sortedRows.slice((activePage-1)*12,activePage*12);
   const renderCard=(action:Action)=> {
     const analysis=data.analyses.find(row=>row.id===action.analysis_id);
+    const product=data.products.find(row=>row.id===analysis?.product_id);
     return <article className="suggestion-card" key={action.id}>
       <div className="suggestion-heading"><Badge>#{action.id}</Badge><Badge tone={action.origin==="ml_rule"?"amber":"blue"}>{actionTypeLabels[action.type]??action.type}</Badge></div>
-      <h3>{action.title}</h3><p className="suggestion-product"><Icon name="box" size={15}/>{analysis?.product.name??"Chưa biết"} · Phân tích #{action.analysis_id}</p>
+      <h3>{action.title}</h3>
+      <div className="suggestion-product">
+        <ProductIdentity
+          name={analysis?.product.name??product?.name??"Chưa biết"}
+          image={product?.thumbnail_url}
+          detail={`Phân tích #${action.analysis_id}`}
+        />
+      </div>
       <p>{action.description}</p>
       <div className="evidence"><span><Icon name="info" size={15}/>BẰNG CHỨNG ĐÃ LƯU</span><p>Bằng chứng: {String(action.original_suggestion_json.evidence??action.information_needed??"Chưa có bằng chứng chi tiết")}</p></div>
       {action.origin==="ml_rule"&&<><p className="muted">Đề xuất thử nghiệm từ ML, cần rà soát.</p><p>Cần xác minh: {String(action.original_suggestion_json.validation_needed??"—")}</p></>}
