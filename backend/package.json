@@ -14,7 +14,9 @@
     "import:ml-sample": "tsx scripts/import-ml-sample.ts",
     "test": "tsx --test tests/unit.test.ts tests/ml-sample.test.ts tests/sample-cleanup.test.ts",
     "test:http": "tsx scripts/test-http.ts",
-    "test:ml-sample": "tsx scripts/test-ml-sample-http.ts"
+    "test:ml-sample": "tsx scripts/test-ml-sample-http.ts",
+    "import:ml-batch": "tsx scripts/import-ml-batch.ts",
+    "fetch:thumbnails": "tsx scripts/fetch-thumbnails.ts"
   },
   "dependencies": {
     "dotenv": "^18.0.7",
