@@ -378,7 +378,8 @@ svg {
   color: #8a7c98;
   padding: 12px 12px 8px;
 }
-.nav-label {
+.nav-label .dot {
+  flex-shrink: 0;
   width: 5px;
   height: 5px;
   background: #c4a6ee;
@@ -1542,6 +1543,17 @@ td > strong {
   color: #9c88ad;
   margin-bottom: 10px;
   font-size: 10px !important;
+}
+.suggestion-product .product-cell {
+  min-width: 0;
+  width: 100%;
+}
+.suggestion-product .product-cell > div {
+  min-width: 0;
+}
+.suggestion-product .product-cell strong {
+  max-width: none;
+  overflow-wrap: anywhere;
 }
 .evidence {
   border-radius: 9px;

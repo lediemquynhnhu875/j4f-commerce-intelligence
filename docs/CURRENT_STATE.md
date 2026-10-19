@@ -1,6 +1,6 @@
 # Project State and Handoff
 
-Updated: 2026-10-18 (Asia/Saigon).
+Updated: 2026-10-19 (Asia/Saigon).
 
 ## Agreed Stack and MVP
 
@@ -40,7 +40,22 @@ Historical planning evidence: [planning audit](verification/planning-audit.md).
 
 ## Active Tasks
 
-Current documentation request: requesting contributor, Codex-assisted, on
+Current suggestion-card request: requesting contributor, Codex-assisted,
+continuing the connected F006/T011 presentation amendment on `first_demo`.
+Scope: show the linked product thumbnail before its name in work cards, with
+existing missing/broken-image fallback and responsive list/Kanban rendering.
+Remote fetched; six local-only commits retained, no remote-only commits. Existing
+uncommitted sidebar CSS and handoff changes preserved; no pull/merge/stash.
+
+Previous sidebar correction: requesting contributor, Codex-assisted, continuing
+the F001/T002 and connected F001/T014 shell presentation amendment on `first_demo`.
+Scope: keep the role heading readable above the first navigation item in both
+shared shells; verify desktop/mobile rendering. Started clean; remote fetch
+succeeded, and the branch has six existing local commits with no remote-only
+commits. Preserve those commits; no pull, merge, stash, commit or push. Original
+feature acceptance remains unchanged.
+
+Previous documentation request: requesting contributor, Codex-assisted, on
 `first_demo`. Started with a clean tree; `git fetch origin` succeeded and local
 HEAD matched `origin/first_demo` (0 ahead / 0 behind). Scope: one root-level
 Vietnamese User/Admin manual describing current pages and controls, plus index
@@ -71,6 +86,8 @@ session started clean, fetched remote refs and branched from `origin/main`.
 
 | Feature / task ID | Owner | Branch | Status | Dependencies / notes |
 | --- | --- | --- | --- | --- |
+| F006/T011 suggestion product thumbnails | Requesting contributor, Codex-assisted | first_demo | Scoped presentation verified | Linked product thumbnail and missing/broken-image fallback; desktop/mobile list/Kanban checks and lint passed; original acceptance unchanged |
+| F001/T002; F001/T014 sidebar presentation correction | Requesting contributor, Codex-assisted | first_demo | Scoped correction verified | Shared CSS heading dimensions fixed; 12 desktop/mobile layout checks and frontend lint passed; original acceptance unchanged |
 | F001/T007; F002/T006; F007/T005 multi-store amendment | Requesting contributor, Codex-assisted | feature/backend-neon-mvp | Schema proposal prepared; unapplied, acceptance unchecked | One User owns many stores; explicit legacy assignment and future scoped API/UI required |
 | F001/T012–T015; F002/T014; F004/T012; F005/T007/T009; F006/T011; F007/T007/T009/T011 amendment | Requesting contributor, Codex-assisted | feature/backend-neon-mvp | Connected shared-catalog UI verified; original acceptance unchecked | Later direct request authorizes integration; stores/ML jobs/config writes unsupported |
 | F001/T007–T011; F002/T006/T011/T013; F004/T004/T011; F007/T004–T006/T008 amendment | Requesting contributor, Codex-assisted | feature/backend-neon-mvp | Shared-catalog backend verified; original acceptance unchecked | Supplied schema supersedes store plan for this backend; frontend/model integration excluded |
@@ -81,6 +98,53 @@ session started clean, fetched remote refs and branched from `origin/main`.
 | F002/T002; F005/T001–T002; F007/T001 | Requesting contributor, Codex-assisted | set_up | Partial, unchecked | Visual implementation exists; loading/error states, wireframe artifacts and contract reviews remain |
 
 ## Latest Handoff
+
+### Product Thumbnails on Suggestion Cards - 2026-10-19
+
+- Direct user request: show an image before the product name on connected work
+  cards for easier identification. Continuing the F006/T011 presentation amendment
+  on `first_demo`, preserving the preceding uncommitted sidebar correction.
+- `frontend/src/features/connected/actions.tsx` resolves each action's analysis
+  and product by ID, and reuses `ProductIdentity` with `products.thumbnail_url`.
+  Product name and analysis ID stay visible. Existing missing/broken-image
+  placeholders are reused. Scoped CSS allows long names to wrap inside narrow
+  list/Kanban cards. No new API fields, database changes or model behavior.
+- `npm run lint` and `git diff --check` passed. Isolated Playwright/Edge checks
+  passed at 1440px and 390px in both List and Kanban: valid image loads before
+  the matching product name, absent and broken URLs show placeholders, analysis
+  IDs remain correct and long names stay inside cards without page overflow.
+  Product fixture order was reversed to verify association by ID; no page errors
+  or write requests occurred. Desktop/mobile screenshots were inspected.
+- Verification uses intercepted API fixtures, not real account/database tests.
+  Temporary script and evidence live in ignored `tmp/suggestion-thumbnail-check.cjs`
+  and `tmp/suggestion-thumbnail-check/`. Initial fixture/locator issues were fixed
+  before the successful run. Existing dev server reused; no full production build,
+  backend tests, commit or push. Original feature acceptance remains unchanged.
+
+### Sidebar Role Heading Layout - 2026-10-19
+
+- Direct user request: the User role heading wrapped vertically and overlapped
+  the active overview item. Continuing F001/T002 and connected F001/T014 shell
+  presentation work on the existing `first_demo` branch; no ownership takeover.
+- In `frontend/src/app/globals.css`, changed the second `.nav-label` selector to
+  `.nav-label .dot` and prevented that decorative item from shrinking. The 5px
+  width/height/background now apply to the decoration instead of the heading.
+  The shared correction covers live and preview User/Admin navigation.
+- `npm run lint` and `git diff --check` passed. An isolated Playwright/Edge check
+  reproduced five wrapped text lines and overlap with the original rule, then
+  verified one-line headings, no first-link overlap, a transparent heading and
+  a 5px decoration for all 12 combinations of live/preview, User/Admin and
+  1440/1024/390px widths. Mobile open/close passed; representative desktop User
+  and mobile Admin screenshots were visually inspected.
+- Temporary verification script, measurements and screenshots are in ignored
+  `tmp/sidebar-layout-check.cjs` and `tmp/sidebar-layout-check/`. API interception
+  supplied isolated layout data; this was not a real authentication/database
+  acceptance test. No credentials read or database changes performed.
+- Reused the contributor's existing development server on `localhost:3000`;
+  the attempted second dev instance exited without stopping it. The initial
+  browser attempt using `127.0.0.1` was blocked by the existing dev origin policy;
+  rerunning on permitted `localhost` passed. Production build/full backend tests
+  were not rerun for this CSS-only change. No commit or push.
 
 ### Explained "Chưa đủ dữ liệu" Results - 2026-10-18
 
