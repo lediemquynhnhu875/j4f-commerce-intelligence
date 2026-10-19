@@ -99,6 +99,45 @@ session started clean, fetched remote refs and branched from `origin/main`.
 
 ## Latest Handoff
 
+### Proportional ML Batch and Product Images - 2026-10-19
+
+- Direct user request: add 100-150 sample products with analyses to Neon at roughly
+  the real status proportions so the demo is more representative. Continues the
+  existing F002 import amendment; no new feature or task ID was invented and no
+  acceptance checkbox was changed. Branch `feature/proportional-ml-batch` from `main`.
+- Chose 125 because it lands the combined catalog closest to the corpus: every
+  status ends within 0.16 percentage points. Catalog is now 225 products, 225
+  analyses, 255 actions; `insufficient_data` fell from 25% to 12.44% against 12.33%
+  in the corpus.
+- Added `src/server/ml-batch.ts`, `scripts/import-ml-batch.ts` and
+  `npm run import:ml-batch`, reusing the first import's mapping, categories and
+  quality gates under a new run key. Selection excludes the first import by
+  recomputing it from the snapshot, so it is a pure function of the source file;
+  the apply reran as `already-imported` with zero inserts.
+- Added `scripts/fetch-thumbnails.ts` and `npm run fetch:thumbnails`. 133 products
+  lacked an image, 118 resolved and 15 returned HTTP 404 as delisted since 2023.
+  Each stored URL was verified to serve; nulls are left for the placeholder tile.
+  `has_video` and `number_of_images` were not touched.
+- The import ran before its scripts were committed and the working copy was then
+  deleted and recloned, so the scripts were rewritten and verified against the data
+  they had already produced: the rewritten selection reproduces the exact
+  `selection_sha256` stored on the `analysis_runs` row and `--apply` returns
+  `already-imported`. No database row was rewritten during reconstruction.
+- `ml-sample.spec.ts` asserted 20 products per category, an artifact of the first
+  bounded import rather than a property of the feature, and it contradicted the live
+  database once each group held 43 to 47 products. It now reads the category total
+  and requires at least 20, the floor that import still guarantees; no other
+  assertion was weakened.
+- Checks passed: dry run, apply, idempotent rerun, thumbnail fetch and recheck,
+  direct database totals, zero duplicate source IDs, zero products without an
+  analysis, backend typecheck/unit tests/build, frontend typecheck/lint/build, and
+  the browser specs. Overview reports 225 products with the new shares.
+- Not done: the remaining 41,351 snapshot products were not imported and the
+  storage cost of a full import on the current Neon plan is still open. No human
+  acceptance or design review. `sellens.spec.ts` was not run because it mutates
+  shared records; `preview-parity.spec.ts` still fails for an unrelated reason.
+- See [verification](verification/proportional-ml-batch.md).
+
 ### Product Thumbnails on Suggestion Cards - 2026-10-19
 
 - Direct user request: show an image before the product name on connected work

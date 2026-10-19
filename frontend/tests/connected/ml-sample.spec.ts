@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-test("ML sample shows five groups of twenty and saved recommendations", async ({
+test("ML sample shows the five imported groups and saved recommendations", async ({
   page,
 }) => {
   const email = process.env.SEED_USER1_EMAIL,
@@ -30,9 +30,15 @@ test("ML sample shows five groups of twenty and saved recommendations", async ({
     ]) {
       await expect(page.getByLabel("Danh mục sản phẩm")).toBeVisible();
       await page.getByLabel("Danh mục sản phẩm").selectOption({ label: name });
-      await expect(page.locator(".table-footer:visible")).toContainText(
-        "/ 20 sản phẩm",
+      // The first import put 20 products in each group; the later proportional
+      // batch added more, so assert the floor that import still guarantees
+      // rather than a total the catalog is expected to keep growing past.
+      const footer = page.locator(".table-footer:visible");
+      await expect(footer).toContainText(/\/\s*\d+\s*sản phẩm/);
+      const inGroup = Number(
+        (await footer.textContent())?.match(/\/\s*(\d+)\s*sản phẩm/)?.[1],
       );
+      expect(inGroup).toBeGreaterThanOrEqual(20);
       await expect(page.locator("tbody tr:visible")).toHaveCount(4);
       await expect(page.locator("tbody tr:visible").first()).toContainText(
         name,

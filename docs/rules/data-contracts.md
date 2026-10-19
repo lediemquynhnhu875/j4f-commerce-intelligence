@@ -113,6 +113,30 @@ suggestion's evidence/hypothesis/action/validation_needed is a string. Missing
 references remain null; feedback-only insufficient_data may retain a reference.
 No synthetic image, capture time, sales scope or quality acceptance is inferred.
 
+## Proportional ML batch (2026-10-19)
+
+A second bounded import, run key `ml-v2-proportional-125-v1`, adds 125 products so
+the demo catalog reflects the corpus status distribution instead of the first
+import's 25-per-status stratification. Combined catalog: 225 products, 225
+analyses, 255 actions. Each status lands within 0.16 percentage points of the
+corpus share. `positive_feedback_low_sales` and `low_rating_low_sales` stay at
+zero because the scored corpus contains none.
+
+No DTO, column or status changed. The batch reuses the first import's mapping,
+its five categories and its quality gates, and records its own `analysis_runs`
+row. Selection excludes the first import's products by recomputing them from the
+snapshot, so it is a pure function of the source file and reruns insert nothing.
+
+Status shares now approximate the corpus; product types do not. The catalog
+remains the original five fashion types and is not a sample of the corpus mix.
+The run manifest states this.
+
+`products.thumbnail_url` is filled by `scripts/fetch-thumbnails.ts` from the public
+Tiki product API, verified to serve before being stored, and only ever where the
+column is null. Listings delisted since the 2023 snapshot keep a null thumbnail.
+Live media is a display asset and is never analysis input: snapshot `has_video`
+and `number_of_images` stay canonical.
+
 ## Clean products
 
 Path: `data/processed/clean_products.csv`

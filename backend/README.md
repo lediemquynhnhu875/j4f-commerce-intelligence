@@ -149,6 +149,33 @@ passed. The real Neon preview passed with `changed: false`. The live apply,
 backup-write, transactional deletion and retirement paths have **not** been run
 in this instruction session; no deletion is claimed.
 
+## Import the proportional batch and product images
+
+The first import is stratified at 25 products per status, which overstates
+`insufficient_data` for a demo. The second batch brings the catalog to the corpus
+distribution. Place the same `products_full.json` in root `data/processed/`
+(ignored). From `backend/`:
+
+```sh
+npm run import:ml-batch -- --dry-run
+npm run import:ml-batch -- --apply
+npm run fetch:thumbnails -- --apply
+```
+
+The batch adds 125 products, 125 analyses and 151 suggestions under run key
+`ml-v2-proportional-125-v1`, reusing the first import's five categories and quality
+gates. Its selection excludes the first import's products by recomputing them from
+the snapshot, so it does not depend on database state and reruns insert nothing.
+It refuses to start if any selected product already exists.
+
+`fetch:thumbnails` fills `thumbnail_url` for imported products that have none, from
+the public Tiki product API, one request at a time. It verifies each URL serves
+before storing it, never replaces an image already stored, and leaves listings that
+return HTTP 404 with a null thumbnail for the interface placeholder. It does not
+touch `has_video` or `number_of_images`, which stay as the snapshot recorded them.
+
+See [verification](../docs/verification/proportional-ml-batch.md).
+
 ## Start
 
 ```sh
