@@ -222,3 +222,45 @@ export async function listProducts(
     pagination: { page, limit, total: count.rows[0].total },
   };
 }
+
+export async function importProducts(
+  items: Array<Record<string, unknown>>,
+  actor: Account,
+) {
+  if (!Array.isArray(items) || items.length === 0) {
+    throw new ApiError(
+      422,
+      "VALIDATION_ERROR",
+      "Danh sách sản phẩm import không được rỗng",
+    );
+  }
+
+  return transaction(async (client) => {
+    const inserted = [];
+    for (const item of items) {
+      if (!item.name || typeof item.name !== "string" || !item.name.trim()) {
+        continue;
+      }
+
+      const row = await insert(client, "products", {
+        name: String(item.name).trim(),
+        description: item.description ? String(item.description) : null,
+        category_id: item.category_id ? String(item.category_id) : null,
+        price:
+          item.price !== null && item.price !== undefined && item.price !== ""
+            ? Number(item.price)
+            : null,
+        currency: item.currency ? String(item.currency) : "VND",
+        quantity_sold: item.quantity_sold ? Number(item.quantity_sold) : 0,
+        rating_average: item.rating_average
+          ? Number(item.rating_average)
+          : null,
+        review_count: item.review_count ? Number(item.review_count) : 0,
+        thumbnail_url: item.thumbnail_url ? String(item.thumbnail_url) : null,
+        imported_by: actor.id,
+      });
+      inserted.push(row);
+    }
+    return { imported_count: inserted.length, items: inserted };
+  });
+}

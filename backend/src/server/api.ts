@@ -57,6 +57,7 @@ export const routes: Record<string, Route> = {
   "POST /api/v1/auth/logout": userRoute(logoutAccount),
 
   "GET /api/v1/products": userRoute(listProducts),
+  "POST /api/v1/products/import": userRoute(importProducts),
   "GET /api/v1/products/:id": userRoute(getProduct),
   "POST /api/v1/products": adminRoute(createProduct),
   "PATCH /api/v1/products/:id": adminRoute(updateProduct),
@@ -160,6 +161,23 @@ async function createProduct({ request, actor }: Context): Promise<Outcome> {
     status: 201,
   };
 }
+
+async function importProducts({ request, actor }: Context): Promise<Outcome> {
+  const payload = await body(request);
+  const items = Array.isArray(payload)
+    ? payload
+    : (payload as { items: unknown[] })?.items;
+  return {
+    body: {
+      data: await catalog.importProducts(
+        items as Array<Record<string, unknown>>,
+        actor!,
+      ),
+    },
+    status: 201,
+  };
+}
+
 async function updateProduct({ request, params }: Context): Promise<Outcome> {
   const fields = parse(productSchema.partial(), await body(request));
   nonempty(fields);
