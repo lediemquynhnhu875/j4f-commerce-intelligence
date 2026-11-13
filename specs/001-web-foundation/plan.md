@@ -1,5 +1,9 @@
 # Implementation Plan: Web Foundation, Authentication, and Store Ownership
 
+> Current ownership: [one User / one store](../store-ownership.md), implemented and verified on configured Neon. Earlier multi-store/shared-catalog assumptions are superseded.
+
+> Current release amendment: [connected workspace scope](../release-scope.md). Demo routes are removed. Admin product/category screens are retired; User catalog write/import and ownership work remain pending. Older preview/catalog milestones below are historical and do not define the current navigation.
+
 **Branch**: Current checkout retained; proposed `feature/web-foundation` | **Date**: 2026-10-09 | **Spec**: [spec.md](spec.md)
 
 **Input**: `specs/001-web-foundation/spec.md`
@@ -95,3 +99,12 @@ Additional target paths: `frontend/src/components/layout/app-shell.tsx`,
 `frontend/src/app/(preview)/preview/page.tsx`,
 `frontend/src/app/(preview)/preview/login/page.tsx`,
 and `frontend/src/lib/preview-fixtures.ts`.
+
+## Runtime popup amendment — 2026-11-13
+
+Mount a shared client popup provider in the root layout. Reuse the existing
+accessible native-dialog shell for styled confirmation and feedback, including
+stacked form errors, Escape/cancel handling, and explicit dismissal. Replace
+native browser confirmations and inline runtime error messages across connected
+pages. Operational statuses and field validation remain part of their forms.
+Browser regressions cover login errors and account confirmation/state changes.

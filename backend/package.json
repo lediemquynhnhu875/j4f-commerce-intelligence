@@ -9,18 +9,18 @@
     "typecheck": "tsc --noEmit",
     "db:inspect": "tsx scripts/inspect-db.ts",
     "db:migrate": "tsx scripts/migrate.ts",
-    "db:seed": "tsx scripts/seed.ts",
     "db:cleanup-samples": "tsx scripts/cleanup-samples.ts",
     "import:ml-sample": "tsx scripts/import-ml-sample.ts",
-    "test": "tsx --test tests/unit.test.ts tests/ml-sample.test.ts tests/sample-cleanup.test.ts",
-    "test:http": "tsx scripts/test-http.ts",
+    "test": "tsx --test tests/unit.test.ts tests/ml-sample.test.ts tests/sample-cleanup.test.ts tests/import.test.ts",
+    "test:http": "tsx scripts/test-store-http.ts",
     "test:ml-sample": "tsx scripts/test-ml-sample-http.ts",
     "import:ml-batch": "tsx scripts/import-ml-batch.ts",
     "fetch:thumbnails": "tsx scripts/fetch-thumbnails.ts"
   },
   "dependencies": {
     "dotenv": "^18.0.7",
-    "next": "16.4.0",
+    "eslint-config-next": "^16.4.6",
+    "next": "^16.4.6",
     "pg": "^8.23.1",
     "zod": "^4.6.7"
   },

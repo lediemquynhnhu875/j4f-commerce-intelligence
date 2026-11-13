@@ -6,6 +6,10 @@ Tài liệu này hướng dẫn thao tác trên giao diện đang kết nối ba
 
 Sellens giúp bạn xem sản phẩm, đối chiếu số bán với nhóm sản phẩm tương tự, đọc bằng chứng và theo dõi các công việc cải thiện. Hệ thống hỗ trợ quyết định từ dữ liệu đã ghi nhận; kết quả không phải cam kết tăng doanh số hoặc dự báo số bán trong tương lai.
 
+> **Cập nhật phạm vi:** Đã gỡ toàn bộ trang demo/preview và liên kết đăng nhập mock. Hai trang Admin Quản lý sản phẩm, Quản lý danh mục đã bị gỡ và URL cũ trả 404. User hiện vẫn xem catalog; chức năng thêm/sửa/import cho User và gọi ML trực tiếp chưa được triển khai trong thay đổi này.
+
+> **Cập nhật cửa hàng:** Mỗi tài khoản User có một cửa hàng riêng. User1 sở hữu **J4F store** và dữ liệu hiện có; User2 hiện chưa có sản phẩm/phân tích/đề xuất. Tên cửa hàng ở đầu trang lấy từ database. Trang Admin Cửa hàng đã hiển thị danh sách thật; chưa hỗ trợ chuyển chủ sở hữu. Mô tả catalog chung và cửa hàng chưa khả dụng bên dưới là nội dung cũ, được thay thế bởi cập nhật này.
+
 ## Mục lục
 
 - [1. Bắt đầu sử dụng và các thao tác chung](#bat-dau)
@@ -19,11 +23,9 @@ Sellens giúp bạn xem sản phẩm, đối chiếu số bán với nhóm sản
   - [3.1. Tổng quan hệ thống](#admin-tong-quan)
   - [3.2. Quản lý cửa hàng](#admin-cua-hang)
   - [3.3. Quản lý tài khoản](#admin-tai-khoan)
-  - [3.4. Quản lý sản phẩm](#admin-san-pham)
-  - [3.5. Quản lý danh mục](#admin-danh-muc)
-  - [3.6. Kết quả đã lưu](#admin-ket-qua)
-  - [3.7. Cấu hình đã lưu](#admin-cau-hinh)
-  - [3.8. Quy trình thực hành cho Admin mới](#admin-thuc-hanh)
+  - [3.4. Kết quả đã lưu](#admin-ket-qua)
+  - [3.5. Cấu hình đã lưu](#admin-cau-hinh)
+  - [3.6. Quy trình thực hành cho Admin mới](#admin-thuc-hanh)
 - [4. Cách hiểu trạng thái và số liệu](#trang-thai)
 - [5. Các tình huống thường gặp](#cau-hoi)
 - [6. Tài liệu dành cho người cài đặt hệ thống](#cai-dat)
@@ -40,9 +42,9 @@ Admin cung cấp tài khoản và mật khẩu cho người sử dụng. Hiện 
 | --- | --- | --- |
 | Xem sản phẩm, phân tích và bằng chứng đã lưu | Có | Có |
 | Chấp nhận, từ chối, theo dõi công việc cải thiện trên giao diện | Có, tại Đề xuất cải thiện | Không có trang thao tác công việc tương ứng trong menu Admin hiện tại |
-| Thêm, sửa, xóa sản phẩm | Không | Có, trong giới hạn dữ liệu được phép thay đổi |
+| Thêm, sửa, xóa sản phẩm trên giao diện | Chưa triển khai | Đã gỡ trang quản lý |
 | Tạo tài khoản, khóa hoặc kích hoạt tài khoản | Không | Có |
-| Thêm, xóa danh mục sản phẩm | Không | Có |
+| Thêm, xóa danh mục sản phẩm trên giao diện | Không | Đã gỡ trang quản lý |
 | Xem các phiên bản cấu hình đã lưu | Không có trang riêng | Có, chỉ đọc |
 | Tạo cửa hàng, phân chia sản phẩm cho từng cửa hàng | Chưa có | Chưa có |
 | Bấm nút chạy mô hình để phân tích mới | Chưa có | Chưa có |
@@ -59,7 +61,7 @@ Admin cung cấp tài khoản và mật khẩu cho người sử dụng. Hiện 
 
 Nếu không đăng nhập được, kiểm tra email, chữ hoa/chữ thường trong mật khẩu và trạng thái tài khoản với Admin. Khi đã hết phiên đăng nhập, đăng nhập lại để tiếp tục.
 
-**Phân biệt giao diện thật và preview:** liên kết **Xem giao diện mock riêng** dẫn đến trang đăng nhập minh họa `/preview/demo-login`. Các trang làm việc `/preview/user/*` và `/preview/admin/*` sử dụng dữ liệu mẫu viết trong frontend. Thao tác ở đó không quản lý dữ liệu thật trên Neon và không cấp quyền cho tài khoản thật. Để làm việc với dữ liệu thật, sử dụng các trang `/user/*` hoặc `/admin/*` sau khi đăng nhập thật.
+**Đăng nhập:** Chỉ sử dụng tài khoản thật được Admin cấp. Các trang `/preview/*` và đăng nhập mock đã được gỡ.
 
 ### 1.3. Những thành phần có ở nhiều trang
 
@@ -152,7 +154,7 @@ Số trên chuông thông báo có thể khác ô Đề xuất cần duyệt: ch
 
 #### Trang này để làm gì?
 
-Đây là nơi tìm sản phẩm và chọn sản phẩm cần xem phân tích. User xem dữ liệu tại đây; các nút tạo, sửa, xóa sản phẩm chỉ có ở giao diện Admin.
+Đây là nơi tìm sản phẩm và chọn sản phẩm cần xem phân tích. User xem dữ liệu tại đây. Trang quản lý sản phẩm Admin đã được gỡ; chức năng thêm/sửa/import dành cho User chưa triển khai.
 
 #### Cách đọc một dòng sản phẩm
 
@@ -346,19 +348,17 @@ Nếu hệ thống báo dữ liệu đã bị thay đổi bởi thao tác khác,
 
 ## 3. Giao diện Admin
 
-Admin quản lý tài khoản và catalog, đồng thời kiểm tra các kết quả đã lưu. Vai trò này không đồng nghĩa rằng mọi chức năng minh họa trong preview đã có trên hệ thống thật.
+Admin quản lý tài khoản và theo dõi hệ thống, kết quả đã lưu. Không còn trang quản lý sản phẩm/danh mục hoặc giao diện preview.
 
 | Trang trong menu | Địa chỉ | Công việc chính |
 | --- | --- | --- |
 | **Tổng quan hệ thống** | `/admin/overview` | Đọc thống kê, kết nối và các kết quả gần nhất. |
 | **Quản lý cửa hàng** | `/admin/stores` | Xem trạng thái chưa thiết lập; hiện chưa quản lý cửa hàng thật. |
 | **Quản lý tài khoản** | `/admin/accounts` | Tạo tài khoản, tạm khóa hoặc kích hoạt. |
-| **Quản lý sản phẩm** | `/admin/products` | Xem, tìm, thêm, sửa, xóa sản phẩm khi được phép. |
-| **Quản lý danh mục** | `/admin/categories` | Tạo danh mục và xóa danh mục chưa được sử dụng. |
 | **Kết quả đã lưu** | `/admin/monitor` | Tìm từng lượt phân tích, xem dữ liệu gốc và xuất kết quả. |
 | **Cấu hình đã lưu** | `/admin/configuration` | Đọc phiên bản mô hình, taxonomy và quy tắc của kết quả đã lưu. |
 
-Admin còn mở được trang bằng chứng `/admin/analysis` từ sản phẩm hoặc giám sát. Trang này không có mục riêng trong menu và dùng cách đọc bằng chứng tương tự User.
+Admin còn mở được trang bằng chứng `/admin/analysis` từ giám sát. Trang này không có mục riêng trong menu và dùng cách đọc bằng chứng tương tự User.
 
 <a id="admin-tong-quan"></a>
 
@@ -404,7 +404,7 @@ Tình trạng kết nối tốt chỉ xác nhận khả năng truy cập hệ th
 - Bảng có các cột dự kiến về mã, tên, chủ sở hữu, sản phẩm, phân tích và thao tác, nhưng hiển thị **Cửa hàng chưa được thiết lập**.
 - Chưa thể tạo, sửa, gán User vào cửa hàng hoặc chia sản phẩm cho từng cửa hàng trên trang này.
 
-Không cần thử bấm nhiều lần hoặc tải lại để mở khóa chức năng. Nếu muốn quản lý tài khoản, chuyển sang Quản lý tài khoản; nếu muốn thêm sản phẩm, dùng Quản lý sản phẩm.
+Không cần thử bấm nhiều lần hoặc tải lại để mở khóa chức năng. Nếu muốn quản lý tài khoản, chuyển sang Quản lý tài khoản. Nhập sản phẩm qua giao diện User chưa được triển khai.
 
 <a id="admin-tai-khoan"></a>
 
@@ -442,74 +442,13 @@ Tạm khóa sẽ làm tài khoản không thể tiếp tục sử dụng phiên 
 **Giới hạn giao diện:** hiện chưa có nút sửa họ tên/email/vai trò, đặt lại mật khẩu hoặc xóa tài khoản. Khi cần các thao tác này, liên hệ người phụ trách hệ thống; không tìm chúng trong hộp tạo tài khoản.
 
 <a id="admin-san-pham"></a>
-
-### 3.4. Trang Quản lý sản phẩm
-
-Cách đọc cột, tìm kiếm, lọc, phân trang và chọn sản phẩm giống [Danh mục sản phẩm của User](#user-san-pham). Admin có thêm các thao tác sau.
-
-#### Thêm sản phẩm
-
-1. Bấm **Thêm sản phẩm**.
-2. Nhập thông tin trong hộp tạo:
-
-| Trường | Yêu cầu / ý nghĩa |
-| --- | --- |
-| **Tên sản phẩm** | Bắt buộc, tối đa 500 ký tự. Nên đủ rõ để phân biệt các sản phẩm. |
-| **Giá** | Có thể để trống nếu chưa biết; nếu nhập phải là số không âm. Không nhập 0 chỉ để thay cho dữ liệu chưa rõ. |
-| **Danh mục** | Chọn danh mục có sẵn; có thể để Chưa phân loại. Muốn có nhóm mới, tạo ở Quản lý danh mục trước. |
-| **Mô tả** | Nội dung mô tả sản phẩm, có thể để trống. |
-
-3. Bấm **Lưu sản phẩm**, chờ **Đang lưu…** kết thúc.
-4. Tìm lại sản phẩm vừa tạo để kiểm tra thông tin.
-
-Sản phẩm mới chưa tự có số liệu phân tích. Trạng thái Chưa có phân tích sau khi thêm là bình thường; hiện chưa có nút chạy ML trực tiếp trong giao diện.
-
-#### Sửa sản phẩm
-
-1. Tìm đúng tên và mã sản phẩm.
-2. Bấm **Sửa** ở dòng tương ứng.
-3. Chỉnh tên, giá, danh mục hoặc mô tả.
-4. Bấm **Lưu sản phẩm**, sau đó kiểm tra lại bảng.
-
-Hộp sửa hiện chưa có trường chỉnh số bán, điểm đánh giá, số đánh giá, mã nguồn, ảnh/video hoặc kết quả ML. Chưa có chức năng tải ảnh/video lên hay import CSV bằng nút trong trang này.
-
-Sửa giá/mô tả trong catalog **không sửa ngược snapshot của phân tích đã lưu** và không tự sinh phân tích mới. Vì vậy có thể thấy giá hiện tại khác giá trong một kết quả lịch sử; cần kiểm tra đúng phần dữ liệu trước khi cho rằng hệ thống sai.
-
-#### Xóa sản phẩm
-
-1. Kiểm tra đúng dòng sản phẩm cần xóa.
-2. Bấm **Xóa**.
-3. Đọc xác nhận của trình duyệt; chỉ đồng ý khi chắc chắn muốn xóa bản ghi đó.
-4. Nếu thành công, sản phẩm không còn trong catalog. Nếu bị báo đang được tham chiếu, dừng lại và kiểm tra dữ liệu liên quan.
-
-Sản phẩm đã có phân tích có thể bị chặn xóa để bảo vệ dữ liệu và lịch sử. Trang không có nút ép xóa hoặc tự xóa toàn bộ phân tích/công việc liên quan. Việc dọn dữ liệu thử nghiệm là công việc bảo trì riêng của người phụ trách kỹ thuật.
-
 <a id="admin-danh-muc"></a>
 
-### 3.5. Trang Quản lý danh mục
-
-Trang hiển thị Mã, Tên, số Sản phẩm và Thao tác. Đây là nhóm quản lý catalog; không phải trình chỉnh sửa toàn bộ taxonomy/quy tắc ghép nhóm của mô hình.
-
-#### Tạo danh mục
-
-1. Bấm **Thêm danh mục**.
-2. Điền **Mã danh mục**: bắt buộc, duy nhất, tối đa 80 ký tự, chỉ dùng chữ thường không dấu `a-z`, số `0-9` và dấu gạch dưới `_`. Ví dụ `tui_deo_cheo`; không dùng khoảng trắng hoặc chữ hoa.
-3. Điền **Tên danh mục**: bắt buộc, tối đa 150 ký tự, có thể dùng tiếng Việt có dấu, ví dụ “Túi đeo chéo”.
-4. Nhập **Mô tả** nếu cần.
-5. Bấm **Lưu danh mục** rồi kiểm tra bảng.
-6. Khi thêm/sửa sản phẩm, chọn danh mục này để đưa sản phẩm vào nhóm.
-
-#### Xóa danh mục
-
-1. Kiểm tra mã, tên và số sản phẩm của danh mục.
-2. Bấm **Xóa danh mục**, đọc xác nhận và xác nhận nếu đúng.
-3. Nếu có sản phẩm đang sử dụng danh mục, hệ thống chặn xóa. Nếu thật sự cần bỏ nhóm đó, trước tiên dùng Sửa sản phẩm để chuyển sản phẩm sang nhóm phù hợp, rồi thử xóa danh mục đã trống.
-
-Hiện chưa có nút sửa danh mục. Thêm hoặc thay đổi danh mục catalog không tự cập nhật loại sản phẩm, nhóm đối chiếu hoặc kết quả trong các phân tích đã đóng băng.
+Hai trang quản lý sản phẩm/danh mục của Admin đã được gỡ. Hướng dẫn thao tác tạo/sửa/xóa tại hai trang này không còn áp dụng.
 
 <a id="admin-ket-qua"></a>
 
-### 3.6. Trang Kết quả đã lưu
+### 3.4. Trang Kết quả đã lưu
 
 #### Mục đích
 
@@ -548,7 +487,7 @@ Không có nút Chạy lại, Thử lại mô hình hoặc sửa trực tiếp k
 
 <a id="admin-cau-hinh"></a>
 
-### 3.7. Trang Cấu hình đã lưu
+### 3.5. Trang Cấu hình đã lưu
 
 Trang dùng để đọc cấu hình gắn với các kết quả đã có, giúp đối chiếu một kết quả được tạo bởi phiên bản nào. **Hiện chỉ xem, chưa chỉnh sửa hoặc triển khai cấu hình.**
 
@@ -571,17 +510,15 @@ Dòng **Chưa có trong kết quả** nghĩa là bản ghi không cung cấp gi�
 
 <a id="admin-thuc-hanh"></a>
 
-### 3.8. Quy trình thực hành cho Admin mới
+### 3.6. Quy trình thực hành cho Admin mới
 
-1. Đăng nhập bằng tài khoản Admin, kiểm tra đúng tên và vai trò.
-2. Vào **Tổng quan hệ thống**, xem trạng thái Web API/PostgreSQL và các kết quả đã lưu.
-3. Khi cần cấp quyền cho người mới, vào **Quản lý tài khoản → Thêm tài khoản**, chọn User hoặc Admin theo đúng nhu cầu.
-4. Nếu cần nhóm sản phẩm mới, tạo ở **Quản lý danh mục** trước.
-5. Vào **Quản lý sản phẩm → Thêm sản phẩm**, điền tên, giá, nhóm và mô tả; kiểm tra lại sau khi lưu.
-6. Không chờ sản phẩm mới tự xuất hiện kết quả ML. Dữ liệu phân tích mới phải được người phụ trách đưa vào hệ thống qua quy trình tích hợp hiện có; chưa có nút import/chạy ML trên trang quản trị.
-7. Với sản phẩm đã có phân tích, vào **Kết quả đã lưu**, chọn mã kết quả, xem snapshot và bấm Xem bằng chứng.
-8. Khi cần kiểm tra nguồn phiên bản, đối chiếu **Cấu hình đã lưu**. Không coi việc chọn phiên bản là đã thay đổi mô hình.
-9. Đăng xuất khi kết thúc công việc.
+1. Đăng nhập bằng tài khoản Admin, kiểm tra đúng vai trò.
+2. Vào Tổng quan hệ thống để xem kết nối và số liệu vận hành.
+3. Vào Quản lý tài khoản để tạo, khóa hoặc kích hoạt tài khoản.
+4. Vào Kết quả đã lưu để xem snapshot và bằng chứng của từng phân tích.
+5. Cấu hình đã lưu chỉ cho xem; Quản lý cửa hàng hiện chưa khả dụng.
+6. Hai trang quản lý sản phẩm/danh mục đã được gỡ. Không dùng hướng dẫn cũ để nhập dữ liệu ở Admin.
+7. Đăng xuất khi kết thúc.
 
 <a id="trang-thai"></a>
 
@@ -644,7 +581,7 @@ Mỗi trạng thái trong cùng nhóm có màu riêng. Khi tìm kiếm, báo cá
 | Có thông tin video nhưng không xem được video trên trang | Dữ liệu hiện diện video phục vụ bằng chứng; giao diện hiện chưa có trình phát/tải video. |
 | Báo xung đột khi lưu công việc | Có thay đổi khác sau thời điểm bạn tải dữ liệu. Ghi lại nội dung chưa lưu, Tải lại, đọc trạng thái mới rồi thao tác tiếp. |
 | Xóa sản phẩm/danh mục bị chặn | Bản ghi đang được dữ liệu khác tham chiếu. Không phải mọi bản ghi đều được phép xóa. Với danh mục, xem sản phẩm đang sử dụng; với sản phẩm đã phân tích, nhờ kỹ thuật kiểm tra nhu cầu bảo trì. |
-| Nút cửa hàng hoặc Lưu phiên bản không bấm được | Chức năng này chưa khả dụng trong phiên bản thật. Đây không phải đã lưu thành công hay lỗi mật khẩu. |
+| Nút cửa hàng hoặc Lưu phiên bản không bấm được | Chức năng này chưa khả dụng. Đây không phải đã lưu thành công hay lỗi mật khẩu. |
 | Bấm Tải lại nhưng kết quả ML không đổi | Tải lại chỉ đọc dữ liệu đã lưu, không chạy suy luận mới. |
 | Hoàn thành công việc nhưng trạng thái sản phẩm vẫn vậy | Trạng thái công việc và kết quả phân tích độc lập. Cần dữ liệu/kết quả mới để đánh giá lại, không sửa kết quả cũ bằng thao tác hoàn thành. |
 | Tệp xuất có nhiều dữ liệu hơn danh sách đang lọc | Nút Xuất dữ liệu đầu trang xuất dữ liệu đã tải theo phạm vi mô tả ở mục 1.3, chưa xuất riêng phần đang lọc. |
@@ -662,3 +599,26 @@ Người sử dụng thông thường chỉ cần website và tài khoản đã 
 - [Trạng thái triển khai hiện tại](docs/CURRENT_STATE.md): các phần đã có và những giới hạn cần tiếp tục xử lý.
 
 Tài liệu này mô tả thao tác theo giao diện hiện tại. Các chức năng cửa hàng, cấu hình có thể chỉnh sửa và phân tích ML theo yêu cầu chỉ nên được đưa vào hướng dẫn sử dụng sau khi đã được triển khai và xác minh riêng.
+
+## Cập nhật thao tác ngày 13/11/2026
+
+### User nhập sản phẩm
+
+Trong Danh mục sản phẩm, bấm **Import dữ liệu**, chọn CSV hoặc JSON. Hệ thống tự
+nhận diện các cột Việt/Anh, chuẩn hóa giá/số lượng/ảnh/video và gắn dữ liệu vào
+cửa hàng đang đăng nhập. Xem số dòng thêm mới, cập nhật, cần kiểm tra và các cột
+được bỏ qua trước khi bấm **Xác nhận nhập**. Dòng lỗi cần được sửa trong file rồi
+chọn lại file. Mã sản phẩm ổn định giúp cập nhật đúng sản phẩm ở lần nhập sau.
+Nếu thiếu mã, hệ thống dùng tên để nhận diện và hiển thị cảnh báo. Ô trống khi
+cập nhật giữ thông tin hiện có. Tối đa 1.000 dòng và 256 KB dữ liệu gửi mỗi lần.
+Ảnh/video cần là địa chỉ HTTP(S). Chọn số sản phẩm mỗi trang bằng ô 10/20/50/100.
+
+### Admin quản lý tài khoản và hoạt động
+
+Tạm khóa/Kích hoạt mở popup xác nhận. Trạng thái của đúng tài khoản đổi ngay,
+chỉ nút đang xử lý bị vô hiệu hóa. Lưu thất bại sẽ khôi phục trạng thái cũ và báo
+qua popup. Tài khoản bị khóa đăng nhập đúng mật khẩu sẽ nhận hướng dẫn liên hệ
+quản trị viên. Tổng quan và Hoạt động phân tích hiển thị số liệu theo cửa hàng.
+Các đợt kết quả đã lưu được ghi rõ, số yêu cầu đang chạy chờ tích hợp ML.
+Các mô tả cũ về Admin xem chi tiết dữ liệu sản phẩm/phân tích được thay thế bởi
+quyền xem số liệu tổng hợp trong bản cập nhật này.

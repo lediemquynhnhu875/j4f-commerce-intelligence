@@ -2,6 +2,8 @@ import { pool, transaction } from "../db";
 import { ApiError, missing } from "../errors";
 import { type Account, accountFields, accountDto, hashPassword } from "../auth";
 
+import { productScope, ownStore } from "./stores";
+
 type Table = "products" | "categories" | "users";
 export async function insert(
   client: Pick<import("pg").PoolClient, "query">,
@@ -12,7 +14,7 @@ export async function insert(
   const fields = Object.keys(data);
   const result = await client.query(
     `INSERT INTO ${table} (${fields.join(",")}) VALUES (${fields.map((_, i) => `$${i + 1}`).join(",")}) RETURNING *`,
-    Object.values(data),
+    Object.entries(data).map(([field, value]) => field === "image_urls" && Array.isArray(value) ? JSON.stringify(value) : value),
   );
   return result.rows[0];
 }
@@ -25,7 +27,7 @@ export async function update(
   const fields = Object.keys(data);
   const result = await client.query(
     `UPDATE ${table} SET ${fields.map((f, i) => `${f}=$${i + 2}`).join(",")},updated_at=now() WHERE id=$1 RETURNING *`,
-    [recordId, ...Object.values(data)],
+    [recordId, ...Object.entries(data).map(([field, value]) => field === "image_urls" && Array.isArray(value) ? JSON.stringify(value) : value)],
   );
   if (!result.rows[0]) missing();
   return result.rows[0];
@@ -64,7 +66,8 @@ export async function createProduct(
   data: Record<string, unknown>,
   actor: Account,
 ) {
-  return insert(pool(), "products", { ...data, imported_by: actor.id });
+  const store = await ownStore(actor);
+  return insert(pool(), "products", { ...data, imported_by: actor.id, store_id: store.id });
 }
 export async function createCategory(data: Record<string, unknown>) {
   return insert(pool(), "categories", data);
@@ -76,7 +79,7 @@ export async function patchCategory(
   const fields = Object.keys(data);
   const result = await pool().query(
     `UPDATE categories SET ${fields.map((f, i) => `${f}=$${i + 2}`).join(",")} WHERE id=$1 RETURNING *`,
-    [recordId, ...Object.values(data)],
+    [recordId, ...Object.entries(data).map(([field, value]) => field === "image_urls" && Array.isArray(value) ? JSON.stringify(value) : value)],
   );
   if (!result.rows[0]) missing();
   return result.rows[0];
@@ -161,11 +164,12 @@ export interface ProductFilters {
 export async function listProducts(
   page: number,
   limit: number,
-  filters: ProductFilters = {},
+  filters: ProductFilters,
+  actor: Account,
 ) {
-  const conditions: string[] = [];
-  const args: unknown[] = [limit, (page - 1) * limit];
-  let idx = 3;
+  const conditions: string[] = ["$1::bigint IS NOT NULL",productScope(actor)];
+  const args: unknown[] = [actor.id];
+  let idx = 2;
 
   if (filters.search) {
     conditions.push(`(name ILIKE $${idx} OR brand ILIKE $${idx})`);
@@ -203,18 +207,13 @@ export async function listProducts(
     : "";
 
   const result = await pool().query(
-    `SELECT * FROM products ${whereClause} ORDER BY id LIMIT $1 OFFSET $2`,
-    args,
+    `SELECT * FROM products ${whereClause} ORDER BY id LIMIT $${idx} OFFSET $${idx+1}`,
+    [...args,limit,(page-1)*limit],
   );
 
-  // Query đếm tổng số bản ghi phù hợp để phân trang
-  const countArgs = args.slice(2);
-  const countWhere = conditions.length
-    ? `WHERE ${conditions.map((cond, i) => cond.replace(/\$\d+/, `$${i + 1}`)).join(" AND ")}`
-    : "";
   const count = await pool().query(
-    `SELECT count(*)::int AS total FROM products ${countWhere}`,
-    countArgs,
+    `SELECT count(*)::int AS total FROM products ${whereClause}`,
+    args,
   );
 
   return {
@@ -223,44 +222,9 @@ export async function listProducts(
   };
 }
 
-export async function importProducts(
-  items: Array<Record<string, unknown>>,
-  actor: Account,
-) {
-  if (!Array.isArray(items) || items.length === 0) {
-    throw new ApiError(
-      422,
-      "VALIDATION_ERROR",
-      "Danh sách sản phẩm import không được rỗng",
-    );
-  }
-
-  return transaction(async (client) => {
-    const inserted = [];
-    for (const item of items) {
-      if (!item.name || typeof item.name !== "string" || !item.name.trim()) {
-        continue;
-      }
-
-      const row = await insert(client, "products", {
-        name: String(item.name).trim(),
-        description: item.description ? String(item.description) : null,
-        category_id: item.category_id ? String(item.category_id) : null,
-        price:
-          item.price !== null && item.price !== undefined && item.price !== ""
-            ? Number(item.price)
-            : null,
-        currency: item.currency ? String(item.currency) : "VND",
-        quantity_sold: item.quantity_sold ? Number(item.quantity_sold) : 0,
-        rating_average: item.rating_average
-          ? Number(item.rating_average)
-          : null,
-        review_count: item.review_count ? Number(item.review_count) : 0,
-        thumbnail_url: item.thumbnail_url ? String(item.thumbnail_url) : null,
-        imported_by: actor.id,
-      });
-      inserted.push(row);
-    }
-    return { imported_count: inserted.length, items: inserted };
-  });
+export async function listStoreCategories(actor:Account,page:number,limit:number) {
+  const filter=actor.role === "admin" ? "$1::bigint IS NOT NULL" : `EXISTS (SELECT 1 FROM products p WHERE p.category_id=c.id AND ${productScope(actor,"p")})`;
+  const rows=await pool().query(`SELECT c.* FROM categories c WHERE ${filter} ORDER BY c.id LIMIT $2 OFFSET $3`,[actor.id,limit,(page-1)*limit]);
+  const count=await pool().query(`SELECT count(*)::int AS total FROM categories c WHERE ${filter}`,[actor.id]);
+  return {data:rows.rows,pagination:{page,limit,total:count.rows[0].total}};
 }

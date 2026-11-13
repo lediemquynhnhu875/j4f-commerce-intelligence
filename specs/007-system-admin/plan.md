@@ -1,8 +1,16 @@
 # Implementation Plan: System Administration
 
+> Current ownership: [one User / one store](../store-ownership.md), implemented and verified on configured Neon. Earlier multi-store/shared-catalog assumptions are superseded.
+
+> Current release amendment: [connected workspace scope](../release-scope.md). Demo routes are removed. Admin product/category screens are retired; User catalog write/import and ownership work remain pending. Older preview/catalog milestones below are historical and do not define the current navigation.
+
 **Branch**: Current checkout retained; proposed `feature/system-admin` | **Date**: 2026-10-09 | **Spec**: [spec.md](spec.md)
 
 **Input**: `specs/007-system-admin/spec.md`
+
+## Current release implementation
+
+Production UI is in frontend/src/features/connected/, with allowed routes and menus in frontend/src/lib/workspace-pages.ts. Admin catalog screens are removed. Backend remains in backend/; historical planned frontend server paths below are not the current runtime. See ../release-scope.md.
 
 ## Summary
 
@@ -81,3 +89,23 @@ Follow the [UI-first sequencing decision](../../docs/decisions/0003-ui-preview-f
 Task numbers follow the corrected local execution order; phase headings add no
 implicit prerequisites. Framework setup and clearly labeled previews do not
 wait for real auth/database/model readiness. Real integration checks remain required.
+
+## Account state and aggregate-only administration amendment — 2026-11-13
+
+- Restrict Admin to account/store administration and system aggregates. GET
+  `/api/v1/admin/summary` returns counts, saved-result batches grouped by store
+  and run, and technical version identifiers. It excludes product identifiers,
+  names, prices, snapshots, evidence and suggestions.
+- Reject Admin access to customer product/category/analysis/action routes,
+  including aliases and mutations. Remove the Admin analysis-detail page. Admin
+  overview/monitor/configuration use aggregate/version data only.
+- Live inference jobs have not been implemented. Request/running counts are
+  nullable and shown as unavailable, while imported batches are labelled saved
+  results. Do not reinterpret saved-result counts as analysis requests.
+- Account suspension uses a custom confirmation popup and optimistic row state,
+  tracks pending IDs independently, rolls back on failure and applies the saved
+  account DTO on success. Other account controls remain usable.
+- Return `403 ACCOUNT_SUSPENDED` for a correct-password login to a suspended
+  account, including the transaction recheck. Wrong passwords retain 401.
+- Mount one popup provider for confirmations and runtime feedback across login,
+  workspace loading, account/catalog/work forms and logout failures.

@@ -292,3 +292,26 @@ Authoritative feature details:
 [presentation](../../specs/005-user-dashboard/contracts/interfaces.md),
 [actions](../../specs/006-improvement-workflow/contracts/interfaces.md), and
 [Admin](../../specs/007-system-admin/contracts/interfaces.md).
+
+## Current import and admin privacy contract — 2026-11-13
+
+This amendment supersedes earlier Admin catalog/detail permissions above.
+Each regular account owns its persisted store. Preview and commit derive store
+ownership from authentication, never file-provided account/store fields.
+POST `/api/v1/products/import/preview` accepts `{items: [...]}` and returns
+`{data:{total,create_count,update_count,invalid_count,ignored_columns,rows}}`.
+Each row includes its one-based data-row index, operation, name, price, errors and
+warnings. CSV headers are excluded from data-row numbering. Commit accepts the
+same raw items, revalidates them and returns counts for created/updated records.
+The existing bare-array commit body remains accepted. Missing/blank update fields
+retain existing values. Imports do not recompute or mutate historical analyses.
+Import identity is a source product code scoped to the store, or a warned
+deterministic name key. Category names resolve/create supporting categories.
+Product writes now also validate HTTP(S) `image_urls` and `video_url`.
+Limits are 1,000 data rows and 256 KiB JSON body. Preview never writes records.
+
+Admin's `/api/v1/admin/summary` DTO exposes counts, `recent` saved batches and
+technical `versions`. `analysis_requests` and `running_requests` are null until
+job tracking exists. Detailed customer product/category/analysis/action routes
+return 403 for Admin. Correct-password suspended login returns
+`403 ACCOUNT_SUSPENDED`; wrong credentials remain 401.

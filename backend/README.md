@@ -1,6 +1,30 @@
 # Sellens PostgreSQL REST backend
 
-The existing Next.js 16.4.0 / TypeScript backend serves JSON at
+## Current store ownership
+
+Each regular User owns one store; existing catalog data belongs to user1's
+`J4F store`. User2 starts empty. All catalog/analysis/work/history requests are
+owner-scoped; Admin retains system monitoring. Product writes/import are User
+operations with server-derived store_id. See [current contract](../specs/store-ownership.md).
+
+Apply migrations with `npm run db:migrate`; first application of 004 requires
+SEED_USER1_EMAIL to identify the existing catalog owner. Existing migration 003
+is present on the configured database but its original SQL was absent in this
+checkout; preserve its recorded checksum. Do not reset the database.
+
+GET `/api/v1/stores` returns the own store (all for Admin), GET
+`/api/v1/stores/me` returns a regular User's store. Existing IDs under products,
+analyses, analysis-results, actions and action history are owner-checked.
+
+Run actual ownership HTTP checks against a started updated backend:
+`STORE_TEST_URL=http://127.0.0.1:3311/api/v1 npx tsx scripts/test-store-http.ts`
+(PowerShell: set `$env:STORE_TEST_URL` first). Credentials come only from ignored
+.env/process environment. The script creates/deletes its own temporary product,
+uses rolled-back account provisioning, and logs out its test sessions.
+Older shared-catalog descriptions below are historical and superseded here.
+
+
+The existing Next.js 16.4.6 / TypeScript backend serves JSON at
 `http://127.0.0.1:3001/api/v1`, using pooled parameterized `pg` queries.
 Routes delegate to validation, authentication and services in `src/server/`.
 The single `src/server/api.ts` file declares endpoints explicitly as
@@ -8,14 +32,11 @@ The single `src/server/api.ts` file declares endpoints explicitly as
 table; a shared matcher resolves `:id`, authorization, 404/405 and response handling.
 The existing Next.js catch-all route remains the HTTP entry point; no per-endpoint
 files or Express dependency are required.
-The live frontend consumes these APIs; isolated preview pages retain mock data.
+The live frontend consumes these authenticated PostgreSQL-backed APIs.
 
-The supplied six-table architecture defines one shared admin/reviewer catalog.
-API role `user` maps to database `reviewer`; provisioning accepts either spelling.
-This supersedes the older store plan for this backend deliverable. See the
-[scope decision](../docs/decisions/0004-shared-catalog-backend.md) and
-[SQL schema](db/migrations/001_shared_catalog.sql). Datasets/models stay external;
-saved analyses do not run inference or convert the separate ML status enum.
+The schema uses one store per regular User. API role `user` maps to database
+`reviewer`. Saved analyses come from imported ML snapshots. Live inference remains
+pending. The public API directory contains endpoint metadata and health links.
 
 ## Installation and environment
 
@@ -34,12 +55,12 @@ values. Credentials are never public environment variables.
 | Variable | Purpose |
 | --- | --- |
 | `DATABASE_URL` | Neon PostgreSQL URI, including supplied SSL/channel-binding parameters; not an HTTP endpoint |
-| `APP_ENV` | Must be `development` for seeds |
+| `APP_ENV` | Environment label; legacy sample cleanup requires `development` |
 | `CORS_ORIGINS` | Comma-separated exact allowed browser origins; empty denies cross-origin requests |
-| `SEED_USER1_EMAIL`, `SEED_USER1_PASSWORD` | First development regular account |
-| `SEED_USER2_EMAIL`, `SEED_USER2_PASSWORD` | Second development regular account |
-| `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD` | Development admin |
-| `BACKEND_TEST_URL` | HTTP test target; default `http://127.0.0.1:3001` |
+| `SEED_USER1_EMAIL`, `SEED_USER1_PASSWORD` | Existing first development account / ML import owner |
+| `SEED_USER2_EMAIL`, `SEED_USER2_PASSWORD` | Existing second development account for integration checks |
+| `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD` | Existing development admin for integration checks |
+| `STORE_TEST_URL` | HTTP test API base; default `http://127.0.0.1:3311/api/v1` |
 
 The URI passes unchanged to `pg`, with channel binding enabled. Pool max is five;
 connection/query timeouts are 10 seconds, idle timeout 30 seconds. The supplied
@@ -53,7 +74,6 @@ From `backend/`, with Neon connectivity:
 ```sh
 npm run db:inspect
 npm run db:migrate
-npm run db:seed
 ```
 
 Inspection prints schema metadata only. The additive migration is transactional,
@@ -62,15 +82,10 @@ names, leaves unrelated tables intact and never drops/resets/replaces data. Neve
 edit an applied migration. Auxiliary tables support sessions, login throttling,
 seed keys and the migration ledger.
 
-Development seeds create 10 realistic synthetic products, 3 descriptive analyses,
-2 regular accounts, 1 admin, 3 categories, 3 actions and 3 history events. Stable
-keys reuse records without changing existing data/passwords. Identity conflicts
-roll back the seed. Passwords use salted scrypt, like backend authentication.
-The user-supplied development seed passwords are accepted with a six-character
-minimum; API provisioning/password changes require 12. Emails must be valid/distinct.
-Seed analyses explicitly have insufficient basis, unverified sales labels/peers,
-null reference, unknown observation time and unavailable prediction origin. They
-make no model, forecast or causal claim.
+The synthetic catalog generator and its `db:seed` command have been removed.
+Provision additional accounts through the authenticated Admin API/UI. Passwords
+use salted scrypt. Existing credentials and records remain persisted in PostgreSQL.
+The `SEED_*` variables identify existing development accounts for tests/imports.
 
 ## Import the bounded real ML sample
 
@@ -87,7 +102,7 @@ Imports exactly 100 products across five types (20 each), 100 saved analyses and
 matching suggestions/history. All writes are atomic. Exact reruns insert nothing;
 different source bytes under the fixed run key stop without overwriting. Preserve
 the original input for verification. This uses the shared catalog and preserves
-old seeds; stores and live inference remain pending. Results are experimental.
+the separate manual catalog entries; live inference remains pending. Results are experimental.
 See [scope](../docs/decisions/0007-bounded-ml-sample-import.md).
 
 With the backend running, verify the source, database and real HTTP responses:
@@ -100,59 +115,25 @@ Uses local SEED_USER1 credentials and writes sanitized results to ignored
 `tmp/ml-sample-http.json`. `npm test` checks selection and source/status validation.
 The migration runner discovers ordered numbered SQL files and checks each checksum.
 
-## Remove the original API-test products
+## Legacy sample cleanup
 
-The prepared CLI retires only the ten original registered synthetic products and
-their verified seed/integration-test dependents. Existing accounts, categories,
-real imported products, ML runs and unrelated history are preserved. No HTTP
-backend needs to be running. Root `.env` needs DATABASE_URL and APP_ENV=development;
-sample-account passwords are not needed for cleanup.
-
-From `backend/`, preview first:
+The original ten synthetic products have already been retired in the configured
+database. The legacy `db:cleanup-samples` utility remains available for older
+development databases, with its identity/dependency checks and unit tests.
 
 ```powershell
 npm run db:cleanup-samples
 ```
 
-This uses a read-only transaction. Review `targets`, `delete` and
-`products_remaining`. The preparation run found 10 products, 3 analyses, 6 test
-actions and 13 history events to remove, leaving 100 products. The command prints
-an `apply_command` with the fingerprint of the exact records reviewed. Copy and
-run that entire command to perform the deletion; its form is:
-
-```powershell
-npm run db:cleanup-samples -- --apply --confirm PLAN_HASH_FROM_PREVIEW
-```
-
-Applying first writes and syncs a backup under root `tmp/seed-cleanup/`, which Git
-ignores. It then deletes in dependency order within a locked transaction, restores
-the two named history protections and checks remaining counts before committing.
-The database role must own/manage those tables. Changed targets, unrecognized
-human work, unexpected real-source records or missing protections stop cleanup.
-If a transaction fails, PostgreSQL rolls back its data and trigger changes; a
-backup file may remain. A lost connection during commit requires inspecting the
-database before retrying, as with any database commit.
-
-Success prints `status: cleaned`, deleted/remaining counts and the backup path.
-Run the preview command again to confirm `already-cleaned`, then reload the web
-UI. The retirement marker blocks full `db:seed` from reintroducing sample products;
-it leaves existing login accounts untouched. Keep the backup private and outside
-Git. No identity sequences, tables or unrelated records are reset.
-
-Legacy HTTP/browser tests that require the ten seed products, including their
-seed-preservation assertions, need a separate seeded development database after
-retirement. They are not post-cleanup acceptance tests for a real-data-only catalog.
-Scope/exception: [ADR 0008](../docs/decisions/0008-retire-development-catalog.md).
-
-Preparation verification: 15 backend tests, production build and final typecheck
-passed. The real Neon preview passed with `changed: false`. The live apply,
-backup-write, transactional deletion and retirement paths have **not** been run
-in this instruction session; no deletion is claimed.
+The preview reports `already-cleaned` for a retired catalog. For an older database,
+review its exact target list and returned fingerprint before using its `--apply
+--confirm` command. The utility creates a private backup and uses a transaction.
+See [the cleanup audit](../specs/mock-retirement.md) for current counts.
 
 ## Import the proportional batch and product images
 
 The first import is stratified at 25 products per status, which overstates
-`insufficient_data` for a demo. The second batch brings the catalog to the corpus
+`insufficient_data` in the initial selection. The second batch brings the catalog to the corpus
 distribution. Place the same `products_full.json` in root `data/processed/`
 (ignored). From `backend/`:
 
@@ -263,19 +244,34 @@ through lists when working with a nonempty database.
 
 ## Tests and evidence
 
-```sh
+```powershell
 npm run typecheck
 npm test
 npm run build
-# With a backend running and seeds configured:
+# Start the backend, then configure its API base in a separate terminal.
+$env:STORE_TEST_URL = "http://127.0.0.1:3001/api/v1"
 npm run test:http
-npm audit
 ```
 
-HTTP tests send real requests and compare full seed responses with direct SQL.
-They verify pagination, all logins, permissions, invalid/missing inputs, immutable
-records, stale actions, rejection validation, CORS, CRUD and logout. Temporary
-products/categories are deleted; only test-created fixtures are removed. Identity
-sequences may advance; seed/unrelated data is not overwritten. Run in development.
-Sanitized results are in ignored `tmp/backend-http-results.json`, without tokens,
-emails or hashes. See [verification report](../docs/verification/sellens-backend.md).
+The HTTP runner uses existing development credentials from ignored environment
+configuration. It checks all three logins, health/readiness, pagination, direct
+PostgreSQL counts and store ownership. It also exercises denied cross-store
+requests, invalid inputs and an owned temporary product import/update/delete.
+The temporary product is removed and test sessions are logged out. Account/store
+provisioning is checked inside a rolled-back transaction.
+
+Sanitized results are written to ignored `tmp/store-http-results.json`. The old
+HTTP runner that required ten synthetic products has been removed. Unit tests
+and isolated browser fixtures remain confined to test execution.
+
+## Import and privacy update — 2026-11-13
+
+- User `POST /api/v1/products/import/preview` previews raw `{items:[...]}` with
+  automatic field mapping, normalization, ignored columns and all-row errors.
+- User `POST /api/v1/products/import` revalidates and atomically creates/updates
+  products within the signed-in store. Missing update fields retain their values.
+- Admin `GET /api/v1/admin/summary` supplies system counts, saved batches by store
+  and technical versions. Detailed customer-data routes now return 403 for Admin.
+- Suspended accounts with a correct password receive `403 ACCOUNT_SUSPENDED`.
+- `npm test` includes import parser/normalization regressions. No migration is
+  required for this update on the existing media/store schema.

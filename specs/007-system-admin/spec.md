@@ -1,5 +1,10 @@
 # Feature Specification: System Administration
 
+> 2026-11-13 amendment: automatic import/preview, popup feedback, per-account suspension state and aggregate-only Admin access are implemented. See the latest plan/tasks amendment and CURRENT_STATE verification. General user query optimization and live ML jobs remain deferred.
+> Current ownership: [one User / one store](../store-ownership.md), implemented and verified on configured Neon. Earlier multi-store/shared-catalog assumptions are superseded.
+
+> Current release amendment: [connected workspace scope](../release-scope.md). Demo routes are removed. Admin product/category screens are retired; User catalog write/import and ownership work remain pending. Older preview/catalog milestones below are historical and do not define the current navigation.
+
 **Feature Branch**: Not created; proposed implementation branch `feature/system-admin`
 
 **Feature ID**: F007 | **Created**: 2026-10-09 | **Status**: Draft for team review
@@ -22,19 +27,13 @@ An administrator needs to provision, suspend and restore access safely.
 2. **Given** a User with an active session, **When** Admin suspends them, **Then** subsequent protected requests are denied.
 3. **Given** a suspended account, **When** Admin reactivates it, **Then** only a fresh login restores access.
 
-### User Story 2 - Manage catalog metadata and explicit assignments (Priority: P1)
+### User Story 2 - Historical catalog management (retired)
 
-An administrator needs to maintain categories and demo store mappings without losing history.
-
-**Why this priority**: This delivers maintain categories and demo store mappings without losing history within the feature's bounded scope.
-
-**Independent Test**: Manage two stores and category/product assignments using F002 published data.
-
-**Acceptance Scenarios**:
-
-1. **Given** source products, **When** Admin assigns them to a store, **Then** only explicitly assigned owners can view them.
-2. **Given** a product with historical analyses, **When** it is reassigned, **Then** old runs stay scoped to the original store.
-3. **Given** an invalid category or mapping, **When** management update is submitted, **Then** validation rejects it.
+The Admin product/category and assignment screens are excluded from the current
+UI release at the user's request. They have no active UI acceptance scenarios.
+F007/T009 retains its historical identity but is retired, not completed.
+Owner-scoped User imports/writes and catalog API authorization are separate,
+unimplemented work. See [release scope](../release-scope.md).
 
 ### User Story 3 - Monitor processing and operational outcomes (Priority: P2)
 
@@ -60,11 +59,11 @@ An administrator needs to see actual failures and application activity.
 
 ### Functional Requirements
 
-- **FR-001**: The system MUST satisfy this outcome: Only active Admins manage accounts, stores, categories and product assignments.
-- **FR-002**: The system MUST satisfy this outcome: Admins provision email/password accounts without public registration; every active User has one explicit store.
+- **FR-001**: The system MUST satisfy this outcome: Only active Admins access account administration and system monitoring. Product/category management screens are excluded from the current Admin workspace; catalog API authorization changes remain pending.
+- **FR-002**: The system MUST satisfy this outcome: Admins provision email/password accounts without public registration. The current runtime uses a shared catalog; the proposed one-User/multiple-store ownership model remains pending.
 - **FR-003**: The system MUST satisfy this outcome: Account suspension blocks active sessions immediately; reactivation requires new login.
-- **FR-004**: The system MUST satisfy this outcome: Admins manage stores and explicit product assignments without deriving ownership from seller metadata.
-- **FR-005**: The system MUST satisfy this outcome: Product/category management reuses the import/catalog services and preserves frozen analysis history.
+- **FR-004**: The system MUST satisfy this outcome: Admin store management remains unavailable until a reviewed ownership implementation exists; source seller metadata must not grant ownership. Admin catalog editing pages are excluded.
+- **FR-005**: The system MUST satisfy this outcome: The current release MUST NOT expose Admin product/category management pages or navigation links; direct URLs return 404. Catalog ownership/import changes are separate future work and preserve frozen history.
 - **FR-006**: The system MUST satisfy this outcome: Operational statistics use actual recorded accounts, imports and processing outcomes.
 - **FR-007**: The system MUST satisfy this outcome: Monitoring distinguishes pending/running/succeeded/failed processing from analytic result categories.
 - **FR-008**: The system MUST satisfy this outcome: Failures and stale processing are visible without exposing credentials or private artifact paths.

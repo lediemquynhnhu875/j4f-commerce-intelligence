@@ -1,4 +1,6 @@
 ---
+
+> Current release amendment: [connected workspace scope](../release-scope.md). Demo routes are removed. Admin product/category screens are retired; User catalog write/import and ownership work remain pending. Older preview/catalog milestones below are historical and do not define the current navigation.
 description: Proposed implementation backlog; all ownership is proposed.
 ---
 

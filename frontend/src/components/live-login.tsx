@@ -1,7 +1,7 @@
 "use client";
+import { ErrorPopup } from "@/components/popup";
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { api } from "@/lib/api-client";
 import type { Account } from "@/types/api";
 import { Badge, Icon, Logo } from "./ui";
@@ -44,7 +44,7 @@ export function LiveLogin() {
             <span>Nhìn rõ cơ hội.</span>
           </h1>
           <p>
-            Đọc bằng chứng từ catalog chung.
+            Đọc bằng chứng từ cửa hàng của bạn.
             <br />
             Theo dõi quyết định và công việc của bạn.
           </p>
@@ -97,25 +97,13 @@ export function LiveLogin() {
               </button>
             </div>
             {error && (
-              <p className="form-error" role="alert">
-                {error}
-              </p>
+              <ErrorPopup message={error} />
             )}
             <button className="button primary login-submit" disabled={pending}>
               {pending ? "Đang đăng nhập…" : "Đăng nhập"}
               <Icon name="arrow" />
             </button>
           </form>
-          <div className="notice">
-            <Icon name="info" />
-            <span>
-                Catalog dùng chung cho tài khoản hoạt động. Kết quả ML đã nhập
-                mang tính thử nghiệm và cần được rà soát.
-            </span>
-          </div>
-          <Link className="text-link" href="/preview/demo-login">
-            Xem giao diện mock riêng
-          </Link>
         </div>
       </div>
     </main>

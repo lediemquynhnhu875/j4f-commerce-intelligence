@@ -1,7 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
-  testDir: "./tests/preview",
+  testDir: "./tests/release",
   fullyParallel: false,
   workers: 1,
   reporter: "list",
@@ -11,6 +11,7 @@ export default defineConfig({
       name: "chromium",
       use: {
         ...devices["Desktop Chrome"],
+        channel: process.env.PLAYWRIGHT_CHANNEL || undefined,
         viewport: { width: 1440, height: 1000 },
       },
     },
