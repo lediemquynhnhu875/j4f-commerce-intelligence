@@ -1,4 +1,8 @@
 ---
+
+> Current ownership: [one User / one store](../store-ownership.md), implemented and verified on configured Neon. Earlier multi-store/shared-catalog assumptions are superseded.
+
+> Current release amendment: [connected workspace scope](../release-scope.md). Demo routes are removed. Admin product/category screens are retired; User catalog write/import and ownership work remain pending. Older preview/catalog milestones below are historical and do not define the current navigation.
 description: Proposed implementation backlog; all ownership is proposed.
 ---
 
@@ -257,3 +261,12 @@ remaining delivery; they do not add a cyclic prerequisite.
 | FR-007 | `T002`, `T003`, `T004`, `T010`, `T014`, `T015` |
 | FR-008 | `T013`, [F007/T006](../007-system-admin/tasks.md) |
 | FR-009 | `T001`, `T016` |
+
+## Runtime popup amendment — 2026-11-13
+
+- [x] Add the shared popup provider and replace connected runtime confirmations
+  and error feedback with styled dialogs.
+- [x] Verify popup login errors, nested import errors and account confirmation
+  with Edge browser regression checks.
+
+These scoped checks do not change unrelated original feature acceptance.

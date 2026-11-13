@@ -48,6 +48,8 @@ export const productSchema = z
     brand: optionalText(255),
     product_url: url,
     thumbnail_url: url,
+    image_urls: z.array(url.unwrap().unwrap()).max(100).optional(),
+    video_url: url,
     currency: z
       .string()
       .regex(/^[A-Z]{3}$/)

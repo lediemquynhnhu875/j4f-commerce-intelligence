@@ -1,4 +1,8 @@
 ---
+
+> Current ownership: [one User / one store](../store-ownership.md), implemented and verified on configured Neon. Earlier multi-store/shared-catalog assumptions are superseded.
+
+> Current release amendment: [connected workspace scope](../release-scope.md). Demo routes are removed. Admin product/category screens are retired; User catalog write/import and ownership work remain pending. Older preview/catalog milestones below are historical and do not define the current navigation.
 description: Proposed implementation backlog; all ownership is proposed.
 ---
 
@@ -240,3 +244,19 @@ remaining delivery; they do not add a cyclic prerequisite.
 | FR-007 | `T007`, `T008`, `T009` |
 | FR-008 | `T006`, `T008` |
 | FR-009 | `T013`, [F007/T008](../007-system-admin/tasks.md), [F007/T009](../007-system-admin/tasks.md) |
+
+## Connected import/catalog amendment — 2026-11-13
+
+- [x] Implement automatic mapping/normalization, all-row preview errors, ignored
+  columns and server-derived ownership for CSV/JSON imports.
+- [x] Make repeated imports update matching store products atomically and preserve
+  fields missing from sparse updates; block duplicate/ambiguous rows.
+- [x] Clear stale previews after replacement-file errors and use popup feedback.
+- [x] Add 10/20/50/100 page-size controls and current-status filter choices.
+- [x] Verify parser regressions, real PostgreSQL HTTP import/rollback/ownership,
+  and browser page-size/replacement-file scenarios.
+- [ ] Optimize user list loading and move filtering/pagination to server queries
+  in a later contributor-authorized performance task.
+
+These checks record this scoped amendment. Original feature and ML-quality gates
+retain their earlier acceptance status.

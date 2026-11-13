@@ -1,5 +1,9 @@
 # Implementation Plan: Product Data, Imports, and Catalog
 
+> Current ownership: [one User / one store](../store-ownership.md), implemented and verified on configured Neon. Earlier multi-store/shared-catalog assumptions are superseded.
+
+> Current release amendment: [connected workspace scope](../release-scope.md). Demo routes are removed. Admin product/category screens are retired; User catalog write/import and ownership work remain pending. Older preview/catalog milestones below are historical and do not define the current navigation.
+
 **Branch**: Current checkout retained; proposed `feature/product-catalog` | **Date**: 2026-10-09 | **Spec**: [spec.md](spec.md)
 
 **Input**: `specs/002-product-catalog/spec.md`
@@ -82,3 +86,29 @@ Follow the [UI-first sequencing decision](../../docs/decisions/0003-ui-preview-f
 Task numbers follow the corrected local execution order; phase headings add no
 implicit prerequisites. Framework setup and clearly labeled previews do not
 wait for real auth/database/model readiness. Real integration checks remain required.
+
+## Authorized import and catalog amendment — 2026-11-13
+
+The requesting contributor authorized implementation on the existing dirty
+`first_demo` checkout. Continue F002's connected catalog/import scope without
+reassigning original feature ownership or claiming unrelated acceptance.
+
+- Parse CSV (comma/semicolon/tab, quoted and multiline fields) and JSON product
+  arrays/envelopes in the browser. The server maps Vietnamese/English column
+  aliases, validates all rows, and lists ignored columns and row-level issues.
+- Derive owner/store from the authenticated regular account. File ownership and
+  arbitrary model-output columns are ignored. Preview and commit share server
+  normalization. Commit validates again inside a transaction and serializes
+  imports within the store before matching product identities.
+- Match source product codes within that store. Sparse updates preserve omitted
+  or blank fields. Missing source codes use a deterministic normalized-name key,
+  with an explicit warning that renaming can create a new product. Ambiguous
+  matches and duplicates within the file block the entire import.
+- Resolve category names automatically and create supporting categories only on
+  commit. Accept image arrays and video URLs, with HTTP(S) validation.
+- Use shared popup feedback and confirmation. Clear the current preview on every
+  file change. Preview limits are 1,000 rows, 2 MB file and 256 KiB request body.
+- Default catalog size is 20 with 10/20/50/100 choices. Display the six ML states
+  plus the unanalysed state. Include legacy states only when actually present.
+- General query optimization/server pagination is explicitly deferred by the
+  contributor. Existing user dataset loading remains the current implementation.

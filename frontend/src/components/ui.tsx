@@ -274,31 +274,19 @@ export function Modal({
     <dialog
       ref={ref}
       className="modal"
-      onCancel={onClose}
+      aria-label={title}
+      onCancel={(event) => { event.preventDefault(); onClose(); }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <div className="modal-head">
         <h2>{title}</h2>
-        <button className="icon-button" aria-label="Đóng" onClick={onClose}>
+        <button type="button" className="icon-button" aria-label="Đóng" onClick={onClose}>
           <Icon name="close" />
         </button>
       </div>
       {children}
     </dialog>
   );
-}
-export function downloadFixture(name: string, data: unknown) {
-  const url = URL.createObjectURL(
-    new Blob(
-      [JSON.stringify({ source: "synthetic UI preview", data }, null, 2)],
-      { type: "application/json" },
-    ),
-  );
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `${name}-demo.json`;
-  a.click();
-  URL.revokeObjectURL(url);
 }

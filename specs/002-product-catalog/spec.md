@@ -1,5 +1,10 @@
 # Feature Specification: Product Data, Imports, and Catalog
 
+> 2026-11-13 amendment: automatic import/preview, popup feedback, per-account suspension state and aggregate-only Admin access are implemented. See the latest plan/tasks amendment and CURRENT_STATE verification. General user query optimization and live ML jobs remain deferred.
+> Current ownership: [one User / one store](../store-ownership.md), implemented and verified on configured Neon. Earlier multi-store/shared-catalog assumptions are superseded.
+
+> Current release amendment: [connected workspace scope](../release-scope.md). Demo routes are removed. Admin product/category screens are retired; User catalog write/import and ownership work remain pending. Older preview/catalog milestones below are historical and do not define the current navigation.
+
 **Feature Branch**: Not created; proposed implementation branch `feature/product-catalog`
 
 **Feature ID**: F002 | **Created**: 2026-10-09 | **Status**: Draft for team review

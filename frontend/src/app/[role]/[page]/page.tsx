@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
+import { isWorkspacePage } from "@/lib/workspace-pages";
 import { LivePage } from "@/components/live-page";
 
 async function Workspace({
@@ -8,24 +9,7 @@ async function Workspace({
   params: Promise<{ role: string; page: string }>;
 }) {
   const { role, page } = await params;
-  if (
-    !["user", "admin"].includes(role) ||
-    !(
-      role === "user"
-        ? ["overview", "products", "analysis", "suggestions"]
-        : [
-            "overview",
-            "accounts",
-            "products",
-            "categories",
-            "analysis",
-            "monitor",
-            "configuration",
-            "stores",
-          ]
-    ).includes(page)
-  )
-    notFound();
+  if (!isWorkspacePage(role, page)) notFound();
   return <LivePage role={role as "user" | "admin"} page={page} />;
 }
 export default function Page({
