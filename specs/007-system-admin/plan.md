@@ -109,3 +109,26 @@ wait for real auth/database/model readiness. Real integration checks remain requ
   account, including the transaction recheck. Wrong passwords retain 401.
 - Mount one popup provider for confirmations and runtime feedback across login,
   workspace loading, account/catalog/work forms and logout failures.
+
+
+## Admin reads by page
+
+F007/T004, T007 and T009–T011 amendment on `remove_demo`. Load only the
+requested 50-row page for stores and accounts. Search and account state
+filters run before pagination. Store rows include the product count for
+that store. The same response carries unfiltered system totals for the
+stat cards. Overview, monitoring and configuration request separate views
+of the aggregate endpoint. Preserve explicit full Admin export and the
+existing account mutation and authorization paths.
+
+
+Store management supports optional ascending and descending product counts.
+Apply the selected order to matching stores before taking a 50-row page.
+Reset navigation to page one when the sort changes.
+
+
+## Admin reads of store statistics
+
+Read product counts from `store_stats` when listing and ranking stores.
+Index both product-count directions with store ID as the tie-breaker.
+Sum the stored product and analysis totals for the system metrics.

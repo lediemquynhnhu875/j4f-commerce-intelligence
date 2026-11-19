@@ -81,3 +81,45 @@ Follow the [UI-first sequencing decision](../../docs/decisions/0003-ui-preview-f
 Task numbers follow the corrected local execution order; phase headings add no
 implicit prerequisites. Framework setup and clearly labeled previews do not
 wait for real auth/database/model readiness. Real integration checks remain required.
+
+## Timeline of saved analyses — 2026-11-18
+
+On User Analysis, show the sales timeline above the observed evidence table.
+Use the existing stored analysis results. Each point uses the result timestamp
+and frozen recorded sales, with visible axis labels. The newest result is
+the default. Selecting a chart point updates the evidence, actions and
+selected analysis URL. Use markers below the numeric scale for missing sales.
+Default the timeline to the latest June 1 through today in Vietnam. Date
+pickers narrow that interval and update the evidence selection.
+
+
+## Store-scoped analysis loading
+
+F005/T009–T011 amendment on `remove_demo`. Request the selected product,
+a timeline projection bounded by Vietnam calendar dates, and the newest
+in-range analysis with its actions. Use the saved timestamp and ID to break
+ties and retain deep links. Fetch only the chosen historical analysis and its
+actions when the owner selects an older point. Load the workspace header summary
+in parallel. Measure request count and bytes before and after the change for the
+same product. Track deployed latency separately from database and UI checks.
+
+
+## Analysis empty states
+
+When the selected product has no saved analysis, keep its product card and show
+one empty-state message. Hide the timeline and evidence sections. If the product
+has history outside the selected dates, keep the date filters available and hide
+the empty plot so the owner can choose a different range.
+
+
+## Current store statistics
+
+Persist current totals and distributions in one `store_stats` row per store.
+A rebuildable per-product projection points to the newest analysis ordered
+by saved timestamp and ID. Use transaction triggers to apply count changes
+from product creation, deletion and category edits, saved analyses, and action
+status changes. Backfill both tables in migration 005.
+
+The User overview reads one owner-scoped response with stored metrics,
+category counts, up to eight priority results and four open suggestions.
+The full JSON export still loads source data on demand.

@@ -1,6 +1,127 @@
 # Project State and Handoff
 
-Updated: 2026-11-13 (Asia/Saigon).
+Updated: 2026-11-19 (Asia/Saigon).
+
+## Current database reference
+
+The [current database diagram and query walkthrough](architecture/sellens-database.md)
+describes the configured Neon schema and the current checkout's read paths.
+Verified all 16 live table names, the 10 diagram entities, the shown foreign
+keys and the document's repository links. The multi-store proposal is historical.
+
+## Current store statistics
+
+F005 overview and F007 Admin ranking on `remove_demo`. See
+[ADR 0011](decisions/0011-current-store-statistics.md). Migration 005 applied
+to the configured Neon database through the repository migration runner.
+
+- Backfill matched 3,808 stores, 41,578 products, 41,706 saved analyses and
+  42,813 proposed actions. The latest-analysis pointers and current action
+  counts matched live source rows. Rollback checks covered concurrent
+  same-store inserts, catalog edits and deletion, category movement, older
+  and newer analyses, and closing a suggestion.
+- The User overview calls one owner-scoped API. It reads stored totals
+  and receives up to eight priority items and four action previews. The Admin
+  store endpoint uses the ordered counter index and the Admin overview sums
+  the stored product and analysis counts.
+- One Neon `EXPLAIN ANALYZE` run of the descending Admin first page used
+  `store_stats_most_products` and reported 2.7 ms of PostgreSQL execution time.
+  The previous measured aggregation plan took 34.7 ms. These are single-query
+  samples. End-to-end production time under load remains unmeasured.
+- Frontend lint and both builds passed. All 18 backend unit tests and 19
+  Edge release tests passed. Application deployment is pending.
+
+## Store ordering by product count
+
+Admin can sort matching stores by most or fewest products. PostgreSQL sorts
+before returning the requested 50-row page. Store ID breaks ties, and the
+UI resets to page one when the order changes. Verified both directions,
+search and pagination against 3,808 stores on Neon. Read-only SQL fixtures
+covered zero counts. Frontend lint, build and all 18 Edge tests passed.
+Backend typecheck and all 18 unit tests passed.
+
+## Empty state for product analyses
+
+Products with no saved analysis retain their product card and display one
+empty-state message. Stored analyses outside a selected date range keep the
+date controls available and hide the empty plot. The workspace API indicates
+whether the selected product has any saved history with `has_analysis`.
+
+Frontend lint and both builds passed. All 18 Edge release tests and 18 backend
+unit tests passed. Read-only Neon checks covered a product without any analyses
+and a product with a saved result both inside and outside the requested dates.
+
+## Admin pagination and reporting requests
+
+F007/T004, T007 and T009–T011 amendment on `remove_demo`. See
+[ADR 0010](decisions/0010-admin-paginated-reads.md).
+
+- Admin stores and accounts now load 50 rows per page. Store totals remain
+  system-wide when the list is filtered. Overview, monitor and configuration
+  query their own aggregate view. Export loads the complete data bundle on
+  demand.
+- Read-only Neon checks confirmed 3,808 stores and 41,578 allocated products,
+  50 distinct rows on each of the first two pages, store search, account
+  filters, and the original User store scope.
+- Backend typecheck, build and all 18 unit tests passed. Frontend lint,
+  build and all 16 Edge release tests passed. The browser tests verified
+  one list request on initial navigation and one per page or filter change.
+- Deployment and end-to-end Render/Vercel timing remain pending.
+
+## Responsive sales timeline
+
+The Analysis chart uses the measured plot width for its SVG coordinates. Axis
+labels keep their proportions and fewer date labels appear in narrow layouts.
+Frontend lint and build passed. All 14 Edge release tests passed, including the
+chart resize check at 1760 px and 390 px.
+
+## Store-scoped workspace queries — 2026-11-19
+
+F005/T009–T011 and F002/T014 amendments on `remove_demo`, implemented in
+the original repository at the contributor's request. See [ADR 0009](decisions/0009-store-scoped-workspace-queries.md).
+
+- Analysis now reads one scoped product, the Vietnam date range projection,
+  and latest in-range evidence with actions. Selecting an older point reads
+  one product/analysis pair. The picker links to the paginated catalog.
+- Catalog filters, sorts and paginates in PostgreSQL. Catalog and Analysis load
+  a small store summary for the shared header. Full JSON exports load on demand.
+- Backend typecheck, build and all 18 unit tests passed. Frontend lint, build
+  and all 13 Edge release tests passed. The tests include a 40,000-product
+  pagination fixture, one initial analysis data request and one older-detail
+  request without repeating the timeline request.
+- Read-only Neon checks verified six saved dates for SP-190606301, the newest
+  result by timestamp, the older action links, catalog paging and status
+  filtering, and denial of cross-store reads. For the sampled 56-product store
+  the old analysis flow's core JSON exceeded 470 KB and the new analysis
+  response plus header summary was approximately 8.4 KB before compression.
+- Deploy backend and frontend together, with the new backend available first.
+  Measure end-to-end latency on Render/Vercel and catalog server time on a large
+  single-store dataset. The 40,000-product browser fixture tests request
+  behavior. It supplies no production latency evidence.
+
+## Saved analysis timeline — 2026-11-18
+
+F005 Analysis-page amendment on `remove_demo`. The requesting contributor
+clarified that the chart and evidence history represent saved ML analysis
+results already imported, rather than edits to the catalog. The uncommitted
+product-version implementation and unapplied migration 005 were removed.
+
+- The sales chart is directly above Observed Evidence and uses
+  `analyzed_at` and the frozen `input_snapshot_json.quantity_sold`.
+  Selection updates the URL and uses the original analysis for evidence and
+  actions. Axis labels explicitly identify quantity sold and time. The separate
+  history selector table has been removed. Results missing sales use selectable
+  diamond markers below the numeric scale.
+- Existing API and database schema support the feature. Read-only Neon
+  inspection found one result for the product in the supplied screenshot.
+  Across stores, 41,451 analyzed products had one result and 125 had two.
+- Frontend build and lint passed. Edge release tests use isolated HTTP
+  fixtures. All 10 tests passed, including one-point rendering and switching the
+  evidence from the newest result to the older result. After the chart-only
+  selection change, the frontend build and all three timeline Edge tests
+  passed. The timeline now defaults to the most recent June 1 through today
+  in Vietnam, with date controls that filter chart and evidence together.
+  Frontend build and all four targeted Edge tests passed. Deployment is pending.
 
 ## Import, account feedback and admin privacy — 2026-11-13
 
@@ -156,6 +277,9 @@ session started clean, fetched remote refs and branched from `origin/main`.
 
 | Feature / task ID | Owner | Branch | Status | Dependencies / notes |
 | --- | --- | --- | --- | --- |
+| F005 overview and F007 Admin ranking statistics | Requesting contributor, Codex-assisted | remove_demo | Neon migration applied and application verified locally | Deploy both applications and measure end-to-end latency |
+| F007/T004, T007 and T009–T011 Admin page queries | Requesting contributor, Codex-assisted | remove_demo | Implemented and verified locally | Deploy both applications and measure navigation latency |
+| F005/T009–T011 and F002/T014 scoped query optimization | Requesting contributor, Codex-assisted | remove_demo | Implemented and locally verified | Deploy both components and measure end-to-end latency on a larger store |
 | F006/T011 suggestion product thumbnails | Requesting contributor, Codex-assisted | first_demo | Scoped presentation verified | Linked product thumbnail and missing/broken-image fallback; desktop/mobile list/Kanban checks and lint passed; original acceptance unchanged |
 | F001/T002; F001/T014 sidebar presentation correction | Requesting contributor, Codex-assisted | first_demo | Scoped correction verified | Shared CSS heading dimensions fixed; 12 desktop/mobile layout checks and frontend lint passed; original acceptance unchanged |
 | F001/T007; F002/T006; F007/T005 multi-store amendment | Requesting contributor, Codex-assisted | feature/backend-neon-mvp | Schema proposal prepared; unapplied, acceptance unchecked | One User owns many stores; explicit legacy assignment and future scoped API/UI required |

@@ -103,21 +103,26 @@ test("product page size and status choices match the current ML statuses", async
     quantity_sold: null,
     rating_average: null,
     review_count: null,
+    latest_status: null,
+    product_type: null,
+    action_titles: [],
   }));
   await page.route("**/api/backend/**", async (route) => {
     const url = new URL(route.request().url());
+    const limit = Number(url.searchParams.get("limit"));
     const data = url.pathname.endsWith("auth/me")
       ? account
       : url.pathname.endsWith("products")
         ? products.slice(
-            (Number(url.searchParams.get("page")) - 1) * 20,
-            Number(url.searchParams.get("page")) * 20,
+            (Number(url.searchParams.get("page")) - 1) * limit,
+            Number(url.searchParams.get("page")) * limit,
           )
         : [];
     await route.fulfill({
       json: {
         data,
         pagination: { total: url.pathname.endsWith("products") ? 25 : 0 },
+        undecided_count: 25,
       },
     });
   });

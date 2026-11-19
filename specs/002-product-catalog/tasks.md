@@ -260,3 +260,13 @@ remaining delivery; they do not add a cyclic prerequisite.
 
 These checks record this scoped amendment. Original feature and ML-quality gates
 retain their earlier acceptance status.
+
+
+## Scoped query optimization
+
+- [x] F002/T014 amendment. Use server pagination, search, status filtering and
+  ordering. Return latest status and action titles for the requested rows.
+- [x] Verify filters and page boundaries with read-only Neon queries and
+  verify bounded client requests with a 40,000-product Playwright fixture.
+- [ ] Measure deployed catalog latency for a large single-store catalog,
+  including latest-status sorting and filtering.

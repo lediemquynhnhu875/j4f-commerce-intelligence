@@ -112,3 +112,12 @@ reassigning original feature ownership or claiming unrelated acceptance.
   plus the unanalysed state. Include legacy states only when actually present.
 - General query optimization/server pagination is explicitly deferred by the
   contributor. Existing user dataset loading remains the current implementation.
+
+
+## Store-scoped server pagination
+
+F002/T014 amendment on `remove_demo`. Move search, filters, ordering and
+10/20/50/100-row pagination to the products API. For each matched product, the
+latest timestamp and ID determine its status. Return action titles only for the
+requested rows. Keep JSON export available on demand. Measure the deployed
+route under larger stores before changing indexes or maintaining summary data.

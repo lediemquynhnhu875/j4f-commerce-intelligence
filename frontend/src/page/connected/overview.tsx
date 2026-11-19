@@ -6,7 +6,7 @@ import { analysisColor } from "@/lib/status-colors";
 import { Donut } from "@/components/charts/donut";
 import { Badge, Empty, Icon, Panel, Stat } from "@/components/ui";
 import { analysisLabels, mlAnalysisLabels } from "@/lib/api-client";
-import type { Analysis, Dataset } from "@/types/api";
+import type { StoreOverview } from "@/types/api";
 import { ProductIdentity } from "@/components/products/product-identity";
 import { quantity, productCode } from "@/lib/analysis-presentation";
 
@@ -31,45 +31,23 @@ const typeLabels: Record<string, string> = {
   review_images_or_video: "Ảnh / video",
   other: "Khác",
 };
-const activeStates = new Set(["proposed", "accepted", "in_progress"]);
 const percent = (count: number, total: number) =>
   total ? (count / total) * 100 : 0;
 
-export function LiveOverview({
-  data,
-  role,
-}: {
-  data: Dataset;
-  role: "user" | "admin";
-}) {
-  const latest = new Map<string, Analysis>();
-  for (const row of data.analyses) {
-    const old = latest.get(row.product_id);
-    if (
-      !old ||
-      row.analyzed_at > old.analyzed_at ||
-      (row.analyzed_at === old.analyzed_at && BigInt(row.id) > BigInt(old.id))
-    )
-      latest.set(row.product_id, row);
-  }
-  const products = data.products;
-  const current = products.flatMap((product) =>
-    latest.get(product.id) ? [latest.get(product.id)!] : [],
-  );
-  const analysisIds = new Set(current.map((row) => row.id));
-  const actions = data.actions.filter((row) =>
-    analysisIds.has(row.analysis_id),
-  );
-  const active = actions.filter((row) => activeStates.has(row.status));
-  const reviewIds = new Set(active.map((row) => row.analysis_id));
-  const total = products.length;
-  const noAnalysis = total - current.length;
-  const hasMl = current.some((row) => row.status_schema_version === "ml_v2");
+export function LiveOverview({ overview }: { overview?: StoreOverview }) {
+  const metrics = overview?.metrics;
+  const total = metrics?.product_count ?? 0;
+  const analyzed = metrics?.analyzed_product_count ?? 0;
+  const referenced = metrics?.reference_product_count ?? 0;
+  const reviewCount = metrics?.review_product_count ?? 0;
+  const noAnalysis = total - analyzed;
+  const missingBasis = analyzed - referenced;
+  const hasMl = (metrics?.ml_product_count ?? 0) > 0;
   const groups = Object.entries(analysisLabels)
     .map(([status, label]) => ({
       status,
       label,
-      count: current.filter((row) => row.status === status).length,
+      count: metrics?.status_counts[status] ?? 0,
       color: analysisColor(status),
     }))
     .filter(
@@ -82,39 +60,10 @@ export function LiveOverview({
       count: noAnalysis,
       color: analysisColor("no_analysis"),
     });
-  const categories = data.categories
-    .map((category) => ({
-      id: category.id,
-      name: category.name,
-      count: products.filter((row) => row.category_id === category.id).length,
-    }))
-    .filter((row) => row.count > 0);
-  const uncategorized = products.filter(
-    (row) =>
-      !data.categories.some((category) => category.id === row.category_id),
-  ).length;
-  if (uncategorized)
-    categories.push({
-      id: "none",
-      name: "Chưa phân loại",
-      count: uncategorized,
-    });
-  const priority = current
-    .filter((row) => reviewIds.has(row.id))
-    .sort((a, b) => {
-      const aScore =
-        a.priority_score === null || a.priority_score === undefined
-          ? -1
-          : Number(a.priority_score);
-      const bScore =
-        b.priority_score === null || b.priority_score === undefined
-          ? -1
-          : Number(b.priority_score);
-      return bScore - aScore || (BigInt(a.id) < BigInt(b.id) ? -1 : 1);
-    });
-  const missingBasis = current.filter(
-    (row) => row.reference_sold === null,
-  ).length;
+
+  const categories = overview?.categories ?? [];
+  const priority = overview?.priority ?? [];
+  const suggestions = overview?.suggestions ?? [];
   return (
     <div className="live-overview">
       <div className="overview-source">
@@ -133,14 +82,14 @@ export function LiveOverview({
         />
         <Stat
           label="Có mức tham chiếu"
-          value={current.length - missingBasis}
+          value={referenced}
           suffix="sản phẩm"
           note="Có giá trị tham chiếu đã lưu"
           tone="blue"
         />
         <Stat
           label="Cần rà soát"
-          value={reviewIds.size}
+          value={reviewCount}
           suffix="sản phẩm"
           note="Có đề xuất đang chờ duyệt hoặc thực hiện"
           tone="pink"
@@ -156,7 +105,7 @@ export function LiveOverview({
         />
         <Stat
           label="Đang thực hiện"
-          value={actions.filter((row) => row.status === "in_progress").length}
+          value={metrics?.in_progress_count ?? 0}
           suffix="việc"
           note="Tiến độ công việc đã lưu"
           tone="blue"
@@ -164,7 +113,7 @@ export function LiveOverview({
         />
         <Stat
           label="Đề xuất cần duyệt"
-          value={actions.filter((row) => row.status === "proposed").length}
+          value={metrics?.pending_review_count ?? 0}
           suffix="việc"
           note="Chờ xem bằng chứng và quyết định"
           tone="green"
@@ -174,7 +123,7 @@ export function LiveOverview({
       <div className="grid-two overview-charts">
         <Panel
           title="Phân bố trạng thái phân tích"
-          subtitle={`${current.length}/${total} sản phẩm có kết quả · Tỷ lệ trên ${total} sản phẩm đang xem`}
+          subtitle={`${analyzed}/${total} sản phẩm có kết quả · Tỷ lệ trên ${total} sản phẩm đang xem`}
           action={
             <span className="tile-icon">
               <Icon name="chart" />
@@ -275,9 +224,9 @@ export function LiveOverview({
       )}
       <Panel
         title="Sản phẩm cần ưu tiên rà soát"
-        subtitle={`${priority.length} sản phẩm có đề xuất đang mở · Hiển thị tối đa 8 sản phẩm theo điểm ưu tiên đã lưu`}
+        subtitle={`${reviewCount} sản phẩm có đề xuất đang mở · Hiển thị tối đa 8 sản phẩm theo điểm ưu tiên đã lưu`}
         action={
-          <Link className="text-link" href={`/${role}/products`}>
+          <Link className="text-link" href="/user/products">
             Xem danh mục <Icon name="arrow" size={16} />
           </Link>
         }
@@ -303,69 +252,39 @@ export function LiveOverview({
                   </tr>
                 </thead>
                 <tbody>
-                  {priority.slice(0, 8).map((analysis) => {
-                    const product = products.find(
-                      (row) => row.id === analysis.product_id,
-                    )!;
-                    return (
-                      <tr key={analysis.id}>
-                        <td>
-                          <ProductIdentity
-                            name={product.name}
-                            image={product.thumbnail_url}
-                            detail={
-                              analysis.product_type ??
-                              data.categories.find(
-                                (row) => row.id === product.category_id,
-                              )?.name
-                            }
-                            code={productCode(product)}
-                          />
-                        </td>
-                        <td>
-                          {analysis.product_type ??
-                            data.categories.find(
-                              (row) => row.id === product.category_id,
-                            )?.name ??
-                            "Chưa phân loại"}
-                        </td>
-                        <td className="numeric">
-                          {quantity(analysis.input_snapshot_json.quantity_sold)}
-                        </td>
-                        <td className="numeric">
-                          {quantity(analysis.reference_sold)}
-                        </td>
-                        <td>
-                          <Badge
-                            tone={
-                              analysis.sales_gap === null
-                                ? "gray"
-                                : Number(analysis.sales_gap) < 0
-                                  ? "red"
-                                  : "green"
-                            }
-                          >
-                            {analysis.sales_gap === null
-                              ? "—"
-                              : `${Number(analysis.sales_gap) > 0 ? "+" : ""}${quantity(analysis.sales_gap)} đơn vị`}
-                          </Badge>
-                        </td>
-                        <td>
-                          <StatusBadge status={analysis.status} />
-                        </td>
-                        <td>
-                          <Link
-                            className="button subtle small"
-                            href={`/${role}/analysis?product=${product.id}&analysis=${analysis.id}`}
-                            aria-label={`Xem phân tích ${product.name}`}
-                          >
-                            <Icon name="eye" size={16} />
-                            Phân tích
-                          </Link>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  {priority.map((row) => (
+                    <tr key={row.analysis_id}>
+                      <td>
+                        <ProductIdentity
+                          name={row.name}
+                          image={row.thumbnail_url}
+                          detail={row.classification}
+                          code={productCode(row)}
+                        />
+                      </td>
+                      <td>{row.classification ?? "Chưa phân loại"}</td>
+                      <td className="numeric">{quantity(row.observed_sold)}</td>
+                      <td className="numeric">{quantity(row.reference_sold)}</td>
+                      <td className="numeric">
+                        <Badge tone={row.sales_gap === null ? "gray" : Number(row.sales_gap) < 0 ? "red" : "green"}>
+                          {row.sales_gap === null
+                            ? "—"
+                            : `${Number(row.sales_gap) > 0 ? "+" : ""}${quantity(row.sales_gap)} đơn vị`}
+                        </Badge>
+                      </td>
+                      <td><StatusBadge status={row.status} /></td>
+                      <td>
+                        <Link
+                          className="button subtle small"
+                          href={`/user/analysis?product=${row.id}&analysis=${row.analysis_id}`}
+                          aria-label={`Xem phân tích ${row.name}`}
+                        >
+                          <Icon name="eye" size={16} />
+                          Phân tích
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -375,45 +294,34 @@ export function LiveOverview({
       <Panel
         title="Đề xuất cải thiện đang theo dõi"
         subtitle="Hành động và bằng chứng gốc của kết quả đang xem"
-        action={<Badge tone="gradient">{active.length} đề xuất đang mở</Badge>}
+        action={<Badge tone="gradient">{metrics?.open_suggestion_count ?? 0} đề xuất đang mở</Badge>}
       >
-        {!active.length ? (
+        {!suggestions.length ? (
           <Empty title="Chưa có công việc cần theo dõi" />
         ) : (
           <div className="grid-two">
-            {active.slice(0, 4).map((action) => {
-              const analysis = current.find(
-                (row) => row.id === action.analysis_id,
-              )!;
-              const product = products.find(
-                (row) => row.id === analysis.product_id,
-              )!;
-              return (
-                <Link
-                  className="work-card"
-                  href={`/${role}/analysis?product=${product.id}&analysis=${analysis.id}`}
-                  key={action.id}
-                >
-                  <div>
-                    <span className="overview-work-type">
-                      {typeLabels[action.type] ?? "Rà soát"}
-                    </span>
-                    <StatusBadge kind="action" status={action.status} />
-                  </div>
-                  <h3>{action.title}</h3>
-                  <p>{product.name}</p>
-                  {typeof action.original_suggestion_json.evidence ===
-                    "string" && (
-                    <p className="overview-work-evidence">
-                      {action.original_suggestion_json.evidence}
-                    </p>
-                  )}
-                  <span className="text-link">
-                    Xem bằng chứng <Icon name="arrow" size={15} />
+            {suggestions.map((action) => (
+              <Link
+                className="work-card"
+                href={`/user/analysis?product=${action.product_id}&analysis=${action.analysis_id}`}
+                key={action.id}
+              >
+                <div>
+                  <span className="overview-work-type">
+                    {typeLabels[action.type] ?? "Rà soát"}
                   </span>
-                </Link>
-              );
-            })}
+                  <StatusBadge kind="action" status={action.status} />
+                </div>
+                <h3>{action.title}</h3>
+                <p>{action.product_name}</p>
+                {typeof action.evidence === "string" && (
+                  <p className="overview-work-evidence">{action.evidence}</p>
+                )}
+                <span className="text-link">
+                  Xem bằng chứng <Icon name="arrow" size={15} />
+                </span>
+              </Link>
+            ))}
           </div>
         )}
       </Panel>

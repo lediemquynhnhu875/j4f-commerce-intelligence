@@ -4,10 +4,10 @@ import { Badge, Empty, Panel, Stat } from "@/components/ui";
 
 export function AdminSystem({
   data,
-  configuration = false,
+  view = "overview",
 }: {
   data: Dataset;
-  configuration?: boolean;
+  view?: "overview" | "monitor" | "configuration";
 }) {
   const summary = data.systemSummary;
   if (!summary)
@@ -17,7 +17,7 @@ export function AdminSystem({
         description="Bấm Tải lại để thử lại."
       />
     );
-  if (configuration)
+  if (view === "configuration")
     return (
       <Panel title="Phiên bản mô hình đã sử dụng">
         <div className="table-scroll">
@@ -31,7 +31,7 @@ export function AdminSystem({
               </tr>
             </thead>
             <tbody>
-              {summary.versions.map((version, index) => (
+              {(summary.versions ?? []).map((version, index) => (
                 <tr key={index}>
                   <td>{version.model_version ?? "Chưa ghi nhận"}</td>
                   <td>{version.pipeline_version}</td>
@@ -42,53 +42,55 @@ export function AdminSystem({
             </tbody>
           </table>
         </div>
-        {!summary.versions.length && <Empty title="Chưa ghi nhận phiên bản" />}
+        {!summary.versions?.length && <Empty title="Chưa ghi nhận phiên bản" />}
       </Panel>
     );
   return (
     <>
-      <div className="stats-grid four">
-        <Stat
-          label="Tổng tài khoản"
-          value={summary.accounts}
-          note="Các tài khoản trong hệ thống"
-          icon="users"
-        />
-        <Stat
-          label="Đang hoạt động"
-          value={summary.active_accounts}
-          note={`${summary.accounts - summary.active_accounts} tài khoản bị khóa`}
-          icon="shield"
-        />
-        <Stat
-          label="Tổng cửa hàng"
-          value={summary.stores}
-          note="Mỗi tài khoản User có một cửa hàng"
-          icon="store"
-        />
-        <Stat
-          label="Sản phẩm đã tải lên"
-          value={summary.products}
-          note="Tổng hợp toàn hệ thống"
-          icon="box"
-        />
-        <Stat
-          label="Yêu cầu phân tích"
-          value={summary.analysis_requests ?? "—"}
-          note="Chưa triển khai tác vụ phân tích theo yêu cầu"
-        />
-        <Stat
-          label="Đang phân tích"
-          value={summary.running_requests ?? "—"}
-          note="Chưa có dữ liệu tác vụ trực tiếp"
-          icon="clock"
-        />
-        <Stat
-          label="Kết quả đã lưu"
-          value={summary.saved_results}
-          note="Các kết quả phân tích đã được nhập"
-        />
-      </div>
+      {view === "overview" && (
+        <div className="stats-grid four">
+          <Stat
+            label="Tổng tài khoản"
+            value={summary.accounts ?? "—"}
+            note="Các tài khoản trong hệ thống"
+            icon="users"
+          />
+          <Stat
+            label="Đang hoạt động"
+            value={summary.active_accounts ?? "—"}
+            note={`${(summary.accounts ?? 0) - (summary.active_accounts ?? 0)} tài khoản bị khóa`}
+            icon="shield"
+          />
+          <Stat
+            label="Tổng cửa hàng"
+            value={summary.stores ?? "—"}
+            note="Mỗi tài khoản User có một cửa hàng"
+            icon="store"
+          />
+          <Stat
+            label="Sản phẩm đã tải lên"
+            value={summary.products ?? "—"}
+            note="Tổng hợp toàn hệ thống"
+            icon="box"
+          />
+          <Stat
+            label="Yêu cầu phân tích"
+            value={summary.analysis_requests ?? "—"}
+            note="Chưa triển khai tác vụ phân tích theo yêu cầu"
+          />
+          <Stat
+            label="Đang phân tích"
+            value={summary.running_requests ?? "—"}
+            note="Chưa có dữ liệu tác vụ trực tiếp"
+            icon="clock"
+          />
+          <Stat
+            label="Kết quả đã lưu"
+            value={summary.saved_results ?? "—"}
+            note="Các kết quả phân tích đã được nhập"
+          />
+        </div>
+      )}
       <Panel
         title="Hoạt động phân tích gần nhất"
         subtitle="Các đợt kết quả đã lưu theo cửa hàng. Tác vụ chạy trực tiếp đang chờ tích hợp ML."
@@ -104,7 +106,7 @@ export function AdminSystem({
               </tr>
             </thead>
             <tbody>
-              {summary.recent.map((row, index) => (
+              {(summary.recent ?? []).map((row, index) => (
                 <tr key={`${row.store_id}-${index}`}>
                   <td>{row.store_name}</td>
                   <td>{row.product_count}</td>
@@ -117,7 +119,7 @@ export function AdminSystem({
             </tbody>
           </table>
         </div>
-        {!summary.recent.length && (
+        {!summary.recent?.length && (
           <Empty
             title="Chưa có hoạt động phân tích"
             description="Hoạt động sẽ được hiển thị theo từng cửa hàng."

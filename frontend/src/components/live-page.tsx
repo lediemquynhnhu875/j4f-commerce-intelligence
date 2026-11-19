@@ -15,11 +15,13 @@ import type {
   Analysis,
   Action,
   Dataset,
+  WorkspaceSummary,
+  StoreOverview,
 } from "@/types/api";
 import { LiveShell, livePages } from "./live-shell";
 import { Empty, Panel, Logo, Icon, Badge } from "./ui";
 import { exportSaved } from "@/lib/analysis-presentation";
-import { LiveStoresUnavailable } from "@/page/connected/administration";
+import { LiveStores } from "@/page/connected/administration";
 import {
   LiveCatalog,
   LiveOverview,
@@ -39,14 +41,25 @@ export function LivePage({
   const params = useSearchParams();
   const { account, refresh: refreshSession } = session;
   const [data, setData] = useState<Dataset | null>(null);
+  const [refreshVersion, setRefreshVersion] = useState(0);
+  const userOverview = role === "user" && page === "overview";
+  const targeted = role === "user" && (page === "analysis" || page === "products");
+  const adminList = role === "admin" && (page === "stores" || page === "accounts");
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const fetchData = useCallback(async (): Promise<Dataset> => {
+  const fetchData = useCallback(async (forExport = false): Promise<Dataset> => {
     if (role === "admin") {
+      if (!forExport) {
+        const summary = await api<{ data: Partial<SystemSummary> }>(`admin/summary?view=${page}`);
+        return { systemSummary: summary.data, accounts: [], stores: [],
+          products: [], categories: [], analyses: [], actions: [] };
+      }
       const [summary, accounts, stores] = await Promise.all([
         api<{ data: SystemSummary }>("admin/summary"),
-        allPages<Account>("admin/accounts"),
-        allPages<Store>("stores"),
+        allPages<Account>("admin/accounts", undefined, 100),
+        allPages<Store>("stores", undefined, 100),
       ]);
       return {
         systemSummary: summary.data,
@@ -58,17 +71,35 @@ export function LivePage({
         actions: [],
       };
     }
+    if (userOverview && !forExport) {
+      const { data: overview } = await api<{ data: StoreOverview }>("workspace/overview");
+      return {
+        storeOverview: overview, workspaceSummary: overview.summary ?? undefined,
+        products: [], categories: [], analyses: [], actions: [], accounts: [], stores: [],
+      };
+    }
+    if (targeted && !forExport) {
+      const [summary, categories] = await Promise.all([
+        api<{ data: WorkspaceSummary }>("workspace/summary"),
+        page === "products" ? allPages<Category>("categories", undefined, 100) : Promise.resolve([]),
+      ]);
+      return {
+        workspaceSummary: summary.data, categories,
+        products: [], analyses: [], actions: [], accounts: [], stores: [],
+      };
+    }
+    const batchSize = forExport ? 100 : 20;
     const [products, categories, analyses, actions, accounts, stores] =
       await Promise.all([
-        allPages<Product>("products"),
-        allPages<Category>("categories"),
-        allPages<Analysis>("analyses"),
-        allPages<Action>("actions"),
+        allPages<Product>("products", undefined, batchSize),
+        allPages<Category>("categories", undefined, batchSize),
+        allPages<Analysis>("analyses", undefined, batchSize),
+        allPages<Action>("actions", undefined, batchSize),
         Promise.resolve([]),
         allPages<Store>("stores"),
       ]);
     return { products, categories, analyses, actions, accounts, stores };
-  }, [role]);
+  }, [role, page, targeted, userOverview]);
   const reportError = useCallback(
     (err: unknown) => {
       setError((err as Error).message);
@@ -78,7 +109,7 @@ export function LivePage({
     [refreshSession],
   );
   useEffect(() => {
-    if (!account || account.role !== role) return;
+    if (!account || account.role !== role || adminList) return;
     let active = true;
     void fetchData()
       .then((result) => {
@@ -96,16 +127,35 @@ export function LivePage({
     return () => {
       active = false;
     };
-  }, [account, role, fetchData, reportError]);
+  }, [account, role, adminList, fetchData, reportError]);
   async function refreshData() {
+    if (adminList) {
+      setRefreshVersion((value) => value + 1);
+      return;
+    }
     setLoading(true);
     setError("");
     try {
       setData(await fetchData());
+      setRefreshVersion((value) => value + 1);
     } catch (err) {
       reportError(err);
     } finally {
       setLoading(false);
+    }
+  }
+  async function exportData() {
+    setExporting(true);
+    setExportError("");
+    try {
+      const exported = role === "admin" || userOverview ? await fetchData(true) : targeted
+        ? page === "products" ? await allPages<Product>("products", undefined, 100) : await fetchData(true)
+        : page === "suggestions" ? data?.actions : data;
+      exportSaved(`sellens-${page}`, exported);
+    } catch (err) {
+      setExportError((err as Error).message);
+    } finally {
+      setExporting(false);
     }
   }
   if (session.loading)
@@ -156,12 +206,12 @@ export function LivePage({
       account={session.account}
       page={page}
       storeName={
-        data?.stores?.find(
+        data?.workspaceSummary?.store_name ?? data?.stores?.find(
           (store) => store.owner_user_id === session.account.id,
         )?.name
       }
       suggestionCount={
-        data?.actions.filter((row) => row.status === "proposed").length ?? 0
+        data?.workspaceSummary?.proposed_count ?? data?.actions.filter((row) => row.status === "proposed").length ?? 0
       }
     >
       <div className="page-breadcrumb">
@@ -206,12 +256,14 @@ export function LivePage({
           </p>
         </div>
         <div className="hero-actions">
-          <div className="snapshot-chip">
+          {!adminList && !(role === "admin" && page === "configuration") && <div className="snapshot-chip">
             <Icon name="calendar" size={17} />
             <div>
               <small>Kết quả gần nhất</small>
               <strong>
-                {data?.analyses.length
+                {data?.workspaceSummary?.latest_analyzed_at
+                  ? new Date(data.workspaceSummary.latest_analyzed_at).toLocaleDateString("vi-VN")
+                  : data?.analyses.length
                   ? new Date(
                       [...data.analyses].sort((a, b) =>
                         b.analyzed_at.localeCompare(a.analyzed_at),
@@ -224,40 +276,32 @@ export function LivePage({
                     : "Chưa có kết quả"}
               </strong>
             </div>
-          </div>
+          </div>}
           <button
             className="button primary"
-            disabled={!data}
-            onClick={() =>
-              exportSaved(
-                `sellens-${page}`,
-                page === "products"
-                  ? data?.products
-                  : page === "suggestions"
-                    ? data?.actions
-                    : data,
-              )
-            }
+            disabled={(!data && !adminList) || exporting}
+            onClick={exportData}
           >
             <Icon name="download" size={16} />
-            Xuất dữ liệu
+            {exporting ? "Đang xuất dữ liệu…" : "Xuất dữ liệu"}
           </button>
           <button
             className="button subtle"
             onClick={refreshData}
-            disabled={loading}
+            disabled={loading && !adminList}
           >
             <Icon name="refresh" />
             Tải lại
           </button>
         </div>
       </section>
-      {loading && (
+      {exportError && <ErrorPopup message={exportError} />}
+      {loading && !adminList && (
         <Panel>
           <p role="status">Đang tải dữ liệu…</p>
         </Panel>
       )}
-      {error && (
+      {error && !adminList && (
         <Panel>
           <ErrorPopup message={error} />
           <button className="button primary" onClick={refreshData}>
@@ -265,41 +309,55 @@ export function LivePage({
           </button>
         </Panel>
       )}
+      {role === "user" && page === "analysis" && (
+        <LiveAnalysis
+          key={account?.id}
+          role={role}
+          refreshVersion={refreshVersion}
+          productId={params.get("product")}
+          analysisId={params.get("analysis")}
+        />
+      )}
+      {role === "user" && page === "products" && (
+        <LiveCatalog
+          key={account?.id}
+          categories={data?.categories ?? []}
+          legacyStatuses={data?.workspaceSummary?.legacy_statuses ?? []}
+          role={role}
+          refresh={refreshData}
+          refreshVersion={refreshVersion}
+        />
+      )}
+      {adminList && (page === "stores" ? (
+        <LiveStores key={session.account.id} refreshVersion={refreshVersion} />
+      ) : (
+        <LiveAccounts
+          key={session.account.id}
+          actor={session.account}
+          refresh={refreshData}
+          refreshVersion={refreshVersion}
+        />
+      ))}
       {!error &&
         data &&
+        !adminList &&
+        !targeted &&
         (page === "overview" ? (
           role === "admin" ? (
             <AdminSystem data={data} />
           ) : (
-            <LiveOverview data={data} role={role} />
+            <LiveOverview overview={data.storeOverview} />
           )
-        ) : page === "products" ? (
-          <LiveCatalog data={data} role={role} refresh={refreshData} />
-        ) : page === "analysis" ? (
-          <LiveAnalysis
-            data={data}
-            role={role}
-            productId={params.get("product")}
-            analysisId={params.get("analysis")}
-          />
         ) : page === "suggestions" ? (
           <LiveActions
             data={data}
             actor={session.account}
             refresh={refreshData}
           />
-        ) : page === "accounts" ? (
-          <LiveAccounts
-            data={data}
-            actor={session.account}
-            refresh={refreshData}
-          />
         ) : page === "monitor" ? (
-          <AdminSystem data={data} />
+          <AdminSystem data={data} view="monitor" />
         ) : page === "configuration" ? (
-          <AdminSystem data={data} configuration />
-        ) : page === "stores" ? (
-          <LiveStoresUnavailable data={data} />
+          <AdminSystem data={data} view="configuration" />
         ) : (
           <Empty
             title="Chưa có API cửa hàng"

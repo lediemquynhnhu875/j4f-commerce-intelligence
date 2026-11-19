@@ -1,23 +1,28 @@
 "use client";
-import type { Dataset } from "@/types/api";
+import { useState } from "react";
+import type { List, Store } from "@/types/api";
+import { ErrorPopup } from "@/components/popup";
+import { AdminListPagination, AdminListSearch, useAdminList } from "./admin-list";
 import { Empty, Panel, Stat } from "@/components/ui";
 
-export function LiveStoresUnavailable({ data }: { data: Dataset }) {
-  const stores = data.stores ?? [];
+type StoreList = List<Store> & { totals: { stores: number; products: number } };
+
+export function LiveStores({ refreshVersion }: { refreshVersion: number }) {
+  const [sort, setSort] = useState("");
+  const list = useAdminList<StoreList>("stores", refreshVersion, { sort });
+  const stores = list.result?.data ?? [];
+  const totals = list.result?.totals;
   return (
     <>
       <div className="stats-grid four">
         <Stat
           label="Tổng số cửa hàng"
-          value={stores.length}
+          value={totals?.stores ?? "—"}
           note="Mỗi User có một cửa hàng"
         />
         <Stat
           label="Sản phẩm đã phân bổ"
-          value={stores.reduce(
-            (total, store) => total + (store.product_count ?? 0),
-            0,
-          )}
+          value={totals?.products ?? "—"}
           note="Dữ liệu đã gắn cửa hàng"
         />
       </div>
@@ -25,6 +30,22 @@ export function LiveStoresUnavailable({ data }: { data: Dataset }) {
         title="Danh sách cửa hàng"
         subtitle="Mỗi tài khoản User sở hữu một cửa hàng. Dữ liệu được phân quyền theo chủ sở hữu."
       >
+        <AdminListSearch label="Tìm theo tên hoặc mã cửa hàng" onSubmit={list.submitSearch}>
+          <select
+            aria-label="Sắp xếp theo số sản phẩm"
+            value={sort}
+            onChange={(event) => {
+              setSort(event.target.value);
+              list.setPage(1);
+            }}
+          >
+            <option value="">Sắp xếp mặc định</option>
+            <option value="products_desc">Nhiều sản phẩm nhất</option>
+            <option value="products_asc">Ít sản phẩm nhất</option>
+          </select>
+        </AdminListSearch>
+        {list.error && <ErrorPopup message={list.error} />}
+        {!list.result && !list.error && <p role="status">Đang tải cửa hàng…</p>}
         <div className="table-scroll">
           <table>
             <thead>
@@ -49,7 +70,12 @@ export function LiveStoresUnavailable({ data }: { data: Dataset }) {
             </tbody>
           </table>
         </div>
-        {!stores.length && <Empty title="Chưa có cửa hàng" />}
+        {list.result && !stores.length && <Empty title="Không tìm thấy cửa hàng" />}
+        {list.result && <AdminListPagination
+          page={list.page}
+          total={list.result.pagination.total}
+          onChange={list.setPage}
+        />}
       </Panel>
     </>
   );

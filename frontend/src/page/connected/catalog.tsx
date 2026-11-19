@@ -1,40 +1,33 @@
 "use client";
 import { ErrorPopup } from "@/components/popup";
 
-import { Fragment, useState, type FormEvent } from "react";
+import { Fragment, useEffect, useState } from "react";
 import Link from "next/link";
 import { StatusBadge } from "@/components/status-badge";
 import { analysisColor } from "@/lib/status-colors";
 import { useRouter } from "next/navigation";
 import { api, analysisLabels, display, price } from "@/lib/api-client";
-import type { Dataset, Product } from "@/types/api";
-import { Empty, Icon, Modal, Panel } from "@/components/ui";
+import type { CatalogProduct, Category, List } from "@/types/api";
+import { Empty, Icon, Panel } from "@/components/ui";
 import { ProductIdentity } from "@/components/products/product-identity";
 import { productCode } from "@/lib/analysis-presentation";
 import { ImportProducts } from "@/components/products/import-products";
-import { usePopup } from "@/components/popup";
 import { mlAnalysisLabels } from "@/lib/api-client";
-import { isInsufficient } from "@/lib/insufficient-data";
 
-function latest(data: Dataset, productId: string) {
-  return data.analyses
-    .filter((row) => row.product_id === productId)
-    .sort(
-      (a, b) =>
-        b.analyzed_at.localeCompare(a.analyzed_at) ||
-        (BigInt(a.id) > BigInt(b.id) ? -1 : 1),
-    )[0];
-}
 export { LiveOverview } from "./overview";
 
 export function LiveCatalog({
-  data,
+  categories,
+  legacyStatuses,
   role,
   refresh,
+  refreshVersion,
 }: {
-  data: Dataset;
+  categories: Category[];
+  legacyStatuses: string[];
   role: "user" | "admin";
   refresh: () => Promise<void>;
+  refreshVersion: number;
 }) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
@@ -45,100 +38,54 @@ export function LiveCatalog({
   const router = useRouter();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const popup = usePopup();
-  const [editor, setEditor] = useState<Product | "new" | null>(null);
-  const [error, setError] = useState("");
-  const [pending, setPending] = useState(false);
+  const query = new URLSearchParams({ view: "catalog", page: String(page), limit: String(pageSize) });
+  if (search) query.set("search", search);
+  if (category) query.set("category_id", category);
+  if (status) query.set("status", status);
+  if (sort) query.set("sort", sort);
+  if (analysableOnly) query.set("concluded_only", "true");
+  const path = `products?${query}`;
+  type CatalogPage = List<CatalogProduct> & { undecided_count: number };
+  const [result, setResult] = useState<{ path: string; value: CatalogPage }>();
+  const [failure, setFailure] = useState<{ path: string; message: string }>();
+  useEffect(() => {
+    const controller = new AbortController();
+    // Wait for typing to settle before querying the complete store catalog.
+    const timeout = setTimeout(() => {
+      void api<CatalogPage>(path, { signal: controller.signal }).then((value) => {
+        if (controller.signal.aborted) return;
+        const lastPage = Math.max(1, Math.ceil(value.pagination.total / pageSize));
+        if (page > lastPage) {
+          setPage(lastPage);
+          return;
+        }
+        setResult({ path, value });
+        setFailure(undefined);
+      }).catch((err: Error) => {
+        if (!controller.signal.aborted) setFailure({ path, message: err.message });
+      });
+    }, search ? 250 : 0);
+    return () => {
+      clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [path, page, pageSize, search, refreshVersion]);
 
-  const concluded = (product: Product) => {
-    const current = latest(data, product.id);
-    return Boolean(current) && !isInsufficient(current.status);
-  };
-
-  const rows = data.products
-    .filter(
-      (row) =>
-        `${row.name} ${row.id} ${productCode(row)}`
-          .toLowerCase()
-          .includes(search.toLowerCase()) &&
-        (!category || row.category_id === category) &&
-        (!status ||
-          (latest(data, row.id)?.status ?? "no_analysis") === status) &&
-        (!analysableOnly || concluded(row)),
-    )
-    .sort((a, b) =>
-      sort === "price"
-        ? Number(a.price ?? Infinity) - Number(b.price ?? Infinity)
-        : sort === "sales"
-          ? Number(b.quantity_sold ?? -1) - Number(a.quantity_sold ?? -1)
-          : Number(concluded(b)) - Number(concluded(a)),
-    );
-
-  const undecidedCount = data.products.filter((row) => !concluded(row)).length;
-  const pages = Math.max(1, Math.ceil(rows.length / pageSize));
-  const activePage = Math.min(page, pages);
+  const current = result?.path === path ? result.value : undefined;
+  const error = failure?.path === path ? failure.message : "";
+  const visible = current?.data ?? [];
+  const total = current?.pagination.total ?? 0;
+  const undecidedCount = current?.undecided_count ?? 0;
+  const pages = Math.max(1, Math.ceil(total / pageSize));
+  const activePage = page;
   const pageNumbers = [
     ...new Set([1, activePage - 1, activePage, activePage + 1, pages]),
   ]
     .filter((number) => number >= 1 && number <= pages)
     .sort((a, b) => a - b);
-  const visible = rows.slice(
-    (activePage - 1) * pageSize,
-    activePage * pageSize,
-  );
-
-  async function save(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setPending(true);
-    setError("");
-    const form = new FormData(event.currentTarget);
-    const value = {
-      name: String(form.get("name")),
-      description: String(form.get("description")),
-      category_id: form.get("category_id") || null,
-      price: form.get("price") === "" ? null : Number(form.get("price")),
-    };
-    try {
-      await api(
-        editor === "new" ? "products" : `products/${(editor as Product).id}`,
-        {
-          method: editor === "new" ? "POST" : "PATCH",
-          body: JSON.stringify(value),
-        },
-      );
-      setEditor(null);
-      popup.notify("Đã lưu sản phẩm.");
-      await refresh();
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setPending(false);
-    }
-  }
-
-  async function remove(product: Product) {
-    if (
-      !(await popup.confirm(
-        `Xóa sản phẩm “${product.name}”? Sản phẩm đã có phân tích sẽ không thể xóa.`,
-      ))
-    )
-      return;
-    setPending(true);
-    setError("");
-    try {
-      await api(`products/${product.id}`, { method: "DELETE" });
-      popup.notify("Đã xóa sản phẩm.");
-      await refresh();
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setPending(false);
-    }
-  }
-
   return (
     <>
-      {error && !editor && <ErrorPopup message={error} />}
+      {error && <ErrorPopup message={error} />}
       <Panel className="filters">
         <div className="filter-search-row">
           <div className="search-field">
@@ -146,6 +93,7 @@ export function LiveCatalog({
             <input
               aria-label="Tìm sản phẩm"
               placeholder="Tìm theo mã, tên sản phẩm…"
+              maxLength={200}
               value={search}
               onChange={(event) => {
                 setSearch(event.currentTarget.value);
@@ -182,17 +130,7 @@ export function LiveCatalog({
             Xem phân tích đã chọn{" "}
             {selected.length > 0 && `(${selected.length})`}
           </button>
-          {role === "admin" && (
-            <button
-              className="button primary"
-              onClick={() => {
-                setEditor("new");
-                setError("");
-              }}
-            >
-              Thêm sản phẩm
-            </button>
-          )}
+
         </div>
         <div className="filter-row">
           <select
@@ -204,7 +142,7 @@ export function LiveCatalog({
             }}
           >
             <option value="">Danh mục: Tất cả</option>
-            {data.categories.map((row) => (
+            {categories.map((row) => (
               <option key={row.id} value={row.id}>
                 {row.name}
               </option>
@@ -221,7 +159,7 @@ export function LiveCatalog({
           >
             <option value="">Trạng thái: Tất cả</option>
             <option value="no_analysis">Chưa có phân tích</option>
-            {[...new Set(data.analyses.map((row) => row.status))]
+            {legacyStatuses
               .filter(
                 (key) =>
                   !(key in mlAnalysisLabels) &&
@@ -346,8 +284,8 @@ export function LiveCatalog({
                       name={product.name}
                       image={product.thumbnail_url}
                       detail={
-                        latest(data, product.id)?.product_type ??
-                        data.categories.find(
+                        product.product_type ??
+                        categories.find(
                           (row) => row.id === product.category_id,
                         )?.name
                       }
@@ -355,7 +293,7 @@ export function LiveCatalog({
                     />
                   </td>
                   <td>
-                    {data.categories.find(
+                    {categories.find(
                       (row) => row.id === product.category_id,
                     )?.name ?? "Chưa phân loại"}
                   </td>
@@ -369,19 +307,14 @@ export function LiveCatalog({
                     </span>
                   </td>
                   <td>
-                    <StatusBadge status={latest(data, product.id)?.status}>
-                      {analysisLabels[latest(data, product.id)?.status] ??
+                    <StatusBadge status={product.latest_status ?? undefined}>
+                      {analysisLabels[product.latest_status ?? ""] ??
                         "Chưa được phân tích"}
                     </StatusBadge>
                   </td>
                   <td>
                     {(() => {
-                      const analysis = latest(data, product.id);
-                      const actions = analysis
-                        ? (data.actions ?? []).filter(
-                            (a) => a.analysis_id === analysis.id,
-                          )
-                        : [];
+                      const actions = product.action_titles;
                       if (!actions.length)
                         return <span className="muted">—</span>;
                       return (
@@ -399,11 +332,11 @@ export function LiveCatalog({
                             fontWeight: 500,
                             textDecoration: "none",
                           }}
-                          title={actions.map((a) => a.title).join("\n")}
+                          title={actions.join("\n")}
                         >
                           <Icon name="sparkles" size={13} />
                           {actions.length === 1
-                            ? actions[0].title
+                            ? actions[0]
                             : `${actions.length} đề xuất`}
                         </Link>
                       );
@@ -416,40 +349,22 @@ export function LiveCatalog({
                     >
                       Xem
                     </Link>
-                    {role === "admin" && (
-                      <>
-                        <button
-                          className="button subtle small"
-                          onClick={() => {
-                            setEditor(product);
-                            setError("");
-                          }}
-                        >
-                          Sửa
-                        </button>
-                        <button
-                          className="button subtle small"
-                          disabled={pending}
-                          onClick={() => remove(product)}
-                        >
-                          Xóa
-                        </button>
-                      </>
-                    )}
+
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        {!visible.length && <Empty />}
+        {!current && !error && <p role="status">Đang tải sản phẩm…</p>}
+        {current && !visible.length && <Empty />}
         <div className="table-footer">
           <span>
             Hiển thị{" "}
             {visible.length
-              ? `${(activePage - 1) * pageSize + 1}–${Math.min(activePage * pageSize, rows.length)}`
+              ? `${(activePage - 1) * pageSize + 1}–${Math.min(activePage * pageSize, total)}`
               : "0"}{" "}
-            / {rows.length} sản phẩm
+            / {total} sản phẩm
           </span>
           <div className="pagination">
             <button
@@ -484,63 +399,6 @@ export function LiveCatalog({
           </div>
         </div>
       </div>
-      {editor && (
-        <Modal
-          title={editor === "new" ? "Thêm sản phẩm" : "Sửa sản phẩm"}
-          onClose={() => !pending && setEditor(null)}
-        >
-          <form className="connected-form" onSubmit={save}>
-            <label>
-              Tên sản phẩm
-              <input
-                name="name"
-                required
-                maxLength={500}
-                defaultValue={editor === "new" ? "" : editor.name}
-              />
-            </label>
-            <label>
-              Giá
-              <input
-                name="price"
-                type="number"
-                min="0"
-                step="0.01"
-                defaultValue={editor === "new" ? "" : (editor.price ?? "")}
-              />
-            </label>
-            <label>
-              Danh mục
-              <select
-                name="category_id"
-                defaultValue={
-                  editor === "new" ? "" : (editor.category_id ?? "")
-                }
-              >
-                <option value="">Chưa phân loại</option>
-                {data.categories.map((row) => (
-                  <option key={row.id} value={row.id}>
-                    {row.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Mô tả
-              <textarea
-                name="description"
-                defaultValue={
-                  editor === "new" ? "" : (editor.description ?? "")
-                }
-              />
-            </label>
-            {error && <ErrorPopup message={error} />}
-            <button className="button primary" disabled={pending}>
-              {pending ? "Đang lưu…" : "Lưu sản phẩm"}
-            </button>
-          </form>
-        </Modal>
-      )}
     </>
   );
 }
