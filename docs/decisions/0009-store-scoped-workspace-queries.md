@@ -27,3 +27,8 @@ Analysis transfers scale with the chosen product and date window. Catalog
 transfers scale with page size. Catalog status filtering, the exact matching
 count and the header totals still query store data. Deployed latency at larger
 store sizes needs a separate measurement.
+
+
+The suggestion workspace now follows the same bounded-client read model.
+It loads a server page of 20 enriched action cards and on-demand pages of
+analysis choices. See the [suggestion response contract](../rules/data-contracts.md#paginated-suggestion-cards).

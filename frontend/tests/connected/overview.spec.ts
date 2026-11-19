@@ -33,11 +33,26 @@ test("live overview shows the full catalog without source controls and opens rea
     );
     const allCategories = new Set(products.map((row) => row.category_id)).size;
     const dashboard = page.locator(".live-overview:visible");
-    await expect(dashboard.getByRole("group", { name: "Nguồn dữ liệu thống kê" })).toHaveCount(0);
-    await expect(dashboard.locator(".overview-source p")).toHaveText(`${products.length} sản phẩm trong catalog`);
-    await expect(dashboard.locator(".stat").filter({ hasText: "Tổng số sản phẩm" }).locator(".stat-value")).toContainText(String(products.length));
-    await expect(dashboard.getByRole("img", { name: new RegExp(`^SẢN PHẨM: ${products.length}\\.`) })).toBeVisible();
-    await expect(dashboard.locator(".overview-category-item")).toHaveCount(allCategories);
+    await expect(
+      dashboard.getByRole("group", { name: "Nguồn dữ liệu thống kê" }),
+    ).toHaveCount(0);
+    await expect(dashboard.locator(".overview-source p")).toHaveText(
+      `${products.length} sản phẩm trong catalog`,
+    );
+    await expect(
+      dashboard
+        .locator(".stat")
+        .filter({ hasText: "Tổng số sản phẩm" })
+        .locator(".stat-value"),
+    ).toContainText(String(products.length));
+    await expect(
+      dashboard.getByRole("img", {
+        name: new RegExp(`^SẢN PHẨM: ${products.length}\\.`),
+      }),
+    ).toBeVisible();
+    await expect(dashboard.locator(".overview-category-item")).toHaveCount(
+      allCategories,
+    );
     await page.screenshot({
       path: "../tmp/overview-desktop.png",
       fullPage: true,
@@ -98,8 +113,12 @@ test("empty overview has no invalid percentages or chart values", async ({
   await expect(
     dashboard.getByText("Chưa có danh mục để thống kê", { exact: true }),
   ).toBeVisible();
-  await expect(dashboard.getByRole("group", { name: "Nguồn dữ liệu thống kê" })).toHaveCount(0);
-  await expect(dashboard.locator(".overview-source p")).toHaveText("0 sản phẩm trong catalog");
+  await expect(
+    dashboard.getByRole("group", { name: "Nguồn dữ liệu thống kê" }),
+  ).toHaveCount(0);
+  await expect(dashboard.locator(".overview-source p")).toHaveText(
+    "0 sản phẩm trong catalog",
+  );
   await expect(dashboard.getByText(/NaN|Infinity/)).toHaveCount(0);
   await expect(dashboard.getByRole("img")).toHaveCount(0);
 });

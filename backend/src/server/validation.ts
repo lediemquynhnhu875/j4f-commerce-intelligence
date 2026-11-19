@@ -202,20 +202,27 @@ export const actionStatuses = [
   "rejected",
   "cancelled",
 ] as const;
+const actionTypes = [
+  "review_price",
+  "complete_description",
+  "review_images_or_video",
+  "review_images",
+  "review_video",
+  "inspect_reviews",
+  "verify_listing_and_stock",
+  "verify_exposure",
+  "other",
+] as const;
+export const actionCardFilters = z.object({
+  analysis_id: id.optional(),
+  type: z.enum(actionTypes).optional(),
+  status: z.enum(actionStatuses).optional(),
+  search: z.string().trim().max(200).optional(),
+});
 export const actionSchema = z
   .object({
     analysis_id: id,
-    type: z.enum([
-      "review_price",
-      "complete_description",
-      "review_images_or_video",
-      "review_images",
-      "review_video",
-      "inspect_reviews",
-      "verify_listing_and_stock",
-      "verify_exposure",
-      "other",
-    ]),
+    type: z.enum(actionTypes),
     title: text(255),
     description: optionalText(),
     original_suggestion_json: json,

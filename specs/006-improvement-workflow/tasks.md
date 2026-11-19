@@ -212,3 +212,13 @@ remaining delivery; they do not add a cyclic prerequisite.
 | FR-008 | `T005`, `T008` |
 | FR-009 | `T002`, `T009`, `T012` |
 | FR-010 | `T002`, `T012` |
+
+
+## Server-paginated suggestion workspace
+
+- [x] Filter, sort and page action cards in the active store in PostgreSQL.
+- [x] Fetch 20 cards at a time in List and Kanban. Provide named navigation
+  controls above the results and load analysis choices on demand.
+- [x] Verify request count, next-page sequencing, exact filter totals and
+  ownership. Check the first two result pages against Neon.
+- [ ] Measure end-to-end navigation latency after deployment.

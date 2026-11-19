@@ -2,12 +2,54 @@
 
 Updated: 2026-11-19 (Asia/Saigon).
 
+## Playwright TypeScript configuration
+
+`frontend/tests/tsconfig.json` loads the existing Node.js type definitions for
+Playwright test files. This fixes TS2591 on the import test's Buffer fixtures.
+TypeScript checked all eight test files and the affected Edge import test passed.
+
+## User and Admin screen structure
+
+Workspace screens now live in `frontend/src/page/user` and `frontend/src/page/admin`.
+The User product list and filters are in `page/user/product.tsx`.
+The shared `page/auth.tsx` checks the session and role before a screen mounts.
+`components/layout/workspace-layout.tsx` renders the common workspace frame.
+The Next.js route maps the existing URLs to screens, including `/user/products`
+and `/user/suggestions`.
+
+Frontend lint, production build and all 21 Edge release tests passed. The new
+auth test verifies that anonymous and wrong-role visits start no page data requests.
+
+## Compact catalog filters
+
+Catalog-only styles reduce button padding, remove label margins and cap
+the desktop search field. Frontend lint and build passed. Edge on the
+production build measured the desktop row at 36 px versus 66 px before.
+The 390 px mobile layout had no horizontal overflow in the filter panel.
+
+## Server-paginated suggestions
+
+The User suggestions workspace on `improve_query` requests 20 enriched cards
+per page with server-side filters and a stable updated-time and ID order.
+List and Kanban share a page. The add-work picker reads paginated analysis
+choices when opened. Full exports continue to load in response to the
+explicit export action.
+
+Frontend lint and both builds passed, with 20 Edge tests and 18 backend unit
+tests. Read-only Neon checks verified a 113-action store, the order and 20-row
+size of the first two pages, filtered totals, the lightweight picker, and
+store isolation. Deployed navigation latency remains unmeasured.
+
 ## Current database reference
 
 The [current database diagram and query walkthrough](architecture/sellens-database.md)
 describes the configured Neon schema and the current checkout's read paths.
 Verified all 16 live table names, the 10 diagram entities, the shown foreign
-keys and the document's repository links. The multi-store proposal is historical.
+keys and the document's repository links. The [DBML source](architecture/sellens-current.dbml)
+was generated from Neon schema metadata. Both the legacy and current DBML parsers verified
+16 tables, 161 columns and 18 foreign keys. The DBML source records PostgreSQL
+CHECK constraints and descending or partial indexes in comments for editor compatibility.
+The multi-store proposal is historical.
 
 ## Current store statistics
 

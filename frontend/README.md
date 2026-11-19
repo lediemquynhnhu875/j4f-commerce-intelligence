@@ -28,15 +28,24 @@ variables. Sessions use the existing HttpOnly cookie proxy at /api/backend/*.
 - Login: / and /login; real backend accounts only.
 - User: /user/overview, /user/products, /user/analysis, /user/suggestions.
 - Admin: /admin/overview, /admin/stores, /admin/accounts, /admin/monitor,
-  /admin/configuration; /admin/analysis remains a monitoring detail view.
+  and /admin/configuration.
 - /preview/*, /admin/products and /admin/categories return 404.
 - Store ownership is enforced by the API. Configuration is read-only and live
   inference remains pending. Product import/write requests use the signed-in
   User's store. Saved analysis data is loaded from PostgreSQL.
 
-Shared navigation/route policy is in src/lib/workspace-pages.ts. Connected UI
-components are in src/page/connected/. Product identity and work evidence
-continue to use API data with missing/broken-image fallbacks and immutable history.
+The Next.js route `src/app/[role]/[page]/page.tsx` maps public URLs to screens:
+
+- `src/page/user/` contains `overview.tsx`, `product.tsx`, `analysis.tsx`
+  and `suggestion.tsx`. The product and suggestion files map to the existing
+  plural URLs `/user/products` and `/user/suggestions`.
+- `src/page/admin/` contains `overview.tsx`, `stores.tsx`, `accounts.tsx`,
+  `monitor.tsx` and `configuration.tsx`.
+- `src/page/auth.tsx` checks the session and requested role before mounting a
+  screen. Backend authorization protects store data independently.
+- `src/components/layout/workspace-layout.tsx` renders the shared layout,
+  and `src/lib/workspace-pages.ts` holds menu labels and allowed route slugs.
+  Each page supplies its own description and API reads.
 
 ## Checks
 

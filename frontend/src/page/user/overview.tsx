@@ -5,10 +5,42 @@ import { StatusBadge } from "@/components/status-badge";
 import { analysisColor } from "@/lib/status-colors";
 import { Donut } from "@/components/charts/donut";
 import { Badge, Empty, Icon, Panel, Stat } from "@/components/ui";
-import { analysisLabels, mlAnalysisLabels } from "@/lib/api-client";
+import { api, analysisLabels, mlAnalysisLabels } from "@/lib/api-client";
 import type { StoreOverview } from "@/types/api";
 import { ProductIdentity } from "@/components/products/product-identity";
 import { quantity, productCode } from "@/lib/analysis-presentation";
+
+import { WorkspaceLayout } from "@/components/layout/workspace-layout";
+import { useAuth } from "@/page/auth";
+import { useWorkspaceData } from "@/lib/use-workspace-data";
+import { exportUserWorkspace } from "@/lib/workspace-data";
+
+async function loadOverview(signal: AbortSignal) {
+  return (await api<{ data: StoreOverview }>("workspace/overview", { signal }))
+    .data;
+}
+
+export default function UserOverview() {
+  const { account } = useAuth();
+  const { data, loading, error, refresh } = useWorkspaceData(loadOverview);
+  return (
+    <WorkspaceLayout
+      page="overview"
+      heading={`Xin chào ${account.full_name}`}
+      description="Theo dõi sản phẩm và ưu tiên cơ hội cải thiện hiệu quả bán hàng."
+      storeName={data?.summary?.store_name}
+      suggestionCount={data?.summary?.proposed_count}
+      latestResult={data?.summary?.latest_analyzed_at ?? null}
+      loading={loading}
+      error={error}
+      canExport={Boolean(data)}
+      onExport={exportUserWorkspace}
+      onRefresh={refresh}
+    >
+      {data && <OverviewContent overview={data} />}
+    </WorkspaceLayout>
+  );
+}
 
 const palette = [
   "#8b5cf6",
@@ -34,7 +66,7 @@ const typeLabels: Record<string, string> = {
 const percent = (count: number, total: number) =>
   total ? (count / total) * 100 : 0;
 
-export function LiveOverview({ overview }: { overview?: StoreOverview }) {
+function OverviewContent({ overview }: { overview: StoreOverview }) {
   const metrics = overview?.metrics;
   const total = metrics?.product_count ?? 0;
   const analyzed = metrics?.analyzed_product_count ?? 0;
@@ -264,15 +296,27 @@ export function LiveOverview({ overview }: { overview?: StoreOverview }) {
                       </td>
                       <td>{row.classification ?? "Chưa phân loại"}</td>
                       <td className="numeric">{quantity(row.observed_sold)}</td>
-                      <td className="numeric">{quantity(row.reference_sold)}</td>
                       <td className="numeric">
-                        <Badge tone={row.sales_gap === null ? "gray" : Number(row.sales_gap) < 0 ? "red" : "green"}>
+                        {quantity(row.reference_sold)}
+                      </td>
+                      <td className="numeric">
+                        <Badge
+                          tone={
+                            row.sales_gap === null
+                              ? "gray"
+                              : Number(row.sales_gap) < 0
+                                ? "red"
+                                : "green"
+                          }
+                        >
                           {row.sales_gap === null
                             ? "—"
                             : `${Number(row.sales_gap) > 0 ? "+" : ""}${quantity(row.sales_gap)} đơn vị`}
                         </Badge>
                       </td>
-                      <td><StatusBadge status={row.status} /></td>
+                      <td>
+                        <StatusBadge status={row.status} />
+                      </td>
                       <td>
                         <Link
                           className="button subtle small"
@@ -294,7 +338,11 @@ export function LiveOverview({ overview }: { overview?: StoreOverview }) {
       <Panel
         title="Đề xuất cải thiện đang theo dõi"
         subtitle="Hành động và bằng chứng gốc của kết quả đang xem"
-        action={<Badge tone="gradient">{metrics?.open_suggestion_count ?? 0} đề xuất đang mở</Badge>}
+        action={
+          <Badge tone="gradient">
+            {metrics?.open_suggestion_count ?? 0} đề xuất đang mở
+          </Badge>
+        }
       >
         {!suggestions.length ? (
           <Empty title="Chưa có công việc cần theo dõi" />

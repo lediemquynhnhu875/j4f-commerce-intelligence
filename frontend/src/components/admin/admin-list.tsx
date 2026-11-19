@@ -15,7 +15,10 @@ export function useAdminList<T extends List<unknown>>(
   const [search, setSearch] = useState("");
   const [result, setResult] = useState<{ path: string; data: T }>();
   const [failure, setFailure] = useState<{ path: string; message: string }>();
-  const params = new URLSearchParams({ page: String(page), limit: String(adminPageSize) });
+  const params = new URLSearchParams({
+    page: String(page),
+    limit: String(adminPageSize),
+  });
   if (search) params.set("search", search);
   if (filters.status) params.set("status", filters.status);
   if (filters.sort) params.set("sort", filters.sort);
@@ -26,7 +29,10 @@ export function useAdminList<T extends List<unknown>>(
     void api<T>(path, { signal: controller.signal })
       .then((data) => {
         if (controller.signal.aborted) return;
-        const lastPage = Math.max(1, Math.ceil(data.pagination.total / adminPageSize));
+        const lastPage = Math.max(
+          1,
+          Math.ceil(data.pagination.total / adminPageSize),
+        );
         if (page > lastPage) {
           setPage(lastPage);
           return;
@@ -35,7 +41,8 @@ export function useAdminList<T extends List<unknown>>(
         setFailure(undefined);
       })
       .catch((err: Error) => {
-        if (!controller.signal.aborted) setFailure({ path, message: err.message });
+        if (!controller.signal.aborted)
+          setFailure({ path, message: err.message });
       });
     return () => controller.abort();
   }, [path, page, refreshVersion]);
@@ -65,9 +72,16 @@ export function AdminListSearch({
   return (
     <form className="filter-search-row" onSubmit={onSubmit}>
       <div className="search-field">
-        <input name="search" aria-label={label} placeholder={label} maxLength={200} />
+        <input
+          name="search"
+          aria-label={label}
+          placeholder={label}
+          maxLength={200}
+        />
       </div>
-      <button className="button subtle" type="submit">Tìm kiếm</button>
+      <button className="button subtle" type="submit">
+        Tìm kiếm
+      </button>
       {children}
     </form>
   );
@@ -87,13 +101,27 @@ export function AdminListPagination({
   const last = Math.min(page * adminPageSize, total);
   return (
     <div className="table-footer">
-      <span>Hiển thị {first}–{last} / {total.toLocaleString("vi-VN")}</span>
+      <span>
+        Hiển thị {first}–{last} / {total.toLocaleString("vi-VN")}
+      </span>
       <div className="pagination">
-        <button type="button" aria-label="Trang trước" disabled={page <= 1} onClick={() => onChange(page - 1)}>
+        <button
+          type="button"
+          aria-label="Trang trước"
+          disabled={page <= 1}
+          onClick={() => onChange(page - 1)}
+        >
           ‹
         </button>
-        <span>Trang {page} / {pages}</span>
-        <button type="button" aria-label="Trang sau" disabled={page >= pages} onClick={() => onChange(page + 1)}>
+        <span>
+          Trang {page} / {pages}
+        </span>
+        <button
+          type="button"
+          aria-label="Trang sau"
+          disabled={page >= pages}
+          onClick={() => onChange(page + 1)}
+        >
           ›
         </button>
       </div>

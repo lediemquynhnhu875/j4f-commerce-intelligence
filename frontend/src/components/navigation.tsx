@@ -13,7 +13,7 @@ export function Navigation({
   current: string;
   onNavigate: () => void;
   pages: WorkspacePage[];
-  suggestionCount?:number;
+  suggestionCount?: number;
 }) {
   return (
     <nav

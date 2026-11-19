@@ -4,6 +4,8 @@ Tài liệu đối chiếu schema `public` trên Neon với mã nguồn nhánh `
 
 ## Sơ đồ quan hệ
 
+Để mở sơ đồ trong dbdiagram.io, copy toàn bộ nội dung file [sellens-current.dbml](sellens-current.dbml) vào trình soạn DBML.
+
 Mỗi tài khoản `reviewer` được hệ thống cấp một cửa hàng khi tạo. `stores.owner_user_id` là khóa ngoại có ràng buộc `UNIQUE`, nên một tài khoản sở hữu tối đa một cửa hàng. API hiển thị vai trò `reviewer` dưới tên `user`.
 
 ```mermaid
@@ -150,7 +152,7 @@ Backend lấy ID tài khoản từ phiên đăng nhập. Luồng đọc của Us
 | **Kết quả phân tích User** — `GET /api/v1/analysis-workspace` | Với một sản phẩm, chỉ lấy ID, thời gian và số bán từ snapshot của các mốc trong khoảng ngày Việt Nam đã chọn. Trả chi tiết và đề xuất của mốc mới nhất trong khoảng. Khi bấm mốc cũ, gọi `GET /api/v1/products/:id/analyses/:analysisId` để lấy chi tiết đúng mốc. Chỉ mục `analyses_product_time` hỗ trợ tìm theo sản phẩm và thời gian. [Truy vấn Phân tích](../../backend/src/server/services/analyses.ts) |
 | **Cửa hàng Admin** — `GET /api/v1/stores` | Đọc số sản phẩm từ `store_stats`. Hai chỉ mục `store_stats_most_products` và `store_stats_fewest_products` phục vụ hai chiều sắp xếp. Khi số đếm bằng nhau, `store_id` tăng dần quyết định thứ tự. API trả tối đa **50 cửa hàng** cho trang mặc định của UI. Khi tìm theo tên hay mã, áp dụng điều kiện tìm trước khi phân trang. Ô tổng lấy tổng số cửa hàng và số sản phẩm đã lưu trong bảng tổng hợp. [Truy vấn cửa hàng](../../backend/src/server/services/stores.ts) |
 | **Tổng quan / Giám sát / Cấu hình Admin** — `GET /api/v1/admin/summary?view=…` | Tổng quan cộng `product_count` và `saved_analysis_count` từ các dòng `store_stats`. Giám sát gom hoạt động theo cửa hàng và đợt phân tích, lấy tối đa 20 mục gần nhất. Cấu hình tổng hợp các tổ hợp phiên bản đã chạy. Mỗi màn hình yêu cầu phần dữ liệu tương ứng. [Truy vấn Admin](../../backend/src/server/services/admin-summary.ts) |
-| **Đề xuất cải thiện User** — `GET /api/v1/actions` | Backend giới hạn theo cửa hàng qua `improvement_actions → product_analyses → products` và hỗ trợ phân trang. Trang Đề xuất hiện vẫn đọc nhiều trang dữ liệu trước khi lọc ở giao diện. Lịch sử của một công việc truy vấn riêng theo `action_id`. [API công việc](../../backend/src/server/services/actions.ts) · [Luồng tải giao diện](../../frontend/src/components/live-page.tsx) |
+| **Đề xuất cải thiện User** — `GET /api/v1/actions` | Backend giới hạn theo cửa hàng qua `improvement_actions → product_analyses → products`. Chế độ `view=cards` áp dụng bộ lọc và sắp theo `updated_at DESC, id DESC` trước khi lấy 20 thẻ. Gói phản hồi có tên và ảnh sản phẩm cùng các số đếm. Danh sách và Kanban dùng chung trang đang xem. Bộ chọn phân tích và lịch sử chỉ tải khi mở hộp thoại. [API công việc](../../backend/src/server/services/actions.ts) · [Luồng tải giao diện](../../frontend/src/page/user/suggestion.tsx) |
 
 ## Ví dụ về phần tối ưu
 

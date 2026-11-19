@@ -2,12 +2,33 @@
 import { useState } from "react";
 import type { List, Store } from "@/types/api";
 import { ErrorPopup } from "@/components/popup";
-import { AdminListPagination, AdminListSearch, useAdminList } from "./admin-list";
+import {
+  AdminListPagination,
+  AdminListSearch,
+  useAdminList,
+} from "@/components/admin/admin-list";
 import { Empty, Panel, Stat } from "@/components/ui";
+
+import { WorkspaceLayout } from "@/components/layout/workspace-layout";
+import { exportAdminWorkspace } from "@/lib/workspace-data";
+
+export default function AdminStores() {
+  const [refreshVersion, setRefreshVersion] = useState(0);
+  return (
+    <WorkspaceLayout
+      page="stores"
+      description="Quản trị hồ sơ cửa hàng và quyền sở hữu sản phẩm."
+      onExport={exportAdminWorkspace}
+      onRefresh={() => setRefreshVersion((version) => version + 1)}
+    >
+      <StoresList refreshVersion={refreshVersion} />
+    </WorkspaceLayout>
+  );
+}
 
 type StoreList = List<Store> & { totals: { stores: number; products: number } };
 
-export function LiveStores({ refreshVersion }: { refreshVersion: number }) {
+function StoresList({ refreshVersion }: { refreshVersion: number }) {
   const [sort, setSort] = useState("");
   const list = useAdminList<StoreList>("stores", refreshVersion, { sort });
   const stores = list.result?.data ?? [];
@@ -30,7 +51,10 @@ export function LiveStores({ refreshVersion }: { refreshVersion: number }) {
         title="Danh sách cửa hàng"
         subtitle="Mỗi tài khoản User sở hữu một cửa hàng. Dữ liệu được phân quyền theo chủ sở hữu."
       >
-        <AdminListSearch label="Tìm theo tên hoặc mã cửa hàng" onSubmit={list.submitSearch}>
+        <AdminListSearch
+          label="Tìm theo tên hoặc mã cửa hàng"
+          onSubmit={list.submitSearch}
+        >
           <select
             aria-label="Sắp xếp theo số sản phẩm"
             value={sort}
@@ -70,12 +94,16 @@ export function LiveStores({ refreshVersion }: { refreshVersion: number }) {
             </tbody>
           </table>
         </div>
-        {list.result && !stores.length && <Empty title="Không tìm thấy cửa hàng" />}
-        {list.result && <AdminListPagination
-          page={list.page}
-          total={list.result.pagination.total}
-          onChange={list.setPage}
-        />}
+        {list.result && !stores.length && (
+          <Empty title="Không tìm thấy cửa hàng" />
+        )}
+        {list.result && (
+          <AdminListPagination
+            page={list.page}
+            total={list.result.pagination.total}
+            onChange={list.setPage}
+          />
+        )}
       </Panel>
     </>
   );

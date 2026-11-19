@@ -37,13 +37,17 @@ export function ObservableSummary({ analysis }: { analysis: Analysis }) {
   return (
     <div className="observable-summary">
       <p>
-        Chưa đủ cơ sở để kết luận về lượng bán, nhưng các chỉ số dưới đây vẫn là số liệu quan sát được
-        của chính sản phẩm và nhóm đối chiếu — vẫn dùng để rà soát tin đăng.
+        Chưa đủ cơ sở để kết luận về lượng bán, nhưng các chỉ số dưới đây vẫn là
+        số liệu quan sát được của chính sản phẩm và nhóm đối chiếu — vẫn dùng để
+        rà soát tin đăng.
       </p>
       {gaps.length > 0 ? (
         <ul className="observable-gaps">
           {gaps.map((gap) => (
-            <li key={gap.metric} className={gap.concern ? "concern" : undefined}>
+            <li
+              key={gap.metric}
+              className={gap.concern ? "concern" : undefined}
+            >
               <strong>{gap.label}</strong>
               <span>{gap.text}</span>
             </li>
@@ -55,7 +59,8 @@ export function ObservableSummary({ analysis }: { analysis: Analysis }) {
         </p>
       )}
       <p className="muted">
-        Chênh lệch ở đây không chứng minh nguyên nhân và không thay cho mức bán tham chiếu.
+        Chênh lệch ở đây không chứng minh nguyên nhân và không thay cho mức bán
+        tham chiếu.
       </p>
     </div>
   );
@@ -73,8 +78,8 @@ export function UnblockPanel({ analysis }: { analysis: Analysis }) {
         <p>{explanation.unblock}</p>
       </div>
       <p className="muted">
-        Hệ thống không tự sinh đề xuất cải thiện khi chưa có căn cứ. Mục này mô tả điều kiện còn thiếu,
-        không phải một khuyến nghị về doanh số.
+        Hệ thống không tự sinh đề xuất cải thiện khi chưa có căn cứ. Mục này mô
+        tả điều kiện còn thiếu, không phải một khuyến nghị về doanh số.
       </p>
     </Panel>
   );

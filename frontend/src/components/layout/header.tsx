@@ -42,8 +42,7 @@ export function Header({
           <div>
             <strong>Quản trị hệ thống Sellens</strong>
             <small>
-              <i className="dot" />{" "}
-              Dữ liệu đã kết nối
+              <i className="dot" /> Dữ liệu đã kết nối
             </small>
           </div>
         )}
@@ -65,11 +64,7 @@ export function Header({
         <div className="profile">
           <div>
             <strong>{account.name}</strong>
-            <small>
-              {role === "admin"
-                ? "Quản trị viên"
-                : "Người dùng"}
-            </small>
+            <small>{role === "admin" ? "Quản trị viên" : "Người dùng"}</small>
           </div>
           <span className="avatar">{account.initials}</span>
         </div>

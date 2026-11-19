@@ -1,0 +1,357 @@
+// Sellens - current PostgreSQL schema on Neon through migration 005_store_stats
+// Paste this file into the DBML editor at dbdiagram.io.
+// PostgreSQL CHECK constraints, DESC and partial indexes are recorded in comments for DBML editor compatibility.
+// Apply database changes through the migration SQL.
+
+Project Sellens {
+  database_type: 'PostgreSQL'
+  Note: 'Schema public trên Neon. Mỗi tài khoản có tối đa một cửa hàng. Xem sellens-database.md để hiểu luồng truy vấn.'
+}
+
+Table users {
+  id bigint [pk, increment, not null]
+  full_name varchar(150) [not null]
+  email varchar(254) [not null, unique]
+  password_hash varchar(255) [not null]
+  role varchar(16) [not null, default: `'reviewer'::character varying`]
+  is_active boolean [not null, default: true]
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+  // CONSTRAINT users_full_name_check CHECK (length(TRIM(BOTH FROM full_name)) > 0)
+  // CONSTRAINT users_role_check CHECK (role::text = ANY (ARRAY['admin'::character varying, 'reviewer'::character varying]::text[]))
+
+  indexes {
+    (`lower(email::text)`) [unique, name: 'users_email_normalized']
+  }
+  // Trigger: user_store
+
+  Note: 'Tài khoản đăng nhập. API gọi vai trò reviewer là user.'
+}
+
+Table stores {
+  id bigint [pk, increment, not null]
+  owner_user_id bigint [not null, unique, note: 'FK tới users.id và UNIQUE trong bảng stores.']
+  name varchar(200) [not null]
+  is_active boolean [not null, default: true]
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+  // CONSTRAINT stores_name_check CHECK (length(TRIM(BOTH FROM name)) > 0)
+  // Trigger: immutable_store_owner
+  // Trigger: init_store_stats
+
+  Note: 'Một tài khoản có tối đa một cửa hàng. Trigger tạo cửa hàng cho reviewer và tạo dòng thống kê ban đầu.'
+}
+
+Table categories {
+  id bigint [pk, increment, not null]
+  code varchar(80) [not null, unique]
+  name varchar(150) [not null]
+  description text
+
+  Note: 'Danh mục dùng chung. Sản phẩm có thể chưa phân loại.'
+}
+
+Table products {
+  id bigint [pk, increment, not null]
+  category_id bigint
+  name varchar(500) [not null]
+  description text
+  brand varchar(255)
+  product_url text
+  thumbnail_url text
+  currency char(3) [not null, default: `'VND'::bpchar`]
+  price numeric(18,2)
+  original_price numeric(18,2)
+  quantity_sold bigint [note: 'Số bán quan sát từ nguồn. NULL khi thiếu dữ liệu.']
+  rating_average numeric(3,2)
+  review_count integer
+  number_of_images integer
+  has_video boolean
+  sales_scope varchar(20) [not null, default: `'unknown'::character varying`]
+  sales_label_verified boolean [not null, default: false]
+  source_data_json jsonb
+  observed_at timestamptz
+  imported_by bigint
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+  source_system varchar(50)
+  source_product_id varchar(100)
+  video_url text
+  image_urls jsonb
+  media_source_json jsonb
+  store_id bigint [not null]
+  // CONSTRAINT products_image_urls_array CHECK (image_urls IS NULL OR jsonb_typeof(image_urls) = 'array'::text)
+  // CONSTRAINT products_media_source_object CHECK (media_source_json IS NULL OR jsonb_typeof(media_source_json) = 'object'::text)
+  // CONSTRAINT products_name_check CHECK (length(TRIM(BOTH FROM name)) > 0)
+  // CONSTRAINT products_number_of_images_check CHECK (number_of_images >= 0)
+  // CONSTRAINT products_original_price_check CHECK (original_price >= 0::numeric)
+  // CONSTRAINT products_price_check CHECK (price >= 0::numeric)
+  // CONSTRAINT products_quantity_sold_check CHECK (quantity_sold >= 0)
+  // CONSTRAINT products_rating_average_check CHECK (rating_average >= 0::numeric AND rating_average <= 5::numeric)
+  // CONSTRAINT products_review_count_check CHECK (review_count >= 0)
+  // CONSTRAINT products_sales_scope_check CHECK (sales_scope::text = ANY (ARRAY['unknown'::character varying, 'listing'::character varying, 'product_page'::character varying]::text[]))
+
+  indexes {
+    category_id [name: 'products_category']
+    (source_system, source_product_id) [name: 'products_source']
+    (store_id, category_id) [name: 'products_store_category']
+  }
+  // Trigger: immutable_product_store
+  // Trigger: track_product_stats
+
+  Note: 'Trạng thái sản phẩm hiện tại và dữ liệu đã nhập theo cửa hàng.'
+}
+
+Table analysis_runs {
+  id bigint [pk, increment, not null]
+  run_key text [not null, unique]
+  source_sha256 char(64) [not null]
+  selection_sha256 char(64) [not null]
+  manifest_json jsonb [not null]
+  scored_at timestamptz [not null]
+  imported_at timestamptz [not null, default: `now()`]
+
+  Note: 'Metadata của đợt nhập kết quả phân tích đã lưu, gồm khóa đợt và dấu vân tay dữ liệu.'
+}
+
+Table product_analyses {
+  id bigint [pk, increment, not null]
+  product_id bigint [not null]
+  analyzed_by bigint
+  reference_sold numeric(20,4)
+  probability_positive_sales numeric(7,6)
+  sales_gap numeric(20,4)
+  status varchar(60) [not null, default: `'insufficient_basis'::character varying`]
+  is_eligible boolean [not null, default: false]
+  needs_review boolean [not null, default: false]
+  priority_score numeric(12,6)
+  model_version varchar(100)
+  pipeline_version varchar(100) [not null]
+  input_snapshot_json jsonb [not null, note: 'Giá trị đầu vào được lưu tại thời điểm phân tích.']
+  comparison_json jsonb
+  evidence_json jsonb
+  config_json jsonb [not null]
+  limitation_note text
+  analyzed_at timestamptz [not null, default: `now()`]
+  run_id bigint
+  status_schema_version text [not null, default: `'legacy_v1'::text`, note: 'Phiên bản trạng thái legacy_v1 hoặc ml_v2.']
+  status_reason text
+  product_type text
+  taxonomy_version text
+  scored_at timestamptz
+  prediction_lower numeric(20,4)
+  prediction_upper numeric(20,4)
+  // CONSTRAINT analyses_interval CHECK (prediction_lower <= prediction_upper)
+  // CONSTRAINT product_analyses_prediction_lower_check CHECK (prediction_lower >= 0::numeric)
+  // CONSTRAINT product_analyses_prediction_upper_check CHECK (prediction_upper >= 0::numeric)
+  // CONSTRAINT product_analyses_probability_positive_sales_check CHECK (probability_positive_sales >= 0::numeric AND probability_positive_sales <= 1::numeric)
+  // CONSTRAINT product_analyses_reference_sold_check CHECK (reference_sold >= 0::numeric)
+  // CONSTRAINT product_analyses_status_check CHECK (status_schema_version = 'legacy_v1'::text AND (status::text = ANY (ARRAY['positive_feedback_below_reference'::character varying, 'low_rating_below_reference'::character varying, 'at_or_above_reference'::character varying, 'zero_sales_needs_investigation'::character varying, 'zero_sales_no_priority_signal'::character varying, 'below_reference_insufficient_reviews'::character varying, 'monitor_gap'::character varying, 'undecided'::character varying, 'insufficient_basis'::character varying]::text[])) OR status_schema_version = 'ml_v2'::text AND (status::text = ANY (ARRAY['positive_feedback_low_sales'::character varying, 'low_rating_low_sales'::character varying, 'performing_well'::character varying, 'untapped_potential'::character varying, 'difficult_to_sell'::character varying, 'insufficient_data'::character varying]::text[])))
+
+  indexes {
+    (run_id, product_id) [unique, name: 'analyses_run_product']
+    (product_id, analyzed_at) [name: 'analyses_product_time']
+    (status, needs_review) [name: 'analyses_status_review']
+  }
+  // Trigger: immutable_analyses
+  // Trigger: track_analysis_stats
+
+  Note: 'Lịch sử phân tích thêm mới theo sản phẩm. Snapshot, so sánh và bằng chứng được giữ theo từng mốc.'
+}
+
+Table improvement_actions {
+  id bigint [pk, increment, not null]
+  analysis_id bigint [not null]
+  type varchar(40) [not null]
+  title varchar(255) [not null]
+  description text
+  original_suggestion_json jsonb [not null]
+  information_needed text
+  status varchar(20) [not null, default: `'proposed'::character varying`]
+  assigned_to bigint
+  created_by bigint
+  decision_reason text
+  due_at timestamptz
+  completed_at timestamptz
+  outcome_note text
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+  origin text [not null, default: `'legacy'::text`]
+  rule_id text
+  // CONSTRAINT improvement_actions_check CHECK (status::text <> 'rejected'::text OR length(TRIM(BOTH FROM decision_reason)) > 0)
+  // CONSTRAINT improvement_actions_origin_check CHECK (origin = ANY (ARRAY['legacy'::text, 'manual'::text, 'ml_rule'::text]))
+  // CONSTRAINT improvement_actions_status_check CHECK (status::text = ANY (ARRAY['proposed'::character varying, 'accepted'::character varying, 'in_progress'::character varying, 'completed'::character varying, 'rejected'::character varying, 'cancelled'::character varying]::text[]))
+  // CONSTRAINT improvement_actions_type_check CHECK (type::text = ANY (ARRAY['review_price'::character varying, 'complete_description'::character varying, 'review_images_or_video'::character varying, 'review_images'::character varying, 'review_video'::character varying, 'inspect_reviews'::character varying, 'verify_listing_and_stock'::character varying, 'verify_exposure'::character varying, 'other'::character varying]::text[]))
+  // CONSTRAINT ml_rule_required CHECK (origin <> 'ml_rule'::text OR rule_id IS NOT NULL AND length(TRIM(BOTH FROM rule_id)) > 0)
+
+  indexes {
+    analysis_id [name: 'actions_analysis']
+    (assigned_to, status) [name: 'actions_assignee_status']
+  }
+
+  // Partial index: CREATE UNIQUE INDEX actions_ml_rule ON public.improvement_actions USING btree (analysis_id, rule_id) WHERE (origin = 'ml_rule'::text)
+  // Trigger: immutable_original
+  // Trigger: track_action_stats
+
+  Note: 'Đề xuất và công việc theo một lần phân tích. Phần gợi ý gốc được giữ cố định.'
+}
+
+Table action_history {
+  id bigint [pk, increment, not null]
+  action_id bigint [not null]
+  changed_by bigint
+  event_type varchar(50) [not null]
+  before_json jsonb
+  after_json jsonb
+  comment text
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (action_id, created_at) [name: 'history_action_time']
+  }
+  // Trigger: immutable_history
+
+  Note: 'Nhật ký trước và sau của thao tác trên công việc.'
+}
+
+Table store_stats {
+  store_id bigint [pk, not null]
+  product_count integer [not null, default: 0]
+  saved_analysis_count integer [not null, default: 0]
+  analyzed_product_count integer [not null, default: 0]
+  reference_product_count integer [not null, default: 0]
+  review_product_count integer [not null, default: 0]
+  ml_product_count integer [not null, default: 0]
+  open_suggestion_count integer [not null, default: 0]
+  in_progress_count integer [not null, default: 0]
+  pending_review_count integer [not null, default: 0, note: 'Đếm đề xuất proposed ở mốc mới nhất của từng sản phẩm.']
+  proposed_count integer [not null, default: 0, note: 'Đếm đề xuất proposed trên mọi lần phân tích của cửa hàng.']
+  category_counts jsonb [not null, default: `'{}'::jsonb`]
+  status_counts jsonb [not null, default: `'{}'::jsonb`]
+  legacy_status_counts jsonb [not null, default: `'{}'::jsonb`]
+  updated_at timestamptz [not null, default: `clock_timestamp()`]
+  // CONSTRAINT store_stats_analyzed_product_count_check CHECK (analyzed_product_count >= 0)
+  // CONSTRAINT store_stats_in_progress_count_check CHECK (in_progress_count >= 0)
+  // CONSTRAINT store_stats_ml_product_count_check CHECK (ml_product_count >= 0)
+  // CONSTRAINT store_stats_open_suggestion_count_check CHECK (open_suggestion_count >= 0)
+  // CONSTRAINT store_stats_pending_review_count_check CHECK (pending_review_count >= 0)
+  // CONSTRAINT store_stats_product_count_check CHECK (product_count >= 0)
+  // CONSTRAINT store_stats_proposed_count_check CHECK (proposed_count >= 0)
+  // CONSTRAINT store_stats_reference_product_count_check CHECK (reference_product_count >= 0)
+  // CONSTRAINT store_stats_review_product_count_check CHECK (review_product_count >= 0)
+  // CONSTRAINT store_stats_saved_analysis_count_check CHECK (saved_analysis_count >= 0)
+
+  indexes {
+    (product_count, store_id) [name: 'store_stats_fewest_products']
+    // PostgreSQL: CREATE INDEX store_stats_most_products ON store_stats (product_count DESC, store_id);
+  }
+
+  Note: 'Một dòng tổng hợp hiện tại mỗi cửa hàng. Trigger cập nhật số đếm trong cùng giao dịch với dữ liệu gốc.'
+}
+
+Table store_current_analysis {
+  product_id bigint [pk, not null]
+  store_id bigint [not null]
+  analysis_id bigint [not null, unique, note: 'Liên kết logic tới product_analyses.id, do trigger duy trì.']
+  analyzed_at timestamptz [not null]
+  status varchar(60) [not null]
+  is_ml boolean [not null]
+  has_reference boolean [not null]
+  priority_score numeric(12,6)
+  open_count integer [not null]
+  in_progress_count integer [not null]
+  proposed_count integer [not null]
+  // CONSTRAINT store_current_analysis_in_progress_count_check CHECK (in_progress_count >= 0)
+  // CONSTRAINT store_current_analysis_open_count_check CHECK (open_count >= 0)
+  // CONSTRAINT store_current_analysis_proposed_count_check CHECK (proposed_count >= 0)
+
+  // PostgreSQL: CREATE INDEX store_current_analysis_time ON store_current_analysis (store_id, analyzed_at DESC);
+
+  // Partial index: CREATE INDEX store_current_analysis_priority ON public.store_current_analysis USING btree (store_id, COALESCE(priority_score, ('-1'::integer)::numeric) DESC, analysis_id) WHERE (open_count > 0)
+
+  Note: 'Một dòng mỗi sản phẩm đã phân tích, chọn theo analyzed_at DESC, id DESC.'
+}
+
+Table sellens_sessions {
+  token_hash char(64) [pk, not null]
+  user_id bigint [not null]
+  expires_at timestamptz [not null]
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    user_id [name: 'sessions_user']
+  }
+
+  Note: 'Phiên xác thực bằng token đã băm. Backend cấp phiên 24 giờ cho mỗi lần đăng nhập thành công.'
+}
+
+Table sellens_login_limits {
+  key char(64) [pk, not null]
+  attempts integer [not null]
+  window_start timestamptz [not null]
+
+  Note: 'Bộ đếm và cửa sổ giới hạn thử đăng nhập.'
+}
+
+Table sellens_migrations {
+  version text [pk, not null]
+  checksum text [not null]
+  applied_at timestamptz [not null, default: `now()`]
+
+  Note: 'Sổ migration và checksum.'
+}
+
+Table sellens_seed_records {
+  seed_key text [pk, not null]
+  entity text [not null]
+  record_id bigint [not null]
+
+  Note: 'Dấu vết bản ghi seed theo entity và record_id.'
+}
+
+Table import_batches {
+  id bigint [pk, increment, not null]
+  imported_by bigint
+  file_name varchar(255) [not null]
+  total_rows integer [default: 0]
+  valid_rows integer [default: 0]
+  invalid_rows integer [default: 0]
+  error_summary jsonb
+  status varchar(50) [default: `'completed'::character varying`]
+  created_at timestamptz [default: `now()`]
+
+  Note: 'Metadata đợt nhập tồn tại trên Neon. Luồng import hiện tại trả báo cáo trực tiếp từ API.'
+}
+
+Table notifications {
+  id bigint [pk, increment, not null]
+  user_id bigint
+  title varchar(255) [not null]
+  message text [not null]
+  type varchar(50) [default: `'info'::character varying`]
+  link varchar(255)
+  is_read boolean [default: false]
+  created_at timestamptz [default: `now()`]
+
+  Note: 'Bảng thông báo tồn tại trên Neon. Menu hiện tại dùng trạng thái giao diện.'
+}
+
+// Foreign keys validated against pg_constraint.
+Ref action_history_action_id_fkey: action_history.action_id > improvement_actions.id [delete: restrict]
+Ref action_history_changed_by_fkey: action_history.changed_by > users.id [delete: restrict]
+Ref import_batches_imported_by_fkey: import_batches.imported_by > users.id [delete: set null]
+Ref improvement_actions_analysis_id_fkey: improvement_actions.analysis_id > product_analyses.id [delete: restrict]
+Ref improvement_actions_assigned_to_fkey: improvement_actions.assigned_to > users.id [delete: restrict]
+Ref improvement_actions_created_by_fkey: improvement_actions.created_by > users.id [delete: restrict]
+Ref notifications_user_id_fkey: notifications.user_id > users.id [delete: cascade]
+Ref product_analyses_analyzed_by_fkey: product_analyses.analyzed_by > users.id [delete: restrict]
+Ref product_analyses_product_id_fkey: product_analyses.product_id > products.id [delete: restrict]
+Ref product_analyses_run_id_fkey: product_analyses.run_id > analysis_runs.id [delete: restrict]
+Ref products_category_id_fkey: products.category_id > categories.id [delete: restrict]
+Ref products_imported_by_fkey: products.imported_by > users.id [delete: restrict]
+Ref products_store_id_fkey: products.store_id > stores.id [delete: restrict]
+Ref sellens_sessions_user_id_fkey: sellens_sessions.user_id > users.id [delete: restrict]
+Ref store_current_analysis_product_id_fkey: products.id - store_current_analysis.product_id [delete: cascade]
+Ref store_current_analysis_store_id_fkey: store_current_analysis.store_id > store_stats.store_id [delete: cascade]
+Ref store_stats_store_id_fkey: stores.id - store_stats.store_id [delete: cascade]
+Ref stores_owner_user_id_fkey: users.id - stores.owner_user_id [delete: restrict]

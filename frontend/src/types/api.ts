@@ -121,18 +121,6 @@ export type SystemSummary = {
     last_used: string;
   }[];
 };
-export type Dataset = {
-  workspaceSummary?: WorkspaceSummary;
-  storeOverview?: StoreOverview;
-  systemSummary?: Partial<SystemSummary>;
-  stores?: Store[];
-  products: Product[];
-  categories: Category[];
-  analyses: Analysis[];
-  actions: Action[];
-  accounts: Account[];
-};
-
 export type WorkspaceSummary = {
   store_name: string | null;
   latest_analyzed_at: string | null;

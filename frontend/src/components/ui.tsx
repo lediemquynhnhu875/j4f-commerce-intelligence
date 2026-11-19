@@ -275,14 +275,22 @@ export function Modal({
       ref={ref}
       className="modal"
       aria-label={title}
-      onCancel={(event) => { event.preventDefault(); onClose(); }}
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
+      }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <div className="modal-head">
         <h2>{title}</h2>
-        <button type="button" className="icon-button" aria-label="Đóng" onClick={onClose}>
+        <button
+          type="button"
+          className="icon-button"
+          aria-label="Đóng"
+          onClick={onClose}
+        >
           <Icon name="close" />
         </button>
       </div>

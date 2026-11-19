@@ -2,6 +2,7 @@
 import { ErrorPopup } from "@/components/popup";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { StatusBadge } from "@/components/status-badge";
 import { api, analysisLabels, price } from "@/lib/api-client";
 import {
@@ -24,6 +25,39 @@ import {
 } from "@/components/analysis/insufficient-data";
 import { isInsufficient, metricLabels } from "@/lib/insufficient-data";
 import type { AnalysisWorkspace, ProductAnalysis } from "@/types/api";
+
+import { WorkspaceLayout } from "@/components/layout/workspace-layout";
+import { useWorkspaceData } from "@/lib/use-workspace-data";
+import {
+  exportUserWorkspace,
+  loadWorkspaceSummary,
+} from "@/lib/workspace-data";
+
+export default function UserAnalysis() {
+  const params = useSearchParams();
+  const { data, loading, error, refresh, refreshVersion } =
+    useWorkspaceData(loadWorkspaceSummary);
+  return (
+    <WorkspaceLayout
+      page="analysis"
+      description="Đọc bằng chứng, hiểu tham chiếu và giới hạn của từng kết luận."
+      storeName={data?.store_name}
+      suggestionCount={data?.proposed_count}
+      latestResult={data?.latest_analyzed_at ?? null}
+      loading={loading}
+      error={error}
+      canExport={Boolean(data)}
+      onExport={exportUserWorkspace}
+      onRefresh={refresh}
+    >
+      <AnalysisEvidence
+        productId={params.get("product")}
+        analysisId={params.get("analysis")}
+        refreshVersion={refreshVersion}
+      />
+    </WorkspaceLayout>
+  );
+}
 
 // Presentation association only: an action must already exist on this analysis.
 const metricActionTypes: Record<string, readonly string[]> = {
@@ -71,13 +105,11 @@ function value(v: unknown) {
         : String(v);
 }
 
-export function LiveAnalysis({
-  role,
+function AnalysisEvidence({
   productId,
   analysisId,
   refreshVersion,
 }: {
-  role: "user" | "admin";
   productId: string | null;
   analysisId: string | null;
   refreshVersion: number;
@@ -96,12 +128,21 @@ export function LiveAnalysis({
   }>();
   const [detail, setDetail] = useState<ProductAnalysis>();
   const [failure, setFailure] = useState<{ path: string; message: string }>();
-  const [detailFailure, setDetailFailure] = useState<{ id: string; message: string }>();
-  const current = workspace?.path === path || workspace?.productPath === path ? workspace.data : undefined;
+  const [detailFailure, setDetailFailure] = useState<{
+    id: string;
+    message: string;
+  }>();
+  const current =
+    workspace?.path === path || workspace?.productPath === path
+      ? workspace.data
+      : undefined;
 
   useEffect(() => {
-    if (workspace?.version === refreshVersion &&
-      (workspace.path === path || workspace.productPath === path)) return;
+    if (
+      workspace?.version === refreshVersion &&
+      (workspace.path === path || workspace.productPath === path)
+    )
+      return;
     const controller = new AbortController();
     void api<{ data: AnalysisWorkspace }>(path, { signal: controller.signal })
       .then(({ data }) => {
@@ -109,13 +150,19 @@ export function LiveAnalysis({
         const productQuery = new URLSearchParams(path.split("?")[1]);
         productQuery.delete("analysis_id");
         if (data.product) productQuery.set("product_id", data.product.id);
-        setWorkspace({ path, productPath: `analysis-workspace?${productQuery}`, version: refreshVersion, data });
+        setWorkspace({
+          path,
+          productPath: `analysis-workspace?${productQuery}`,
+          version: refreshVersion,
+          data,
+        });
         setFailure(undefined);
         setDetail(undefined);
         setDetailFailure(undefined);
       })
       .catch((err: Error) => {
-        if (!controller.signal.aborted) setFailure({ path, message: err.message });
+        if (!controller.signal.aborted)
+          setFailure({ path, message: err.message });
       });
     return () => controller.abort();
   }, [path, refreshVersion, workspace]);
@@ -125,8 +172,10 @@ export function LiveAnalysis({
   const inRange = current?.timeline ?? [];
   const latest = current?.latest;
   const selectedId = inRange.some((row) => row.id === analysisId)
-    ? analysisId : latest?.analysis.id;
-  const historicalId = selectedId && selectedId !== latest?.analysis.id ? selectedId : null;
+    ? analysisId
+    : latest?.analysis.id;
+  const historicalId =
+    selectedId && selectedId !== latest?.analysis.id ? selectedId : null;
 
   useEffect(() => {
     if (!historicalId || !product) return;
@@ -134,19 +183,24 @@ export function LiveAnalysis({
     void api<{ data: ProductAnalysis }>(
       `products/${encodeURIComponent(product.id)}/analyses/${encodeURIComponent(historicalId)}`,
       { signal: controller.signal },
-    ).then(({ data }) => {
-      if (!controller.signal.aborted) {
-        setDetail(data);
-        setDetailFailure(undefined);
-      }
-    }).catch((err: Error) => {
-      if (!controller.signal.aborted) setDetailFailure({ id: historicalId, message: err.message });
-    });
+    )
+      .then(({ data }) => {
+        if (!controller.signal.aborted) {
+          setDetail(data);
+          setDetailFailure(undefined);
+        }
+      })
+      .catch((err: Error) => {
+        if (!controller.signal.aborted)
+          setDetailFailure({ id: historicalId, message: err.message });
+      });
     return () => controller.abort();
   }, [historicalId, product, refreshVersion]);
 
   const result = historicalId
-    ? detail?.analysis.id === historicalId ? detail : undefined
+    ? detail?.analysis.id === historicalId
+      ? detail
+      : undefined
     : latest;
   const analysis = result?.analysis;
   const suggestions = result?.actions ?? [];
@@ -159,10 +213,18 @@ export function LiveAnalysis({
     window.history.replaceState(null, "", url);
   }
   if (failure?.path === path)
-    return <Panel><ErrorPopup message={failure.message} /></Panel>;
+    return (
+      <Panel>
+        <ErrorPopup message={failure.message} />
+      </Panel>
+    );
   if (!product)
-    return current ? <Empty title="Catalog chưa có sản phẩm" /> : (
-      <Panel><p role="status">Đang tải phân tích…</p></Panel>
+    return current ? (
+      <Empty title="Catalog chưa có sản phẩm" />
+    ) : (
+      <Panel>
+        <p role="status">Đang tải phân tích…</p>
+      </Panel>
     );
   const input = analysis?.input_snapshot_json ?? {};
   const observed = input.quantity_sold ?? null,
@@ -187,10 +249,7 @@ export function LiveAnalysis({
           <ProductIdentity
             name={title}
             image={product.thumbnail_url}
-            detail={
-              analysis?.product_type ??
-              product.category_name
-            }
+            detail={analysis?.product_type ?? product.category_name}
             code={productCode(product)}
           />
           <strong className="product-price">
@@ -208,10 +267,12 @@ export function LiveAnalysis({
             ★ · {quantity(analysis ? input.review_count : product.review_count)}{" "}
             đánh giá
           </p>
-          {(analysis || hasAnalysis !== true) && <StatusBadge status={analysis?.status} />}
+          {(analysis || hasAnalysis !== true) && (
+            <StatusBadge status={analysis?.status} />
+          )}
         </div>
         <div className="analysis-product-actions">
-          <Link className="button subtle" href={`/${role}/products`}>
+          <Link className="button subtle" href={"/user/products"}>
             Chọn sản phẩm khác
           </Link>
           <button
@@ -240,11 +301,18 @@ export function LiveAnalysis({
         />
       )}
       {historicalId && detailFailure?.id === historicalId ? (
-        <Panel><ErrorPopup message={detailFailure.message} /></Panel>
+        <Panel>
+          <ErrorPopup message={detailFailure.message} />
+        </Panel>
       ) : !current || (historicalId && !analysis) ? (
-        <Panel><p role="status">Đang tải bằng chứng…</p></Panel>
+        <Panel>
+          <p role="status">Đang tải bằng chứng…</p>
+        </Panel>
       ) : current.has_analysis === false ? (
-        <Empty title="Sản phẩm đã chọn chưa có kết quả phân tích" description={null} />
+        <Empty
+          title="Sản phẩm đã chọn chưa có kết quả phân tích"
+          description={null}
+        />
       ) : !analysis ? (
         <Empty
           title="Chưa có bằng chứng trong khoảng đã chọn"
@@ -528,17 +596,16 @@ export function LiveAnalysis({
               <div>
                 <h3>Xem đề xuất và kiểm tra bằng chứng</h3>
                 <p>
-                  {role === "user"
-                    ? "Chấp nhận, từ chối hoặc theo dõi công việc của đúng kết quả này."
-                    : "Kiểm tra dữ liệu và phiên bản của đúng kết quả này trong trang giám sát."}
+                  Chấp nhận, từ chối hoặc theo dõi công việc của đúng kết quả
+                  này.
                 </p>
               </div>
               <Link
                 className="button primary"
-                href={`/${role === "user" ? "user/suggestions" : "admin/monitor"}?analysis=${analysis.id}`}
+                href={`/user/suggestions?analysis=${analysis.id}`}
               >
                 <Icon name="sparkles" size={18} />
-                {role === "user" ? "Xem đề xuất" : "Xem trong giám sát"}
+                Xem đề xuất
               </Link>
             </div>
             {suggestions.map((row) => (

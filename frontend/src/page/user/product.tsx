@@ -6,27 +6,67 @@ import Link from "next/link";
 import { StatusBadge } from "@/components/status-badge";
 import { analysisColor } from "@/lib/status-colors";
 import { useRouter } from "next/navigation";
-import { api, analysisLabels, display, price } from "@/lib/api-client";
-import type { CatalogProduct, Category, List } from "@/types/api";
+import {
+  allPages,
+  api,
+  analysisLabels,
+  display,
+  price,
+} from "@/lib/api-client";
+import type { CatalogProduct, Category, List, Product } from "@/types/api";
 import { Empty, Icon, Panel } from "@/components/ui";
 import { ProductIdentity } from "@/components/products/product-identity";
 import { productCode } from "@/lib/analysis-presentation";
 import { ImportProducts } from "@/components/products/import-products";
 import { mlAnalysisLabels } from "@/lib/api-client";
 
-export { LiveOverview } from "./overview";
+import { WorkspaceLayout } from "@/components/layout/workspace-layout";
+import { useWorkspaceData } from "@/lib/use-workspace-data";
+import { loadWorkspaceSummary } from "@/lib/workspace-data";
 
-export function LiveCatalog({
+async function loadCatalogHeader(signal: AbortSignal) {
+  const [summary, categories] = await Promise.all([
+    loadWorkspaceSummary(signal),
+    allPages<Category>("categories", signal, 100),
+  ]);
+  return { summary, categories };
+}
+
+export default function UserProduct() {
+  const { data, loading, error, refresh, refreshVersion } =
+    useWorkspaceData(loadCatalogHeader);
+  return (
+    <WorkspaceLayout
+      page="products"
+      description="Quản lý danh mục và đối chiếu tín hiệu quan sát từ snapshot."
+      storeName={data?.summary.store_name}
+      suggestionCount={data?.summary.proposed_count}
+      latestResult={data?.summary.latest_analyzed_at ?? null}
+      loading={loading}
+      error={error}
+      canExport={Boolean(data)}
+      onExport={() => allPages<Product>("products", undefined, 100)}
+      onRefresh={refresh}
+    >
+      <Catalog
+        categories={data?.categories ?? []}
+        legacyStatuses={data?.summary.legacy_statuses ?? []}
+        refresh={refresh}
+        refreshVersion={refreshVersion}
+      />
+    </WorkspaceLayout>
+  );
+}
+
+function Catalog({
   categories,
   legacyStatuses,
-  role,
   refresh,
   refreshVersion,
 }: {
   categories: Category[];
   legacyStatuses: string[];
-  role: "user" | "admin";
-  refresh: () => Promise<void>;
+  refresh: () => void;
   refreshVersion: number;
 }) {
   const [search, setSearch] = useState("");
@@ -38,7 +78,11 @@ export function LiveCatalog({
   const router = useRouter();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const query = new URLSearchParams({ view: "catalog", page: String(page), limit: String(pageSize) });
+  const query = new URLSearchParams({
+    view: "catalog",
+    page: String(page),
+    limit: String(pageSize),
+  });
   if (search) query.set("search", search);
   if (category) query.set("category_id", category);
   if (status) query.set("status", status);
@@ -51,20 +95,29 @@ export function LiveCatalog({
   useEffect(() => {
     const controller = new AbortController();
     // Wait for typing to settle before querying the complete store catalog.
-    const timeout = setTimeout(() => {
-      void api<CatalogPage>(path, { signal: controller.signal }).then((value) => {
-        if (controller.signal.aborted) return;
-        const lastPage = Math.max(1, Math.ceil(value.pagination.total / pageSize));
-        if (page > lastPage) {
-          setPage(lastPage);
-          return;
-        }
-        setResult({ path, value });
-        setFailure(undefined);
-      }).catch((err: Error) => {
-        if (!controller.signal.aborted) setFailure({ path, message: err.message });
-      });
-    }, search ? 250 : 0);
+    const timeout = setTimeout(
+      () => {
+        void api<CatalogPage>(path, { signal: controller.signal })
+          .then((value) => {
+            if (controller.signal.aborted) return;
+            const lastPage = Math.max(
+              1,
+              Math.ceil(value.pagination.total / pageSize),
+            );
+            if (page > lastPage) {
+              setPage(lastPage);
+              return;
+            }
+            setResult({ path, value });
+            setFailure(undefined);
+          })
+          .catch((err: Error) => {
+            if (!controller.signal.aborted)
+              setFailure({ path, message: err.message });
+          });
+      },
+      search ? 250 : 0,
+    );
     return () => {
       clearTimeout(timeout);
       controller.abort();
@@ -86,7 +139,7 @@ export function LiveCatalog({
   return (
     <>
       {error && <ErrorPopup message={error} />}
-      <Panel className="filters">
+      <Panel className="filters catalog-filters">
         <div className="filter-search-row">
           <div className="search-field">
             <Icon name="search" />
@@ -122,15 +175,12 @@ export function LiveCatalog({
           <button
             className="button primary"
             disabled={!selected.length}
-            onClick={() =>
-              router.push(`/${role}/analysis?product=${selected[0]}`)
-            }
+            onClick={() => router.push(`/user/analysis?product=${selected[0]}`)}
           >
             <Icon name="sparkles" size={17} />
             Xem phân tích đã chọn{" "}
             {selected.length > 0 && `(${selected.length})`}
           </button>
-
         </div>
         <div className="filter-row">
           <select
@@ -285,17 +335,15 @@ export function LiveCatalog({
                       image={product.thumbnail_url}
                       detail={
                         product.product_type ??
-                        categories.find(
-                          (row) => row.id === product.category_id,
-                        )?.name
+                        categories.find((row) => row.id === product.category_id)
+                          ?.name
                       }
                       code={productCode(product)}
                     />
                   </td>
                   <td>
-                    {categories.find(
-                      (row) => row.id === product.category_id,
-                    )?.name ?? "Chưa phân loại"}
+                    {categories.find((row) => row.id === product.category_id)
+                      ?.name ?? "Chưa phân loại"}
                   </td>
                   <td>{price(product.price, product.currency)}</td>
                   <td>{display(product.quantity_sold)}</td>
@@ -319,7 +367,7 @@ export function LiveCatalog({
                         return <span className="muted">—</span>;
                       return (
                         <Link
-                          href={`/${role}/analysis?product=${product.id}`}
+                          href={`/user/analysis?product=${product.id}`}
                           style={{
                             display: "inline-flex",
                             alignItems: "center",
@@ -345,11 +393,10 @@ export function LiveCatalog({
                   <td>
                     <Link
                       className="button subtle small"
-                      href={`/${role}/analysis?product=${product.id}`}
+                      href={`/user/analysis?product=${product.id}`}
                     >
                       Xem
                     </Link>
-
                   </td>
                 </tr>
               ))}
@@ -402,5 +449,3 @@ export function LiveCatalog({
     </>
   );
 }
-
-export { LiveAnalysis } from "./evidence";

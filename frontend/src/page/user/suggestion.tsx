@@ -1,7 +1,7 @@
 "use client";
 import { usePopup } from "@/components/popup";
 import { ErrorPopup } from "@/components/popup";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { StatusBadge } from "@/components/status-badge";
@@ -9,8 +9,42 @@ import { ProductIdentity } from "@/components/products/product-identity";
 import { actionColor } from "@/lib/status-colors";
 import { actionTypeLabels } from "@/lib/analysis-presentation";
 import { api, allPages, actionLabels } from "@/lib/api-client";
-import type { Dataset, Action, History, Account } from "@/types/api";
+import type { List, Action, History, Account } from "@/types/api";
+import { ActionAnalysisPicker } from "@/components/analysis/action-analysis-picker";
 import { Badge, Empty, Icon, Modal, Panel, Stat } from "@/components/ui";
+
+import { WorkspaceLayout } from "@/components/layout/workspace-layout";
+import { useAuth } from "@/page/auth";
+import { useWorkspaceData } from "@/lib/use-workspace-data";
+import { loadWorkspaceSummary } from "@/lib/workspace-data";
+
+export default function UserSuggestion() {
+  const params = useSearchParams();
+  const { account } = useAuth();
+  const { data, loading, error, refresh, refreshVersion } =
+    useWorkspaceData(loadWorkspaceSummary);
+  return (
+    <WorkspaceLayout
+      page="suggestions"
+      description="Rà soát đề xuất và chủ động theo dõi tiến độ thực hiện."
+      storeName={data?.store_name}
+      suggestionCount={data?.proposed_count}
+      latestResult={data?.latest_analyzed_at ?? null}
+      loading={loading}
+      error={error}
+      canExport={Boolean(data)}
+      onExport={() => allPages<Action>("actions", undefined, 100)}
+      onRefresh={refresh}
+    >
+      <SuggestionList
+        key={params.get("analysis") ?? ""}
+        actor={account}
+        refresh={refresh}
+        refreshVersion={refreshVersion}
+      />
+    </WorkspaceLayout>
+  );
+}
 
 const nextStates: Record<string, string[]> = {
   proposed: ["accepted", "rejected", "cancelled"],
@@ -20,14 +54,25 @@ const nextStates: Record<string, string[]> = {
   rejected: [],
   cancelled: [],
 };
-export function LiveActions({
-  data,
+const pageSize = 20;
+type ActionCard = Action & {
+  product: { name: string; thumbnail_url: string | null };
+};
+type ActionCardPage = List<ActionCard> & {
+  status_counts: Record<string, number>;
+  matched_status_counts: Record<string, number>;
+  has_analyses: boolean;
+  types: string[];
+};
+
+function SuggestionList({
   actor,
   refresh,
+  refreshVersion,
 }: {
-  data: Dataset;
   actor: Account;
-  refresh: () => Promise<void>;
+  refresh: () => void;
+  refreshVersion: number;
 }) {
   const params = useSearchParams();
   const [page, setPage] = useState(1);
@@ -45,6 +90,54 @@ export function LiveActions({
     action: Action;
     rows: History[];
   } | null>(null);
+  const filters = new URLSearchParams({
+    view: "cards",
+    page: String(page),
+    limit: String(pageSize),
+  });
+  const analysisId = params.get("analysis");
+  if (analysisId) filters.set("analysis_id", analysisId);
+  if (category) filters.set("type", category);
+  if (filter) filters.set("status", filter);
+  if (search.trim()) filters.set("search", search.trim());
+  const path = `actions?${filters}`;
+  const [result, setResult] = useState<{
+    path: string;
+    value: ActionCardPage;
+  }>();
+  const [failure, setFailure] = useState<{ path: string; message: string }>();
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const timeout = setTimeout(
+      () => {
+        void api<ActionCardPage>(path, { signal: controller.signal })
+          .then((value) => {
+            if (controller.signal.aborted) return;
+            const lastPage = Math.max(
+              1,
+              Math.ceil(value.pagination.total / pageSize),
+            );
+            if (page > lastPage) {
+              setPage(lastPage);
+              return;
+            }
+            setResult({ path, value });
+            setFailure(undefined);
+          })
+          .catch((err: Error) => {
+            if (!controller.signal.aborted)
+              setFailure({ path, message: err.message });
+          });
+      },
+      search ? 250 : 0,
+    );
+    return () => {
+      clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [path, page, search, refreshVersion]);
+
   async function mutate(action: Action, fields: Record<string, unknown>) {
     setPending(true);
     setError("");
@@ -58,7 +151,7 @@ export function LiveActions({
       });
       setEditor(null);
       popup.notify("Đã cập nhật công việc.");
-      await refresh();
+      refresh();
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -130,33 +223,21 @@ export function LiveActions({
       setAdding(false);
       popup.notify("Đã tạo công việc.");
       setPage(1);
-      await refresh();
+      refresh();
     } catch (err) {
       setError((err as Error).message);
     } finally {
       setPending(false);
     }
   }
-  const rows = data.actions.filter(
-    (row) =>
-      (!params.get("analysis") || row.analysis_id === params.get("analysis")) &&
-      (!category || row.type === category) &&
-      (!filter || row.status === filter) &&
-      `${row.title} ${row.id}`.toLowerCase().includes(search.toLowerCase()),
-  );
-  const sortedRows = [...rows].sort(
-    (a, b) =>
-      b.updated_at.localeCompare(a.updated_at) ||
-      (BigInt(a.id) > BigInt(b.id) ? -1 : 1),
-  );
-  const pages = Math.max(1, Math.ceil(rows.length / 12)),
-    activePage = Math.min(page, pages);
-  const visible = sortedRows.slice((activePage - 1) * 12, activePage * 12);
-  const renderCard = (action: Action) => {
-    const analysis = data.analyses.find((row) => row.id === action.analysis_id);
-    const product = data.products.find(
-      (row) => row.id === analysis?.product_id,
-    );
+  const current = result?.path === path ? result.value : undefined;
+  const listError = failure?.path === path ? failure.message : "";
+  const summary = result?.value;
+  const counts = summary?.status_counts;
+  const total = current?.pagination.total ?? 0;
+  const visible = current?.data ?? [];
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  const renderCard = (action: ActionCard) => {
     return (
       <article className="suggestion-card" key={action.id}>
         <div className="suggestion-heading">
@@ -168,8 +249,8 @@ export function LiveActions({
         <h3>{action.title}</h3>
         <div className="suggestion-product">
           <ProductIdentity
-            name={analysis?.product.name ?? product?.name ?? "Chưa biết"}
-            image={product?.thumbnail_url}
+            name={action.product.name}
+            image={action.product.thumbnail_url}
             detail={`Phân tích #${action.analysis_id}`}
           />
         </div>
@@ -285,22 +366,24 @@ export function LiveActions({
       <div className="stats-grid five">
         <Stat
           label="Tổng đề xuất"
-          value={data.actions.length}
+          value={
+            counts
+              ? Object.values(counts).reduce((sum, count) => sum + count, 0)
+              : "—"
+          }
           note="Công việc và đề xuất đã lưu"
           icon="sparkles"
         />
         <Stat
           label="Mới phát hiện"
-          value={data.actions.filter((a) => a.status === "proposed").length}
+          value={counts ? (counts.proposed ?? 0) : "—"}
           note="Chờ duyệt hành động"
           tone="pink"
         />
         <Stat
           label="Đang theo dõi"
           value={
-            data.actions.filter((a) =>
-              ["accepted", "in_progress"].includes(a.status),
-            ).length
+            counts ? (counts.accepted ?? 0) + (counts.in_progress ?? 0) : "—"
           }
           note="Đã chấp nhận / đang làm"
           tone="blue"
@@ -308,14 +391,14 @@ export function LiveActions({
         />
         <Stat
           label="Đã hoàn thành"
-          value={data.actions.filter((a) => a.status === "completed").length}
+          value={counts ? (counts.completed ?? 0) : "—"}
           note="Hoàn thành việc, chưa đo hiệu quả"
           tone="green"
           icon="check"
         />
         <Stat
           label="Đã từ chối"
-          value={data.actions.filter((a) => a.status === "rejected").length}
+          value={counts ? (counts.rejected ?? 0) : "—"}
           note="Giữ nguyên bằng chứng"
           tone="gray"
         />
@@ -327,6 +410,7 @@ export function LiveActions({
             <input
               aria-label="Tìm công việc"
               value={search}
+              maxLength={200}
               placeholder="Tìm đề xuất, mã công việc…"
               onChange={(event) => {
                 setSearch(event.target.value);
@@ -370,7 +454,7 @@ export function LiveActions({
           </div>
           <button
             className="button primary"
-            disabled={!data.analyses.length}
+            disabled={!summary?.has_analyses}
             onClick={() => {
               setAdding(true);
               setError("");
@@ -390,7 +474,7 @@ export function LiveActions({
           >
             Tất cả
           </button>
-          {[...new Set(data.actions.map((a) => a.type))].map((type) => (
+          {(summary?.types ?? []).map((type) => (
             <button
               key={type}
               className={category === type ? "selected" : ""}
@@ -412,60 +496,74 @@ export function LiveActions({
           </Link>
         </p>
       )}
-      {error && !editor && !adding && (
-        <ErrorPopup message={error} />
-      )}
-      {!rows.length ? (
+      {error && !editor && !adding && <ErrorPopup message={error} />}
+      {listError && <ErrorPopup message={listError} />}
+      {!current && !listError && (
         <Panel>
-          <Empty title="Chưa có công việc phù hợp" />
+          <p role="status">Đang tải đề xuất…</p>
         </Panel>
-      ) : kanban ? (
-        <div className="kanban">
-          {Object.entries(actionLabels).map(([status, label]) => (
-            <section
-              className="kanban-column"
-              key={status}
-              style={{ borderTop: `3px solid ${actionColor(status)}` }}
-            >
-              <h3 style={{ color: actionColor(status) }}>
-                {label}
-                <span>
-                  {rows.filter((row) => row.status === status).length}
-                </span>
-              </h3>
-              {rows.filter((row) => row.status === status).map(renderCard)}
-            </section>
-          ))}
-        </div>
-      ) : (
-        <>
-          <div className="grid-two">{visible.map(renderCard)}</div>
-          <div className="table-footer">
-            <span>
-              {rows.length
-                ? `${(activePage - 1) * 12 + 1}–${Math.min(activePage * 12, rows.length)}`
-                : "0"}{" "}
-              / {rows.length} đề xuất
-            </span>
-            <div className="pagination">
-              <button
-                aria-label="Trang đề xuất trước"
-                disabled={activePage <= 1}
-                onClick={() => setPage(activePage - 1)}
-              >
-                ‹
-              </button>
-              <button
-                aria-label="Trang đề xuất sau"
-                disabled={activePage >= pages}
-                onClick={() => setPage(activePage + 1)}
-              >
-                ›
-              </button>
-            </div>
-          </div>
-        </>
       )}
+      {current &&
+        (visible.length === 0 ? (
+          <Panel>
+            <Empty title="Chưa có công việc phù hợp" />
+          </Panel>
+        ) : (
+          <>
+            <div className="table-footer">
+              <span>
+                {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, total)} /{" "}
+                {total} đề xuất
+              </span>
+              <div className="filter-row">
+                <button
+                  className="button subtle small"
+                  type="button"
+                  disabled={page <= 1}
+                  onClick={() => setPage(page - 1)}
+                >
+                  Trang trước
+                </button>
+                <span>
+                  Trang {page} / {pageCount}
+                </span>
+                <button
+                  type="button"
+                  className="button subtle small"
+                  disabled={page >= pageCount}
+                  onClick={() => setPage(page + 1)}
+                >
+                  Trang sau
+                </button>
+              </div>
+            </div>
+            {kanban ? (
+              <div className="kanban">
+                {Object.entries(actionLabels).map(([status, label]) => {
+                  const column = visible.filter((row) => row.status === status);
+                  return (
+                    <section
+                      className="kanban-column"
+                      key={status}
+                      style={{ borderTop: `3px solid ${actionColor(status)}` }}
+                    >
+                      <h3 style={{ color: actionColor(status) }}>
+                        {label}
+                        <span>
+                          {column.length} /{" "}
+                          {current.matched_status_counts[status] ?? 0}
+                        </span>
+                      </h3>
+                      {column.map(renderCard)}
+                    </section>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="grid-two">{visible.map(renderCard)}</div>
+            )}
+          </>
+        ))}
       <div className="opportunity-banner">
         <span className="brand-mark">
           <Icon name="sparkles" size={26} />
@@ -531,9 +629,7 @@ export function LiveActions({
                 </label>
               </>
             )}
-            {error && (
-              <ErrorPopup message={error} />
-            )}
+            {error && <ErrorPopup message={error} />}
             <button className="button primary" disabled={pending}>
               {pending ? "Đang lưu…" : "Lưu công việc"}
             </button>
@@ -546,16 +642,7 @@ export function LiveActions({
           onClose={() => !pending && setAdding(false)}
         >
           <form className="connected-form" onSubmit={create}>
-            <label>
-              Phân tích
-              <select name="analysis_id" required>
-                {data.analyses.map((row) => (
-                  <option value={row.id} key={row.id}>
-                    #{row.id} · {row.product.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <ActionAnalysisPicker />
             <label>
               Tiêu đề
               <input name="title" maxLength={255} required />
@@ -568,9 +655,7 @@ export function LiveActions({
               Công việc thủ công được ghi rõ nguồn; không tự tạo kết luận mô
               hình.
             </p>
-            {error && (
-              <ErrorPopup message={error} />
-            )}
+            {error && <ErrorPopup message={error} />}
             <button className="button primary" disabled={pending}>
               Tạo công việc
             </button>
