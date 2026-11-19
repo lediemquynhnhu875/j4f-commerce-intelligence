@@ -21,6 +21,55 @@ export async function listActions(page:number,limit:number,analysisId:string|und
   const count=await pool().query(`SELECT count(*)::int AS total ${from} WHERE ${filter}`,args);
   return {data:result.rows,pagination:{page,limit,total:count.rows[0].total}};
 }
+type CardFilters = { analysis_id?: string; type?: string; status?: string; search?: string };
+
+export async function listActionCards(
+  page: number,
+  limit: number,
+  filters: CardFilters,
+  actor: Account,
+) {
+  const { rows: [result] } = await pool().query(
+    `WITH scope AS MATERIALIZED (
+      SELECT s.id, stats.saved_analysis_count
+      FROM stores s JOIN store_stats stats ON stats.store_id=s.id
+      WHERE s.owner_user_id=$1 AND s.is_active
+    ), work AS MATERIALIZED (
+      SELECT w.id,w.type,w.status,w.title,w.updated_at,w.analysis_id
+      FROM scope s JOIN products p ON p.store_id=s.id
+      JOIN product_analyses a ON a.product_id=p.id
+      JOIN improvement_actions w ON w.analysis_id=a.id
+    ), matched AS MATERIALIZED (
+      SELECT id,updated_at,status FROM work
+      WHERE ($2::bigint IS NULL OR analysis_id=$2) AND ($3::text IS NULL OR type=$3)
+        AND ($4::text IS NULL OR status=$4)
+        AND ($5::text IS NULL OR strpos(lower(title || ' ' || id::text), lower($5))>0)
+    ), current_page AS (
+      SELECT id,updated_at FROM matched ORDER BY updated_at DESC,id DESC LIMIT $6 OFFSET $7
+    )
+    SELECT coalesce((
+      SELECT jsonb_agg(to_jsonb(w) || jsonb_build_object(
+        'id',w.id::text,'analysis_id',w.analysis_id::text,
+        'assigned_to',w.assigned_to::text,'created_by',w.created_by::text,
+        'product',jsonb_build_object('id',p.id::text,'name',p.name,'thumbnail_url',p.thumbnail_url)
+      ) ORDER BY selected.updated_at DESC,selected.id DESC)
+      FROM current_page selected JOIN improvement_actions w ON w.id=selected.id
+      JOIN product_analyses a ON a.id=w.analysis_id JOIN products p ON p.id=a.product_id
+    ),'[]') AS data,
+    (SELECT count(*)::int FROM matched) AS total,
+    (SELECT coalesce(jsonb_object_agg(status,n),'{}')
+      FROM (SELECT status,count(*)::int AS n FROM work GROUP BY status) counts) AS status_counts,
+    (SELECT coalesce(jsonb_object_agg(status,n),'{}')
+      FROM (SELECT status,count(*)::int AS n FROM matched GROUP BY status) counts) AS matched_status_counts,
+    ARRAY(SELECT DISTINCT type FROM work ORDER BY type) AS types,
+    EXISTS(SELECT 1 FROM scope WHERE saved_analysis_count>0) AS has_analyses`,
+    [actor.id, filters.analysis_id ?? null, filters.type ?? null, filters.status ?? null,
+      filters.search || null, limit, (page - 1) * limit],
+  );
+  const { total, ...payload } = result;
+  return { ...payload, pagination: { page, limit, total } };
+}
+
 export async function getAction(recordId: string) {
   const result = await pool().query(
     "SELECT * FROM improvement_actions WHERE id=$1",

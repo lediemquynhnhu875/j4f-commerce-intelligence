@@ -391,3 +391,19 @@ current date by default. Explicit analysis IDs select results within that range.
   Product, result and action changes and their counter changes commit or
   roll back together. The Admin store endpoint uses the same saved counts
   for both sort directions and keeps its existing pagination contract.
+
+
+## Paginated suggestion cards
+
+- `GET /api/v1/actions?view=cards&page=1&limit=20` scopes the results to the
+  authenticated active store. It accepts `analysis_id`, `type`, `status`,
+  and literal `search` across action title and ID. It orders by
+  `updated_at DESC, id DESC` before applying the requested page.
+- The response extends the paginated action shape with `product` on each
+  card, unfiltered `status_counts` and `types`, filtered
+  `matched_status_counts`, and a `has_analyses` flag. Counts describe all
+  matches in their respective scope. The UI groups the current page by
+  status in Kanban.
+- `GET /api/v1/analyses?view=picker` returns paged IDs and product names for
+  the add-work dialog. Optional search matches product name or analysis ID.
+  The default action and analysis endpoints retain their existing contracts.

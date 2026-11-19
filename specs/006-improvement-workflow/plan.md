@@ -81,3 +81,13 @@ Follow the [UI-first sequencing decision](../../docs/decisions/0003-ui-preview-f
 Task numbers follow the corrected local execution order; phase headings add no
 implicit prerequisites. Framework setup and clearly labeled previews do not
 wait for real auth/database/model readiness. Real integration checks remain required.
+
+
+## Server-paginated suggestion workspace
+
+Fetch one server page of 20 action cards for the current store. Apply the
+analysis, action type, status and search filters and order by updated time
+then action ID. Return product identity with the requested cards and keep
+workspace counts in the same response. List and Kanban share the page.
+Fetch analysis choices when the add-work dialog opens, then page or search
+those choices on demand. Continue loading history when its dialog opens.

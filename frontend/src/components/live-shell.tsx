@@ -2,14 +2,12 @@
 import { ErrorPopup } from "@/components/popup";
 import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { api } from "@/lib/api-client";
 import type { Account } from "@/types/api";
 import { Header } from "./layout/header";
 import { Sidebar } from "./layout/sidebar";
 import { Icon, Modal } from "./ui";
 
-import { workspacePages as livePages } from "@/lib/workspace-pages";
-export { workspacePages as livePages } from "@/lib/workspace-pages";
+import { workspacePages } from "@/lib/workspace-pages";
 
 export function LiveShell({
   account,
@@ -17,12 +15,14 @@ export function LiveShell({
   children,
   suggestionCount = 0,
   storeName,
+  onLogout,
 }: {
   account: Account;
   page: string;
   children: ReactNode;
   suggestionCount?: number;
   storeName?: string;
+  onLogout: () => Promise<void>;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false),
@@ -30,10 +30,7 @@ export function LiveShell({
     [error, setError] = useState("");
   async function logout() {
     try {
-      await api("auth/logout", { method: "POST" });
-      window.dispatchEvent(new Event("sellens-session-changed"));
-      router.replace("/login");
-      router.refresh();
+      await onLogout();
     } catch (err) {
       setError((err as Error).message);
     }
@@ -49,7 +46,7 @@ export function LiveShell({
         open={open}
         onClose={() => setOpen(false)}
         onLogout={() => void logout()}
-        pages={livePages[account.role]}
+        pages={workspacePages[account.role]}
         suggestionCount={suggestionCount}
       />
       <div className="workspace">
@@ -58,7 +55,7 @@ export function LiveShell({
           page={page}
           onOpenMenu={() => setOpen(true)}
           onOpenNotifications={() => setNotifications(true)}
-            pages={livePages[account.role]}
+            pages={workspacePages[account.role]}
           storeName={storeName}
           profile={{
             name: account.full_name,

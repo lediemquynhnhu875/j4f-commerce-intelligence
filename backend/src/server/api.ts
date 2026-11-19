@@ -21,6 +21,7 @@ import {
   loginSchema,
   analysisSchema,
   actionSchema,
+  actionCardFilters,
   actionPatchSchema,
   productFilterSchema,
   adminListSearch,
@@ -285,6 +286,10 @@ function optionalFilter(url: URL, field: string) {
 }
 async function listAnalyses({ url, actor }: Context): Promise<Outcome> {
   const { page, limit } = pagination(url);
+  if (url.searchParams.get("view") === "picker") {
+    const { search } = parse(actionCardFilters, { search: url.searchParams.get("search") ?? undefined });
+    return { body: await analyses.listAnalysisChoices(page, limit, search ?? "", actor!) };
+  }
   return {
     body: await analyses.listAnalyses(
       page,
@@ -314,6 +319,15 @@ async function listAnalysisActions({ url, params, actor }: Context): Promise<Out
 }
 async function listActions({ url, actor }: Context): Promise<Outcome> {
   const { page, limit } = pagination(url);
+  if (url.searchParams.get("view") === "cards") {
+    const filters = parse(actionCardFilters, {
+      analysis_id: url.searchParams.get("analysis_id") ?? undefined,
+      type: url.searchParams.get("type") ?? undefined,
+      status: url.searchParams.get("status") ?? undefined,
+      search: url.searchParams.get("search") ?? undefined,
+    });
+    return { body: await actions.listActionCards(page, limit, filters, actor!) };
+  }
   return {
     body: await actions.listActions(
       page,

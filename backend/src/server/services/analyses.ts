@@ -15,6 +15,22 @@ export async function listAnalyses(page:number,limit:number,productId:string|und
   const count=await pool().query(`SELECT count(*)::int AS total FROM product_analyses a JOIN products p ON p.id=a.product_id WHERE ${filter}`,args);
   return {data:rows.rows,pagination:{page,limit,total:count.rows[0].total}};
 }
+export async function listAnalysisChoices(page: number, limit: number, search: string, actor: Account) {
+  const { rows: [result] } = await pool().query(
+    `WITH matched AS MATERIALIZED (
+      SELECT a.id AS id, p.name AS product_name
+      FROM product_analyses a JOIN products p ON p.id=a.product_id
+      WHERE ${productScope(actor,"p")}
+        AND ($2='' OR strpos(lower(p.name || ' ' || a.id::text),lower($2))>0)
+    )
+    SELECT coalesce((
+      SELECT jsonb_agg(jsonb_build_object('id', id::text, 'product_name', product_name) ORDER BY id)
+      FROM (SELECT * FROM matched ORDER BY id LIMIT $3 OFFSET $4) current_page
+    ),'[]') AS data, (SELECT count(*)::int FROM matched) AS total`,
+    [actor.id, search, limit, (page - 1) * limit],
+  );
+  return { data: result.data, pagination: { page, limit, total: result.total } };
+}
 export async function getAnalysis(recordId: string) {
   const rows = await pool().query(`${relation} WHERE a.id=$1`, [recordId]);
   if (!rows.rows[0]) missing();

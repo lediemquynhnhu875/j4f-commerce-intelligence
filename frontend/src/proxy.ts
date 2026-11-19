@@ -6,5 +6,9 @@ export function proxy() {
 }
 
 export const config = {
-  matcher: ["/preview/:path*", "/admin/products/:path*", "/admin/categories/:path*"],
+  matcher: [
+    "/preview/:path*",
+    "/admin/products/:path*",
+    "/admin/categories/:path*",
+  ],
 };

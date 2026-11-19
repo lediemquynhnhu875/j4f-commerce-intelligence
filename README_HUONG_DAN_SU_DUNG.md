@@ -84,7 +84,7 @@ Nếu không đăng nhập được, kiểm tra email, chữ hoa/chữ thường
 **Phạm vi của nút Xuất dữ liệu ở đầu trang:**
 
 - Tại trang sản phẩm: xuất toàn bộ sản phẩm đã tải, không chỉ các dòng đang lọc, trang đang xem hoặc sản phẩm đã tích chọn.
-- Tại Đề xuất cải thiện: xuất toàn bộ công việc đã tải, không chỉ danh sách đang lọc.
+- Tại Đề xuất cải thiện, bấm **Xuất dữ liệu** để tải toàn bộ công việc của cửa hàng.
 - Tại các trang còn lại: xuất gói dữ liệu đã tải theo quyền tài khoản, có thể gồm sản phẩm, danh mục, phân tích, công việc; với Admin còn có danh sách tài khoản. Vì vậy, tệp có thể chứa dữ liệu rộng hơn nội dung đang hiển thị.
 - Trang chi tiết phân tích và trang giám sát còn có nút xuất riêng cho một kết quả; xem hướng dẫn tại từng trang.
 
@@ -268,8 +268,8 @@ Các ô đếm trên **toàn bộ dữ liệu công việc đã tải**, không 
 | **Tìm công việc** | Nhập tiêu đề hoặc số mã công việc. Tìm kiếm hiện chưa dựa vào tên sản phẩm hoặc mã `SP-…`. |
 | **Trạng thái công việc** | Chọn trạng thái cần xem hoặc tất cả trạng thái. |
 | Các nhóm loại công việc | Bấm **Tất cả**, **Rà soát giá**, **Rà soát ảnh**, **Rà soát video**, **Bổ sung mô tả**, **Phản hồi khách hàng**, **Hiển thị / tồn kho**, **Khả năng hiển thị**, **Ảnh / video**, **Công việc khác** khi nhóm đó có trong dữ liệu. |
-| **Danh sách** | Xem các thẻ công việc, tối đa 12 việc mỗi trang; dùng phân trang để xem tiếp. |
-| **Kanban** | Xem công việc trong 6 cột trạng thái. Cuộn ngang khi màn hình không đủ rộng. Hiện di chuyển trạng thái bằng nút, chưa kéo thả thẻ giữa các cột. |
+| **Danh sách** | Xem tối đa 20 thẻ mỗi trang. Dùng **Trang trước** và **Trang sau** ngay trên danh sách để xem tiếp. |
+| **Kanban** | Xem các thẻ của trang hiện tại theo 6 cột trạng thái. Bộ đếm mỗi cột cho biết số thẻ trên trang và tổng khớp bộ lọc. Cuộn ngang nếu màn hình hẹp. Dùng các nút trên thẻ để đổi trạng thái. |
 | **Xem tất cả** khi đang giới hạn theo phân tích | Bỏ giới hạn của lần phân tích được mở từ trang bằng chứng. Nếu vẫn thiếu việc, kiểm tra thêm ô tìm kiếm, trạng thái và nhóm loại. |
 
 Khi đi từ nút Xem đề xuất trong trang phân tích, có dòng **Đang xem đề xuất của phân tích #…**. Hãy kiểm tra số phân tích này nếu bạn chỉ thấy vài công việc thay vì toàn bộ.

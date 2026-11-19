@@ -139,7 +139,12 @@ function SalesChart({
   const hasMissingSales = sales.includes(null);
   const maximum = Math.max(1, ...sales.filter((value) => value !== null));
   const left = Math.max(60, 38 + quantity(maximum).length * 7);
-  const width = Math.max(280, availableWidth, left + 168, chronological.length * 32);
+  const width = Math.max(
+    280,
+    availableWidth,
+    left + 168,
+    chronological.length * 32,
+  );
   const right = width - 16;
   const top = 24;
   const bottom = 176;
@@ -169,7 +174,9 @@ function SalesChart({
     : [];
   const numberOfDays = (end - start) / dayMs;
   const tickCapacity = Math.min(5, Math.floor((right - left) / 100) + 1);
-  const tickCount = singleDay ? tickCapacity : Math.min(tickCapacity, numberOfDays);
+  const tickCount = singleDay
+    ? tickCapacity
+    : Math.min(tickCapacity, numberOfDays);
   const tickTimes = Array.from({ length: tickCount }, (_, index) => {
     const fraction = index / (tickCount - 1);
     if (singleDay) return start + (last - start) * fraction;

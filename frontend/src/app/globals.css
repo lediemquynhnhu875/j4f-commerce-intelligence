@@ -1333,6 +1333,44 @@ td > strong {
   background: #f7f1ff;
   padding: 9px 12px;
 }
+.panel.catalog-filters {
+  padding: 12px 14px;
+}
+.catalog-filters .filter-search-row {
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.catalog-filters .filter-search-row > label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 12px;
+}
+.catalog-filters .search-field {
+  flex: 1 1 240px;
+  max-width: 480px;
+  min-height: 36px;
+  padding: 0 10px;
+}
+.catalog-filters .search-field input {
+  padding: 6px 0;
+}
+.catalog-filters .button {
+  min-height: 36px;
+  padding: 5px 10px;
+}
+.catalog-filters select {
+  min-height: 36px;
+  padding: 6px 10px;
+}
+.catalog-filters .filter-toggle {
+  margin: 0;
+  white-space: normal;
+}
 .work-card {
   display: block;
   border: 1px solid #ede0fc;
@@ -2565,6 +2603,14 @@ td > strong {
   .filter-search-row {
     flex-direction: column;
     gap: 10px;
+  }
+  .catalog-filters .filter-search-row {
+    align-items: stretch;
+  }
+  .catalog-filters .search-field {
+    flex: none;
+    max-width: none;
+    min-width: 0;
   }
   .filter-row select {
     flex: 1 1 100%;

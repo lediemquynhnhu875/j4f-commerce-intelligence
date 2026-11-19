@@ -67,10 +67,12 @@ export async function api<T>(
       errorPayload.error?.code === "ACCOUNT_SUSPENDED"
         ? "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên."
         : response.status === 401
-        ? (path === "auth/login" ? "Email hoặc mật khẩu không đúng." : "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.")
-        : errorPayload.error?.code === "STALE_VERSION"
-          ? "Dữ liệu đã được cập nhật. Tải lại trước khi lưu."
-          : `${errorPayload.error?.message ?? "Yêu cầu thất bại"}${detail ? ` — ${detail}` : ""}`,
+          ? path === "auth/login"
+            ? "Email hoặc mật khẩu không đúng."
+            : "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại."
+          : errorPayload.error?.code === "STALE_VERSION"
+            ? "Dữ liệu đã được cập nhật. Tải lại trước khi lưu."
+            : `${errorPayload.error?.message ?? "Yêu cầu thất bại"}${detail ? ` — ${detail}` : ""}`,
     );
   }
 

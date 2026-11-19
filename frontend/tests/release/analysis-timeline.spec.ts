@@ -48,12 +48,15 @@ async function openAnalysis(
     const url = new URL(route.request().url());
     const { pathname: path, searchParams } = url;
     requested.push(url);
-    const selected = [...rows].filter((row) => {
-      const from = Date.parse(`${searchParams.get("from")}T00:00:00+07:00`);
-      const to = Date.parse(`${searchParams.get("to")}T00:00:00+07:00`) + 86400000;
-      const time = Date.parse(row.analyzed_at);
-      return time >= from && time < to;
-    }).sort((a, b) => Date.parse(b.analyzed_at) - Date.parse(a.analyzed_at));
+    const selected = [...rows]
+      .filter((row) => {
+        const from = Date.parse(`${searchParams.get("from")}T00:00:00+07:00`);
+        const to =
+          Date.parse(`${searchParams.get("to")}T00:00:00+07:00`) + 86400000;
+        const time = Date.parse(row.analyzed_at);
+        return time >= from && time < to;
+      })
+      .sort((a, b) => Date.parse(b.analyzed_at) - Date.parse(a.analyzed_at));
     const data = path.endsWith("/auth/me")
       ? { id: "91", full_name: "Store owner", role: "user", is_active: true }
       : path.endsWith("/workspace/summary")
@@ -62,11 +65,23 @@ async function openAnalysis(
           ? {
               product,
               has_analysis: rows.length > 0,
-              latest: selected[0] ? { analysis: selected[0], actions: [] } : null,
-              timeline: selected.map(({ id, analyzed_at, input_snapshot_json }) =>
-                ({ id, analyzed_at, quantity_sold: input_snapshot_json.quantity_sold })),
+              latest: selected[0]
+                ? { analysis: selected[0], actions: [] }
+                : null,
+              timeline: selected.map(
+                ({ id, analyzed_at, input_snapshot_json }) => ({
+                  id,
+                  analyzed_at,
+                  quantity_sold: input_snapshot_json.quantity_sold,
+                }),
+              ),
             }
-          : { analysis: rows.find((row) => path.endsWith(`/products/14/analyses/${row.id}`)), actions: [] };
+          : {
+              analysis: rows.find((row) =>
+                path.endsWith(`/products/14/analyses/${row.id}`),
+              ),
+              actions: [],
+            };
     return route.fulfill({
       json: {
         data,
@@ -98,14 +113,19 @@ test("one imported result shows axis labels and evidence without a history selec
   await expect(
     page.getByRole("table", { name: "Bằng chứng theo từng yếu tố" }),
   ).toContainText("456");
-  expect(requested.map((url) => url.pathname.split("/api/backend/")[1]).sort()).toEqual([
-    "analysis-workspace", "auth/me", "workspace/summary",
-  ]);
-  expect(requested.find((url) => url.pathname.endsWith("/analysis-workspace"))
-    ?.searchParams.get("product_id")).toBe("14");
+  expect(
+    requested.map((url) => url.pathname.split("/api/backend/")[1]).sort(),
+  ).toEqual(["analysis-workspace", "auth/me", "workspace/summary"]);
+  expect(
+    requested
+      .find((url) => url.pathname.endsWith("/analysis-workspace"))
+      ?.searchParams.get("product_id"),
+  ).toBe("14");
 });
 
-test("chart text keeps its proportions as the viewport changes", async ({ page }) => {
+test("chart text keeps its proportions as the viewport changes", async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 1760, height: 1000 });
   await openAnalysis(page, [older, newest]);
   const chart = page.getByRole("img", {
@@ -123,7 +143,9 @@ test("chart text keeps its proportions as the viewport changes", async ({ page }
   await expect.poll(readScale).toEqual({ x: 1, y: 1 });
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await expect.poll(async () => (await chart.boundingBox())!.width).toBeLessThan(390);
+  await expect
+    .poll(async () => (await chart.boundingBox())!.width)
+    .toBeLessThan(390);
   await expect.poll(readScale).toEqual({ x: 1, y: 1 });
 });
 
@@ -154,8 +176,12 @@ test("choosing an older chart point replaces the evidence with the saved analysi
   await expect(evidence).toContainText("123");
   await expect(evidence).not.toContainText("456");
   await expect(page).toHaveURL(/analysis=1/);
-  expect(requested.filter((url) => url.pathname.endsWith("/analysis-workspace"))).toHaveLength(1);
-  expect(requested.filter((url) => url.pathname.endsWith("/products/14/analyses/1"))).toHaveLength(1);
+  expect(
+    requested.filter((url) => url.pathname.endsWith("/analysis-workspace")),
+  ).toHaveLength(1);
+  expect(
+    requested.filter((url) => url.pathname.endsWith("/products/14/analyses/1")),
+  ).toHaveLength(1);
   await page.getByRole("button", { name: "Về mốc mới nhất" }).click();
   await expect(evidence).toContainText("456");
 });
@@ -216,23 +242,46 @@ test("the period runs from June to today in Vietnam and updates the selected evi
   await expect(chart.getByText("19/11/2026")).toBeVisible();
 });
 
-
-test("a product without saved analyses shows only the product and a compact message", async ({ page }) => {
+test("a product without saved analyses shows only the product and a compact message", async ({
+  page,
+}) => {
   await openAnalysis(page, []);
   await expect(page.getByText(product.name, { exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Sản phẩm đã chọn chưa có kết quả phân tích" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", {
+      name: "Sản phẩm đã chọn chưa có kết quả phân tích",
+    }),
+  ).toBeVisible();
   await expect(page.getByLabel("Từ ngày", { exact: true })).toHaveCount(0);
-  await expect(page.getByRole("img", { name: "Biểu đồ số lượng bán ra theo thời điểm phân tích" })).toHaveCount(0);
-  await expect(page.getByRole("heading", { name: "Bằng chứng quan sát" })).toHaveCount(0);
+  await expect(
+    page.getByRole("img", {
+      name: "Biểu đồ số lượng bán ra theo thời điểm phân tích",
+    }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { name: "Bằng chứng quan sát" }),
+  ).toHaveCount(0);
 });
 
-test("an empty date range keeps the filters available for a product with history", async ({ page }) => {
+test("an empty date range keeps the filters available for a product with history", async ({
+  page,
+}) => {
   await openAnalysis(page, [older]);
   const from = page.getByLabel("Từ ngày", { exact: true });
   await from.fill("2026-11-18");
-  await expect(page.getByRole("heading", { name: "Chưa có bằng chứng trong khoảng đã chọn" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", {
+      name: "Chưa có bằng chứng trong khoảng đã chọn",
+    }),
+  ).toBeVisible();
   await expect(from).toBeVisible();
-  await expect(page.getByRole("img", { name: "Biểu đồ số lượng bán ra theo thời điểm phân tích" })).toHaveCount(0);
+  await expect(
+    page.getByRole("img", {
+      name: "Biểu đồ số lượng bán ra theo thời điểm phân tích",
+    }),
+  ).toHaveCount(0);
   await page.getByRole("button", { name: "Đặt lại", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Bằng chứng quan sát" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Bằng chứng quan sát" }),
+  ).toBeVisible();
 });

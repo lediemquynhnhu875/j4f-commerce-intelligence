@@ -20,7 +20,7 @@ type Preview = {
     warnings: string[];
   }[];
 };
-export function ImportProducts({ refresh }: { refresh: () => Promise<void> }) {
+export function ImportProducts({ refresh }: { refresh: () => void }) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [items, setItems] = useState<unknown[]>([]);
@@ -81,7 +81,7 @@ export function ImportProducts({ refresh }: { refresh: () => Promise<void> }) {
         `Đã thêm ${result.data.created_count} sản phẩm và cập nhật ${result.data.updated_count} sản phẩm. Các kết quả phân tích đã lưu phản ánh dữ liệu tại lần phân tích trước.`,
         "Nhập dữ liệu thành công",
       );
-      await refresh();
+      refresh();
     } catch (error) {
       notify((error as Error).message, "Nhập dữ liệu thất bại");
     } finally {
