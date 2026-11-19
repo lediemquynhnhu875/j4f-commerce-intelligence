@@ -243,13 +243,13 @@ export function Empty({
   description = "Thử thay đổi từ khóa hoặc đặt lại bộ lọc.",
 }: {
   title?: string;
-  description?: string;
+  description?: string | null;
 }) {
   return (
     <div className="empty">
       <Icon name="search" size={34} />
       <h3>{title}</h3>
-      <p>{description}</p>
+      {description && <p>{description}</p>}
     </div>
   );
 }

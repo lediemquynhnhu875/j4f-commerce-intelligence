@@ -1,0 +1,93 @@
+.analysis-timeline-chart-scroll {
+  overflow-x: auto;
+}
+.analysis-timeline-plot {
+  position: relative;
+}
+.analysis-timeline-plot svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.analysis-timeline-plot line {
+  stroke: var(--border);
+}
+.analysis-timeline-plot text {
+  fill: var(--text-secondary);
+  font-size: 12px;
+}
+.analysis-timeline-plot path {
+  fill: none;
+  stroke: var(--info);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.analysis-timeline-point {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  border-radius: 50%;
+}
+.analysis-timeline-point::after {
+  content: "";
+  width: 10px;
+  height: 10px;
+  background: var(--surface);
+  border: 2px solid var(--info);
+  border-radius: 50%;
+}
+.analysis-timeline-point[aria-pressed="true"]::after,
+.analysis-timeline-point:hover::after {
+  background: var(--info);
+}
+.analysis-timeline-point:focus-visible {
+  outline: 2px solid var(--info);
+}
+.analysis-timeline-hint {
+  margin: 12px 0;
+  color: var(--text-secondary);
+}
+
+.analysis-timeline-range {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.analysis-timeline-range label {
+  display: grid;
+  gap: 4px;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+.analysis-timeline-range input {
+  min-height: 36px;
+  padding: 5px 9px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-main);
+}
+
+.analysis-timeline-plot .analysis-timeline-axis-title {
+  fill: var(--text-main);
+  font-weight: 600;
+}
+.analysis-timeline-plot .analysis-timeline-missing-line {
+  stroke-dasharray: 3 4;
+}
+.analysis-timeline-point[data-missing-sales="true"]::after {
+  border-radius: 2px;
+  transform: rotate(45deg);
+}
+.analysis-timeline-missing-note {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}

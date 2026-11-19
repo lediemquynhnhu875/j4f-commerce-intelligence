@@ -3,8 +3,7 @@ import { ErrorPopup } from "@/components/popup";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { StatusBadge } from "@/components/status-badge";
-import { useRouter } from "next/navigation";
-import { api, allPages, analysisLabels, price } from "@/lib/api-client";
+import { api, analysisLabels, price } from "@/lib/api-client";
 import {
   actionTypeLabels,
   exportSaved,
@@ -12,6 +11,11 @@ import {
   productCode,
 } from "@/lib/analysis-presentation";
 import { Badge, Empty, Icon, Panel, Stat } from "@/components/ui";
+import {
+  AnalysisTimeline,
+  useAnalysisDateRange,
+  analysisTime,
+} from "@/components/analysis/analysis-timeline";
 import { ProductIdentity } from "@/components/products/product-identity";
 import {
   InsufficientReason,
@@ -19,7 +23,7 @@ import {
   UnblockPanel,
 } from "@/components/analysis/insufficient-data";
 import { isInsufficient, metricLabels } from "@/lib/insufficient-data";
-import type { Analysis, Dataset, Product } from "@/types/api";
+import type { AnalysisWorkspace, ProductAnalysis } from "@/types/api";
 
 // Presentation association only: an action must already exist on this analysis.
 const metricActionTypes: Record<string, readonly string[]> = {
@@ -68,86 +72,98 @@ function value(v: unknown) {
 }
 
 export function LiveAnalysis({
-  data,
   role,
   productId,
   analysisId,
+  refreshVersion,
 }: {
-  data: Dataset;
   role: "user" | "admin";
   productId: string | null;
   analysisId: string | null;
+  refreshVersion: number;
 }) {
-  const router = useRouter();
-  const selectedId =
-    productId ??
-    data.analyses.find((row) => row.id === analysisId)?.product_id ??
-    data.products.find((p) =>
-      data.analyses.some(
-        (a) => a.product_id === p.id && a.status_schema_version === "ml_v2",
-      ),
-    )?.id ??
-    data.products[0]?.id;
-  const [product, setProduct] = useState<Product | null>(null),
-    [rows, setRows] = useState<Analysis[]>([]),
-    [loading, setLoading] = useState(true),
-    [error, setError] = useState("");
+  const range = useAnalysisDateRange();
+  const lookupId = productId ?? analysisId;
+  const lookupKey = productId ? "product_id" : "analysis_id";
+  const query = new URLSearchParams({ from: range.from, to: range.to });
+  if (lookupId) query.set(lookupKey, lookupId);
+  const path = `analysis-workspace?${query}`;
+  const [workspace, setWorkspace] = useState<{
+    path: string;
+    productPath: string;
+    version: number;
+    data: AnalysisWorkspace;
+  }>();
+  const [detail, setDetail] = useState<ProductAnalysis>();
+  const [failure, setFailure] = useState<{ path: string; message: string }>();
+  const [detailFailure, setDetailFailure] = useState<{ id: string; message: string }>();
+  const current = workspace?.path === path || workspace?.productPath === path ? workspace.data : undefined;
+
   useEffect(() => {
-    let active = true;
+    if (workspace?.version === refreshVersion &&
+      (workspace.path === path || workspace.productPath === path)) return;
     const controller = new AbortController();
-    async function load() {
-      setLoading(true);
-      setError("");
-      setProduct(null);
-      setRows([]);
-      try {
-        if (!selectedId) return;
-        const [detail, history] = await Promise.all([
-          api<{ data: Product }>(`products/${encodeURIComponent(selectedId)}`, {
-            signal: controller.signal,
-          }),
-          allPages<Analysis>(
-            `products/${encodeURIComponent(selectedId)}/analyses`,
-            controller.signal,
-          ),
-        ]);
-        if (active) {
-          setProduct(detail.data);
-          setRows(history);
-        }
-      } catch (err) {
-        if (active && (err as Error).name !== "AbortError")
-          setError((err as Error).message);
-      } finally {
-        if (active) setLoading(false);
+    void api<{ data: AnalysisWorkspace }>(path, { signal: controller.signal })
+      .then(({ data }) => {
+        if (controller.signal.aborted) return;
+        const productQuery = new URLSearchParams(path.split("?")[1]);
+        productQuery.delete("analysis_id");
+        if (data.product) productQuery.set("product_id", data.product.id);
+        setWorkspace({ path, productPath: `analysis-workspace?${productQuery}`, version: refreshVersion, data });
+        setFailure(undefined);
+        setDetail(undefined);
+        setDetailFailure(undefined);
+      })
+      .catch((err: Error) => {
+        if (!controller.signal.aborted) setFailure({ path, message: err.message });
+      });
+    return () => controller.abort();
+  }, [path, refreshVersion, workspace]);
+
+  const product = current ? current.product : workspace?.data.product;
+  const hasAnalysis = current?.has_analysis ?? workspace?.data.has_analysis;
+  const inRange = current?.timeline ?? [];
+  const latest = current?.latest;
+  const selectedId = inRange.some((row) => row.id === analysisId)
+    ? analysisId : latest?.analysis.id;
+  const historicalId = selectedId && selectedId !== latest?.analysis.id ? selectedId : null;
+
+  useEffect(() => {
+    if (!historicalId || !product) return;
+    const controller = new AbortController();
+    void api<{ data: ProductAnalysis }>(
+      `products/${encodeURIComponent(product.id)}/analyses/${encodeURIComponent(historicalId)}`,
+      { signal: controller.signal },
+    ).then(({ data }) => {
+      if (!controller.signal.aborted) {
+        setDetail(data);
+        setDetailFailure(undefined);
       }
-    }
-    void load();
-    return () => {
-      active = false;
-      controller.abort();
-    };
-  }, [selectedId]);
-  const analysis = analysisId
-    ? rows.find((row) => row.id === analysisId)
-    : [...rows].sort(
-        (a, b) =>
-          b.analyzed_at.localeCompare(a.analyzed_at) ||
-          (BigInt(a.id) > BigInt(b.id) ? -1 : 1),
-      )[0];
-  if (loading)
-    return (
-      <Panel>
-        <p role="status">Đang tải phân tích…</p>
-      </Panel>
+    }).catch((err: Error) => {
+      if (!controller.signal.aborted) setDetailFailure({ id: historicalId, message: err.message });
+    });
+    return () => controller.abort();
+  }, [historicalId, product, refreshVersion]);
+
+  const result = historicalId
+    ? detail?.analysis.id === historicalId ? detail : undefined
+    : latest;
+  const analysis = result?.analysis;
+  const suggestions = result?.actions ?? [];
+  function selectAnalysis(id?: string) {
+    const url = new URL(window.location.href);
+    if (!productId && !analysisId && !id) return;
+    if (product) url.searchParams.set("product", product.id);
+    if (id) url.searchParams.set("analysis", id);
+    else url.searchParams.delete("analysis");
+    window.history.replaceState(null, "", url);
+  }
+  if (failure?.path === path)
+    return <Panel><ErrorPopup message={failure.message} /></Panel>;
+  if (!product)
+    return current ? <Empty title="Catalog chưa có sản phẩm" /> : (
+      <Panel><p role="status">Đang tải phân tích…</p></Panel>
     );
-  if (error)
-    return (
-      <Panel>
-        <ErrorPopup message={error} />
-      </Panel>
-    );
-  if (!product) return <Empty title="Catalog chưa có sản phẩm" />;
   const input = analysis?.input_snapshot_json ?? {};
   const observed = input.quantity_sold ?? null,
     reference = analysis?.reference_sold ?? null;
@@ -155,9 +171,6 @@ export function LiveAnalysis({
     ? (analysis.evidence_json.items as Record<string, unknown>[])
     : [];
   const comparison = analysis?.comparison_json ?? {};
-  const suggestions = data.actions.filter(
-    (row) => row.analysis_id === analysis?.id,
-  );
   const undecided = isInsufficient(analysis?.status);
   const maximum = Math.max(Number(observed ?? 0), Number(reference ?? 0), 1);
   const title =
@@ -176,8 +189,7 @@ export function LiveAnalysis({
             image={product.thumbnail_url}
             detail={
               analysis?.product_type ??
-              data.categories.find((row) => row.id === product.category_id)
-                ?.name
+              product.category_name
             }
             code={productCode(product)}
           />
@@ -196,22 +208,12 @@ export function LiveAnalysis({
             ★ · {quantity(analysis ? input.review_count : product.review_count)}{" "}
             đánh giá
           </p>
-          <StatusBadge status={analysis?.status} />
+          {(analysis || hasAnalysis !== true) && <StatusBadge status={analysis?.status} />}
         </div>
         <div className="analysis-product-actions">
-          <select
-            aria-label="Sản phẩm phân tích"
-            value={selectedId}
-            onChange={(event) =>
-              router.push(`/${role}/analysis?product=${event.target.value}`)
-            }
-          >
-            {data.products.map((row) => (
-              <option key={row.id} value={row.id}>
-                {row.name}
-              </option>
-            ))}
-          </select>
+          <Link className="button subtle" href={`/${role}/products`}>
+            Chọn sản phẩm khác
+          </Link>
           <button
             className="button subtle"
             disabled={!analysis}
@@ -228,17 +230,114 @@ export function LiveAnalysis({
           </button>
         </div>
       </div>
-      {!analysis ? (
+      {hasAnalysis !== false && (
+        <AnalysisTimeline
+          rows={inRange}
+          range={range}
+          onRangeChange={() => selectAnalysis()}
+          currentId={selectedId ?? undefined}
+          onSelect={selectAnalysis}
+        />
+      )}
+      {historicalId && detailFailure?.id === historicalId ? (
+        <Panel><ErrorPopup message={detailFailure.message} /></Panel>
+      ) : !current || (historicalId && !analysis) ? (
+        <Panel><p role="status">Đang tải bằng chứng…</p></Panel>
+      ) : current.has_analysis === false ? (
+        <Empty title="Sản phẩm đã chọn chưa có kết quả phân tích" description={null} />
+      ) : !analysis ? (
         <Empty
-          title={
-            analysisId
-              ? "Không tìm thấy kết quả cho sản phẩm này"
-              : "Chưa có phân tích"
-          }
-          description="Sản phẩm này chưa có kết quả phân tích được lưu."
+          title="Chưa có bằng chứng trong khoảng đã chọn"
+          description="Chọn khoảng ngày khác để xem các kết quả đã lưu của sản phẩm."
         />
       ) : (
         <>
+          <Panel
+            title="Bằng chứng quan sát"
+            subtitle={`Đang xem kết quả lúc ${analysisTime.format(new Date(analysis.analyzed_at))}`}
+            action={
+              analysis.id !== latest?.analysis.id && (
+                <button
+                  type="button"
+                  className="button subtle small"
+                  onClick={() => selectAnalysis()}
+                >
+                  Về mốc mới nhất
+                </button>
+              )
+            }
+          >
+            {undecided && <ObservableSummary analysis={analysis} />}
+            <div className="table-card">
+              <div className="table-scroll">
+                <table aria-label="Bằng chứng theo từng yếu tố">
+                  <thead>
+                    <tr>
+                      <th>YẾU TỐ</th>
+                      <th>HIỆN TRẠNG</th>
+                      <th>CƠ SỞ ĐỐI CHIẾU</th>
+                      <th>CHÊNH LỆCH</th>
+                      <th>HÀNH ĐỘNG RÀ SOÁT</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map((item, index) => {
+                      const actions = suggestions.filter((row) =>
+                        metricActionTypes[String(item.metric)]?.includes(
+                          row.type,
+                        ),
+                      );
+                      return (
+                        <tr key={index}>
+                          <td>
+                            {metricLabels[String(item.metric)] ??
+                              String(item.metric)}
+                          </td>
+                          <td>
+                            {item.metric === "peer_quality"
+                              ? `${quantity(item.peer_count)} sản phẩm`
+                              : value(item.observed)}
+                          </td>
+                          <td>{peerValue(item)}</td>
+                          <td>{value(item.difference)}</td>
+                          <td>
+                            {actions.length ? (
+                              <div className="evidence-review-actions">
+                                {actions.map((row) => (
+                                  <a
+                                    key={row.id}
+                                    className={`badge ${actionTones[row.type] ?? "purple"}`}
+                                    href={`#analysis-action-${row.id}`}
+                                    title={
+                                      typeof row.original_suggestion_json
+                                        .action === "string"
+                                        ? row.original_suggestion_json.action
+                                        : row.title
+                                    }
+                                  >
+                                    {actionTypeLabels[row.type] ?? row.type}
+                                    <Icon name="arrow" size={12} />
+                                  </a>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="muted">Chưa có đề xuất</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            {!items.length && (
+              <Empty
+                title="Chưa có bằng chứng chi tiết"
+                description="Kết quả này chưa có dữ liệu đối chiếu theo từng yếu tố."
+              />
+            )}
+          </Panel>
           <div className="diagnosis">
             <span className="tile-icon pink">
               <Icon name="sparkles" />
@@ -333,7 +432,7 @@ export function LiveAnalysis({
               ))}
             </div>
           </Panel>
-          <Panel title="1. Bối cảnh & Cơ sở ghép nhóm đối chiếu">
+          <Panel title="Bối cảnh & Cơ sở ghép nhóm đối chiếu">
             <div className="context-grid">
               <div className="tinted">
                 <small>Nhóm sản phẩm</small>
@@ -364,82 +463,7 @@ export function LiveAnalysis({
               </div>
             </div>
           </Panel>
-          <Panel
-            title="2. Bằng chứng quan sát"
-            subtitle="Các giá trị và hành động đã lưu của đúng lần phân tích"
-          >
-            {undecided && <ObservableSummary analysis={analysis} />}
-            <div className="table-card">
-              <div className="table-scroll">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>YẾU TỐ</th>
-                      <th>HIỆN TRẠNG</th>
-                      <th>CƠ SỞ ĐỐI CHIẾU</th>
-                      <th>CHÊNH LỆCH</th>
-                      <th>HÀNH ĐỘNG RÀ SOÁT</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {items.map((item, index) => {
-                      const actions = suggestions.filter((row) =>
-                        metricActionTypes[String(item.metric)]?.includes(
-                          row.type,
-                        ),
-                      );
-                      return (
-                        <tr key={index}>
-                          <td>
-                            {metricLabels[String(item.metric)] ??
-                              String(item.metric)}
-                          </td>
-                          <td>
-                            {item.metric === "peer_quality"
-                              ? `${quantity(item.peer_count)} sản phẩm`
-                              : value(item.observed)}
-                          </td>
-                          <td>{peerValue(item)}</td>
-                          <td>{value(item.difference)}</td>
-                          <td>
-                            {actions.length ? (
-                              <div className="evidence-review-actions">
-                                {actions.map((row) => (
-                                  <a
-                                    key={row.id}
-                                    className={`badge ${actionTones[row.type] ?? "purple"}`}
-                                    href={`#analysis-action-${row.id}`}
-                                    title={
-                                      typeof row.original_suggestion_json
-                                        .action === "string"
-                                        ? row.original_suggestion_json.action
-                                        : row.title
-                                    }
-                                  >
-                                    {actionTypeLabels[row.type] ?? row.type}
-                                    <Icon name="arrow" size={12} />
-                                  </a>
-                                ))}
-                              </div>
-                            ) : (
-                              <span className="muted">Chưa có đề xuất</span>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            {!items.length && (
-              <Empty
-                title="Chưa có bằng chứng chi tiết"
-                description="Kết quả này chưa có dữ liệu đối chiếu theo từng yếu tố."
-              />
-            )}
-          </Panel>
-          <Panel title="3. Giải thích kết quả phân tích">
+          <Panel title="Giải thích kết quả phân tích">
             <div className="grid-two">
               {suggestions.map((row) => (
                 <div
@@ -477,7 +501,7 @@ export function LiveAnalysis({
             )}
           </Panel>
           {undecided && <UnblockPanel analysis={analysis} />}
-          <Panel title="4. Phạm vi & Giới hạn phân tích">
+          <Panel title="Phạm vi & Giới hạn phân tích">
             <div className="notice">
               <Icon name="shield" />
               <span>
@@ -499,7 +523,7 @@ export function LiveAnalysis({
                 : "Chưa xác định"}
             </p>
           </Panel>
-          <Panel title="5. Hành động tiếp theo">
+          <Panel title="Hành động tiếp theo">
             <div className="action-banner">
               <div>
                 <h3>Xem đề xuất và kiểm tra bằng chứng</h3>
@@ -548,19 +572,6 @@ export function LiveAnalysis({
           </Panel>
         </>
       )}
-      <Panel title="Lịch sử kết quả">
-        {rows.map((row) => (
-          <p key={row.id}>
-            <Link
-              className="text-link"
-              href={`/${role}/analysis?product=${product.id}&analysis=${row.id}`}
-            >
-              #{row.id} · {new Date(row.analyzed_at).toLocaleString("vi-VN")} ·{" "}
-              {analysisLabels[row.status] ?? row.status}
-            </Link>
-          </p>
-        ))}
-      </Panel>
     </>
   );
 }

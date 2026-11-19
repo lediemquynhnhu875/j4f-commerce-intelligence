@@ -213,3 +213,37 @@ remaining delivery; they do not add a cyclic prerequisite.
 | FR-007 | `T002`, `T008`, `T011` |
 | FR-008 | `T003`, `T012` |
 | FR-009 | `T004`, `T008`, `T012` |
+
+## Timeline of saved analyses — 2026-11-18
+
+- [x] Use the existing owner-scoped analysis list to present the sales timeline.
+- [x] Show evidence for the latest/selected result and retain deep link IDs.
+- [x] Verify axis labels, point selection and missing sales on Edge with HTTP fixtures.
+- [x] Add inclusive date filters and verify the June-to-today default, reset and Vietnam date rollover.
+
+
+## Scoped query optimization
+
+- [x] F005/T009–T011 amendment. Read one product, the requested date window
+  and latest evidence. Load older detail by product and analysis ID.
+- [x] Verify latest/older selection, date bounds, request count, and owner
+  isolation with Playwright and read-only Neon checks.
+- [ ] Measure time to visible evidence on the deployed frontend and backend.
+  Compare larger stores and histories against the same user journey.
+
+
+## Analysis empty states
+
+- [x] Show one message below the product card when the product has no saved result.
+- [x] Keep date controls when history exists outside the selected range.
+- [x] Verify both states in Edge and the API history flag on Neon.
+
+
+## Current store statistics
+
+- [x] Backfill current counters and latest-analysis pointers per store.
+- [x] Maintain counts through product, analysis and action writes, including
+  older imports and transactional rollback.
+- [x] Serve the owner overview in one request with bounded previews. Verify
+  the saved counts, source history ordering and request count.
+- [ ] Measure end-to-end timing on deployed Render and Vercel under load.

@@ -275,3 +275,14 @@ and isolated browser fixtures remain confined to test execution.
 - Suspended accounts with a correct password receive `403 ACCOUNT_SUSPENDED`.
 - `npm test` includes import parser/normalization regressions. No migration is
   required for this update on the existing media/store schema.
+
+
+### Store statistics
+
+Apply `005_store_stats.sql` through `npm run db:migrate` before deploying the
+version that reads the overview and Admin count tables. The migration takes
+write locks during its single-transaction backfill. Normal writes maintain
+the totals by trigger, including the bundled import scripts. Preserve the
+statistics triggers when maintaining fixtures or restoring catalog data.
+The Git attribute for migration 005 preserves the applied file's checksum
+across checkout platforms.

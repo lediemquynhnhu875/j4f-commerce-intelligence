@@ -80,11 +80,12 @@ export async function api<T>(
 export async function allPages<T>(
   path: string,
   signal?: AbortSignal,
+  limit = 20,
 ): Promise<T[]> {
   const rows: T[] = [];
   for (let page = 1; page <= 1000; page++) {
     const result = await api<List<T>>(
-      `${path}${path.includes("?") ? "&" : "?"}page=${page}&limit=20`,
+      `${path}${path.includes("?") ? "&" : "?"}page=${page}&limit=${limit}`,
       { signal },
     );
     rows.push(...result.data);

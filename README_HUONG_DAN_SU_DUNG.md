@@ -198,7 +198,9 @@ Mở trang phân tích chỉ đọc kết quả đã lưu. Với sản phẩm ch
 
 #### Mở đúng sản phẩm và đúng lần phân tích
 
-Bạn có thể mở trang này từ nút **Xem** của sản phẩm, **Phân tích** trong Tổng quan hoặc menu Kết quả phân tích. Dùng bộ chọn **Sản phẩm phân tích** để chuyển sang sản phẩm khác.
+Bạn có thể mở trang này từ nút **Xem** của sản phẩm, **Phân tích** trong Tổng quan hoặc menu Kết quả phân tích. Bấm **Chọn sản phẩm khác** để về Danh mục, tìm theo mã hoặc tên rồi bấm **Xem**.
+
+Nếu sản phẩm chưa từng có kết quả phân tích, dưới thẻ sản phẩm sẽ hiện thông báo **Sản phẩm đã chọn chưa có kết quả phân tích**. Nếu sản phẩm đã có lịch sử mà khoảng đang chọn không có kết quả, hãy đổi khoảng ngày hoặc bấm **Đặt lại**.
 
 Mặc định, giao diện ưu tiên kết quả mới nhất của sản phẩm. Khi mở một mục trong Lịch sử kết quả hoặc liên kết có chỉ định lần phân tích, bạn đang xem **đúng lần được chọn**, có thể là kết quả cũ.
 
@@ -397,20 +399,18 @@ Tình trạng kết nối tốt chỉ xác nhận khả năng truy cập hệ th
 
 ### 3.2. Trang Quản lý cửa hàng
 
-**Trạng thái hiện tại: chưa thiết lập chức năng cửa hàng thật.** Trang vẫn có bố cục thống kê và bảng để thể hiện vị trí chức năng, nhưng chưa có dữ liệu/quyền sở hữu cửa hàng để quản lý.
+Trang hiển thị mã, tên, chủ sở hữu, số sản phẩm và trạng thái của từng cửa hàng. Hai ô đầu trang đếm tổng số cửa hàng và tổng sản phẩm đã phân bổ trên toàn hệ thống.
 
-- Tổng cửa hàng và số SKU đã phân bổ chưa có giá trị; một số số liệu kết quả/đề xuất lấy từ catalog chung, không phải của từng cửa hàng.
-- Ô **Tìm cửa hàng** và nút **Thêm cửa hàng** đang bị vô hiệu hóa.
-- Bảng có các cột dự kiến về mã, tên, chủ sở hữu, sản phẩm, phân tích và thao tác, nhưng hiển thị **Cửa hàng chưa được thiết lập**.
-- Chưa thể tạo, sửa, gán User vào cửa hàng hoặc chia sản phẩm cho từng cửa hàng trên trang này.
-
-Không cần thử bấm nhiều lần hoặc tải lại để mở khóa chức năng. Nếu muốn quản lý tài khoản, chuyển sang Quản lý tài khoản. Nhập sản phẩm qua giao diện User chưa được triển khai.
+- Mỗi trang hiển thị tối đa **50 cửa hàng**. Bấm **Trang trước** hoặc **Trang sau** để chuyển trang.
+- Nhập tên hoặc mã cửa hàng vào ô tìm kiếm rồi bấm **Tìm kiếm**. Xóa nội dung ô và tìm lại để xem danh sách đầy đủ theo từng trang.
+- Chọn **Nhiều sản phẩm nhất** hoặc **Ít sản phẩm nhất** để sắp xếp các cửa hàng theo số sản phẩm. Danh sách trở về trang đầu sau khi đổi thứ tự. Cửa hàng có 0 sản phẩm đứng đầu khi sắp xếp từ ít đến nhiều.
+- Hệ thống tạo cửa hàng tự động khi Admin tạo tài khoản User. Trang này dùng để tra cứu thông tin đã lưu.
 
 <a id="admin-tai-khoan"></a>
 
 ### 3.3. Trang Quản lý tài khoản
 
-Trang hiển thị bảng **Tài khoản trong catalog chung**, gồm Tên, Email, Vai trò, Trạng thái và Thao tác.
+Bảng gồm Tên, Email, Vai trò, Trạng thái và Thao tác. Mỗi trang hiển thị tối đa **50 tài khoản**. Bạn có thể tìm bằng tên hoặc email, lọc **Hoạt động** hay **Tạm khóa**, rồi dùng **Trang trước** và **Trang sau** để chuyển trang.
 
 #### Tạo tài khoản
 
@@ -425,17 +425,17 @@ Trang hiển thị bảng **Tài khoản trong catalog chung**, gồm Tên, Emai
 | **Vai trò** | Chọn **User** cho người xem/phụ trách công việc; chỉ chọn **Admin** khi người đó cần quyền quản trị. |
 
 3. Bấm **Tạo tài khoản** và chờ lưu xong.
-4. Kiểm tra tài khoản xuất hiện trong bảng, đúng vai trò và trạng thái.
+4. Tìm tài khoản mới bằng email để kiểm tra vai trò và trạng thái.
 5. Cung cấp thông tin đăng nhập cho đúng người qua kênh phù hợp; không đưa mật khẩu vào báo cáo hoặc tệp hướng dẫn công khai.
 
-Mỗi tài khoản mới không tự có một cửa hàng riêng trong phiên bản hiện tại.
+Mỗi tài khoản User mới được tạo kèm một cửa hàng riêng.
 
 #### Tạm khóa hoặc kích hoạt
 
 1. Tìm đúng dòng theo email để tránh thao tác nhầm người.
 2. Bấm **Tạm khóa** nếu tài khoản đang hoạt động, hoặc **Kích hoạt** nếu tài khoản đang bị khóa.
-3. Đọc hộp xác nhận của trình duyệt và xác nhận nếu đúng ý định.
-4. Kiểm tra Trạng thái trong bảng sau khi dữ liệu tải lại.
+3. Kiểm tra tên tài khoản trong hộp thoại và bấm **Xác nhận**.
+4. Kiểm tra trạng thái mới ngay trên dòng vừa thao tác.
 
 Tạm khóa sẽ làm tài khoản không thể tiếp tục sử dụng phiên đang có. Sau khi kích hoạt lại, người đó cần đăng nhập lại; phiên cũ không tự được khôi phục. Nút khóa chính tài khoản Admin đang đăng nhập bị vô hiệu hóa.
 
@@ -622,3 +622,15 @@ quản trị viên. Tổng quan và Hoạt động phân tích hiển thị số
 Các đợt kết quả đã lưu được ghi rõ, số yêu cầu đang chạy chờ tích hợp ML.
 Các mô tả cũ về Admin xem chi tiết dữ liệu sản phẩm/phân tích được thay thế bởi
 quyền xem số liệu tổng hợp trong bản cập nhật này.
+
+## Xem số bán và bằng chứng qua các lần phân tích
+
+Trong **Kết quả phân tích**, chọn sản phẩm để xem **Số lượng bán ra theo thời
+gian** ngay dưới thẻ sản phẩm. Trục ngang là thời điểm phân tích theo giờ
+Việt Nam. Trục dọc là số bán ghi trong dữ liệu của từng lần phân tích.
+Mặc định biểu đồ hiển thị từ ngày 01/06 gần nhất đến hôm nay. Dùng **Từ ngày**
+và **Đến ngày** để thu hẹp khoảng xem, hoặc bấm **Đặt lại** để trở về mặc định.
+
+Bên dưới biểu đồ, mục **Bằng chứng quan sát** mở kết quả mới nhất. Bấm một
+điểm trên biểu đồ để xem bằng chứng của lần đó. Bấm **Về mốc mới nhất** để
+quay lại. Điểm hình thoi đánh dấu lần phân tích chưa có số bán.

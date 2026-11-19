@@ -70,3 +70,57 @@ export async function createAnalysis(
     });
   });
 }
+
+export async function productAnalysis(actor: Account, productId: string, analysisId: string) {
+  const { rows } = await pool().query(
+    `${relation} WHERE ${productScope(actor, "p")} AND a.product_id=$2 AND a.id=$3`,
+    [actor.id, productId, analysisId],
+  );
+  if (!rows[0]) missing();
+  const actions = await pool().query(
+    "SELECT * FROM improvement_actions WHERE analysis_id=$1 ORDER BY id",
+    [analysisId],
+  );
+  return { analysis: rows[0], actions: actions.rows };
+}
+
+export async function analysisWorkspace(
+  actor: Account, productId: string | undefined, analysisId: string | undefined,
+  from: string, to: string,
+) {
+  const lookup = productId ? "AND p.id=$2" : analysisId
+    ? "AND p.id=(SELECT product_id FROM product_analyses WHERE id=$2)"
+    : `ORDER BY EXISTS (
+        SELECT 1 FROM product_analyses a WHERE a.product_id=p.id AND a.status_schema_version='ml_v2'
+      ) DESC, p.id LIMIT 1`;
+  const selection = productId ?? analysisId;
+  const { rows } = await pool().query(
+    `SELECT p.*, c.name AS category_name,
+      EXISTS (SELECT 1 FROM product_analyses a WHERE a.product_id=p.id) AS has_analysis
+      FROM products p LEFT JOIN categories c ON c.id=p.category_id
+      WHERE ${productScope(actor, "p")} ${lookup}`,
+    selection ? [actor.id, selection] : [actor.id],
+  );
+  if (!rows[0]) {
+    if (selection) missing();
+    return { product: null, has_analysis: false, timeline: [], latest: null };
+  }
+  const { has_analysis, ...product } = rows[0];
+  if (!has_analysis) return { product, has_analysis, timeline: [], latest: null };
+
+  const timeline = await pool().query(
+    `SELECT id, analyzed_at, input_snapshot_json->'quantity_sold' AS quantity_sold
+      FROM product_analyses WHERE product_id=$1
+      AND analyzed_at >= ($2::date::timestamp AT TIME ZONE 'Asia/Ho_Chi_Minh')
+      AND analyzed_at < (($3::date + 1)::timestamp AT TIME ZONE 'Asia/Ho_Chi_Minh')
+      ORDER BY analyzed_at DESC, id DESC`,
+    [product.id, from, to],
+  );
+  const latestId = timeline.rows[0]?.id;
+  return {
+    product,
+    has_analysis,
+    timeline: timeline.rows,
+    latest: latestId ? await productAnalysis(actor, product.id, latestId) : null,
+  };
+}
