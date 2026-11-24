@@ -293,6 +293,34 @@ Authoritative feature details:
 [actions](../../specs/006-improvement-workflow/contracts/interfaces.md), and
 [Admin](../../specs/007-system-admin/contracts/interfaces.md).
 
+## Live Model A pilot
+
+`POST /api/v1/products/:id/analyses` requires the active owning User and an
+`Idempotency-Key` of 1–200 printable non-space ASCII characters. The application
+constructs the request from the saved product. Responses are 201 for a new
+successful run and 200 when replaying the same key and snapshot, with
+`{data:{id,status,reused}}`. Snapshot changes cause 409. Failed calls return
+controlled 4xx/5xx responses without a saved result. Any existing product
+analysis remains available. Import preview and commit do not invoke ML.
+
+Backend sends a separate, bearer-authenticated `POST /v1/infer` request with
+`schema_version: "sellens-inference-v1"`. Allowed product fields are name,
+up to 10,000 description characters, category name, source product ID,
+price, original price, quantity sold, rating, review count, image count and
+video presence. Sales and feedback are observations for scoring rules, excluded
+from Model A features. The pilot supports VND and uses a fixed corpus; other
+stores' private application data stays in Neon. IDs in the training corpus
+return 409. No raw peer rows are returned.
+
+Results save the Model A version, taxonomy/rules versions and the bundle,
+corpus, taxonomy and configuration hashes. Input version, comparable-product
+evidence, new original suggestions and their audit events are saved atomically.
+Gap remains observed minus reference in the app database. Missing numeric
+values are JSON null; insufficient basis may be saved with a specific reason.
+The pilot is synchronous and does not persist technical processing failures.
+See the [deployment guide](../ml/trien-khai-ml-render.md) and
+[architecture decision](../decisions/0012-live-model-a-pilot.md).
+
 ## Current import and admin privacy contract — 2026-11-13
 
 This amendment supersedes earlier Admin catalog/detail permissions above.

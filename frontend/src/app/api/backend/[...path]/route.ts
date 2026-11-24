@@ -1,6 +1,8 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
+export const maxDuration = 60;
+
 const SESSION = "sellens-session";
 type Context = { params: Promise<{ path: string[] }> };
 function error(status: number, code: string, message: string) {
@@ -36,6 +38,10 @@ async function proxy(request: Request, context: Context) {
   const token = cookieStore.get(SESSION)?.value;
   const headers: Record<string, string> = { Accept: "application/json" };
   if (token) headers.Authorization = `Bearer ${token}`;
+  const analyzesProduct = request.method === "POST" && path.length === 3 &&
+    path[0] === "products" && path[2] === "analyses";
+  const analysisKey = analyzesProduct ? request.headers.get("idempotency-key") : null;
+  if (analysisKey) headers["Idempotency-Key"] = analysisKey;
   let body: string | undefined;
   if (!["GET", "HEAD"].includes(request.method)) {
     body = await request.text();
@@ -57,7 +63,7 @@ async function proxy(request: Request, context: Context) {
       body,
       cache: "no-store",
       redirect: "error",
-      signal: AbortSignal.timeout(15000),
+      signal: AbortSignal.timeout(analyzesProduct ? 45000 : 15000),
     });
     const payload = await upstream.json();
     const isLogin = path.join("/") === "auth/login";

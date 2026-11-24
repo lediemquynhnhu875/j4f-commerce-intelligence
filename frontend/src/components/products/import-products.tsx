@@ -78,7 +78,7 @@ export function ImportProducts({ refresh }: { refresh: () => void }) {
       setItems([]);
       setPreview(null);
       notify(
-        `Đã thêm ${result.data.created_count} sản phẩm và cập nhật ${result.data.updated_count} sản phẩm. Các kết quả phân tích đã lưu phản ánh dữ liệu tại lần phân tích trước.`,
+        `Đã thêm ${result.data.created_count} sản phẩm và cập nhật ${result.data.updated_count} sản phẩm. Chọn Xem ở một sản phẩm, rồi nhấn Chạy phân tích để dùng dữ liệu vừa nhập.`,
         "Nhập dữ liệu thành công",
       );
       refresh();

@@ -4,7 +4,7 @@
 
 - Next.js serves the connected frontend and isolated previews in `frontend/` and web API in `backend/`.
 - The web backend owns application logic, PostgreSQL access on Neon, and user actions.
-- Python/FastAPI model serving remains pending and reuses `ml/src/`; no service was moved.
+- Python/FastAPI serves experimental inference from `ml/src/serving/` and reuses the trained Model A and offline scoring rules.
 - The backend has a verified PostgreSQL REST runtime; the frontend uses a same-origin cookie proxy.
 - See [the current scope amendment](../decisions/0004-shared-catalog-backend.md).
 

@@ -225,7 +225,7 @@ export function normalizeImportRow(value: unknown): NormalizedImport {
       ),
     );
   else result.fields = checked.data;
-  if (result.key.length > 255)
-    result.errors.push("Mã sản phẩm dài quá 255 ký tự.");
+  if (Array.from(result.key).length > 100)
+    result.errors.push("Mã sản phẩm dài quá 100 ký tự.");
   return result;
 }

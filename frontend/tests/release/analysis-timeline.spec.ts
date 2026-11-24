@@ -93,6 +93,37 @@ async function openAnalysis(
   return requested;
 }
 
+test("retrying live inference keeps the request key and opens the saved result", async ({ page }) => {
+  const rows: ReturnType<typeof savedAnalysis>[] = [];
+  await openAnalysis(page, rows);
+  const keys: string[] = [];
+  await page.route("**/api/backend/products/14/analyses", (route) => {
+    expect(route.request().method()).toBe("POST");
+    keys.push(route.request().headers()["idempotency-key"]);
+    if (keys.length === 1) {
+      return route.fulfill({
+        status: 503,
+        json: { error: { code: "ML_UNAVAILABLE", message: "ML đang khởi động." } },
+      });
+    }
+    rows.push(newest);
+    return route.fulfill({
+      status: 201,
+      json: { data: { id: newest.id, status: newest.status, reused: false } },
+    });
+  });
+  const run = page.getByRole("button", { name: "Chạy phân tích" });
+  await run.click();
+  await expect(page.getByRole("dialog")).toContainText("ML đang khởi động.");
+  await page.getByRole("button", { name: "Đã hiểu" }).click();
+  await run.click();
+  await expect(page.getByRole("dialog")).toContainText("Phân tích hoàn tất");
+  await page.getByRole("button", { name: "Đã hiểu" }).click();
+  await expect(page.getByRole("table", { name: "Bằng chứng theo từng yếu tố" })).toContainText("456");
+  expect(keys[0]).toMatch(/^[a-f0-9-]{36}$/);
+  expect(keys).toEqual([keys[0], keys[0]]);
+});
+
 test("one imported result shows axis labels and evidence without a history selector", async ({
   page,
 }) => {

@@ -4,6 +4,12 @@
 
 **Status**: Planning baseline for team review; endpoints and schemas are not implemented.
 
+## Current pilot contract
+
+The implemented synchronous pilot is documented in the
+[shared serving contract](../../../docs/rules/data-contracts.md#live-model-a-pilot).
+The following table and processing states describe the original full plan.
+
 ## Web and model-service contract
 
 | Interface | Access / input | Result |

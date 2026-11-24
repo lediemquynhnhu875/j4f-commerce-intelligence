@@ -35,6 +35,7 @@ import * as catalog from "./services/catalog";
 import * as analyses from "./services/analyses";
 import * as actions from "./services/actions";
 import { previewImport, commitImport } from "./services/imports";
+import { runProductAnalysis } from "./services/live-analysis";
 import { systemSummary } from "./services/admin-summary";
 import { storeOverview } from "./services/overview";
 
@@ -81,6 +82,7 @@ export const routes: Record<string, Route> = {
   "PATCH /api/v1/products/:id": userRoute(updateProduct),
   "DELETE /api/v1/products/:id": userRoute(deleteProduct),
   "GET /api/v1/products/:id/analyses": userRoute(listProductAnalyses),
+  "POST /api/v1/products/:id/analyses": userRoute(analyzeProduct),
 
   "GET /api/v1/categories": userRoute(listCategories),
   "GET /api/v1/categories/:id": userRoute(getCategory),
@@ -248,6 +250,16 @@ async function deleteProduct({ params, actor }: Context): Promise<Outcome> {
   await stores.ownStore(actor!);
   return { body: { data: await catalog.deleteRecord("products", params.id) } };
 }
+async function analyzeProduct({ request, params, actor }: Context): Promise<Outcome> {
+  const key = request.headers.get("idempotency-key");
+  if (!key || key.length > 200 || !/^[!-~]+$/.test(key))
+    throw new ApiError(422, "ANALYSIS_KEY_REQUIRED", "Cần gửi mã yêu cầu phân tích hợp lệ.");
+  // Dispatch already authenticated this bearer before checking store ownership.
+  const token = request.headers.get("authorization")!.slice("Bearer ".length);
+  const data = await runProductAnalysis(actor!, params.id, key, token);
+  return { status: data.reused ? 200 : 201, body: { data } };
+}
+
 async function listProductAnalyses({ url, params, actor }: Context): Promise<Outcome> {
   await catalog.getRecord("products", params.id);
   const { page, limit } = pagination(url);
@@ -478,7 +490,7 @@ export async function handle(request: Request, path: string[]) {
         throw new ApiError(403, "ORIGIN_DENIED", "Origin is not allowed");
       headers["Access-Control-Allow-Origin"] = origin;
       headers["Access-Control-Allow-Methods"] = "GET,POST,PATCH,DELETE,OPTIONS";
-      headers["Access-Control-Allow-Headers"] = "Authorization,Content-Type";
+      headers["Access-Control-Allow-Headers"] = "Authorization,Content-Type,Idempotency-Key";
     }
     if (request.method === "OPTIONS")
       return new Response(null, { status: 204, headers });
