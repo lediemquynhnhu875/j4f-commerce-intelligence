@@ -11,6 +11,10 @@ so full ML readiness is not established. See
 
 ## Outputs
 
+For the complete single-file product/status/recommendation/raw-attribute bundle,
+see [web integration export](../docs/ml/web-integration-export.md).
+Local output: `data/processed/web_integration/products_full.json` (41,576 products).
+
 | Stage | Main output |
 | --- | --- |
 | Prepare | `data/processed/clean_products.csv` |

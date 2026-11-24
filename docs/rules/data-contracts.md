@@ -107,6 +107,24 @@ The frontend may display Vietnamese labels, but storage and API values use these
 
 ## Guardrails
 
+### Offline complete web snapshot (additive export)
+
+`data/processed/web_integration/products_full.json` uses schema
+`j4f-web-snapshot-v1`: `{metadata, products}`. It preserves every MVP v2 score
+column and all clean products; nested CSV JSON is decoded, IDs stay strings,
+numeric/boolean fields are typed and missing values are null. Each record adds
+`source_product_id`, `product_status` (alias of `status`),
+`product_recommendations` (alias of `recommendations`), `recommendation_count`,
+raw source records and selection provenance. Store assignment, capture time and
+image URL remain null where unavailable. All duplicate raw variants are audit
+evidence; ambiguous raw-row selection is explicitly null.
+
+This is an offline import bundle, not an implemented API response or a change to
+the planned clean-CSV upload endpoint. Mai/Nhung/Huy must account for the added
+format and the frontend's synthetic status mismatch before integration. Existing
+CSV fields, six statuses and model guards are unchanged. See the
+[export guide](../ml/web-integration-export.md) for full fields and usage.
+
 - `review_count` and `rating_average` are excluded from the primary actionable reference model; they may be used in a comparison model and status interpretation.
 - `favourite_count` is excluded because it is zero throughout the supplied snapshot.
 - `date_created` is excluded until its unit and meaning are verified.

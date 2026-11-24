@@ -1,6 +1,6 @@
 # Project State and Handoff
 
-Updated: 2026-10-12 (Asia/Saigon).
+Updated: 2026-10-16 (Asia/Saigon).
 
 ## Agreed Stack and MVP
 
@@ -44,6 +44,7 @@ The existing dirty `set_up` branch was retained without pulling or stashing.
 
 | Feature / task ID | Owner | Branch | Status | Dependencies / notes |
 | --- | --- | --- | --- | --- |
+| Requested offline web export (F002/F003 support; no new task ID) | Requesting contributor, Codex-assisted | feature/data-pipeline-handoff | Complete, offline export only | All 41,576 v2 products exported and verified; no API/database implementation or task takeover. Dirty checkout retained; remote not synchronized. |
 | F001/T001 | Requesting contributor, Codex-assisted | set_up | Complete | Existing frontend setup verified locally; shared Node LTS baseline still needs review |
 | F001/T002 | Requesting contributor, Codex-assisted | set_up | Complete | Both synthetic role shells and responsive layout verified |
 | F006/T001 | Requesting contributor, Codex-assisted | set_up | Complete, mock only | Evidence-preserving accept/reject and required reason verified |
@@ -51,6 +52,68 @@ The existing dirty `set_up` branch was retained without pulling or stashing.
 | F002/T002; F005/T001–T002; F007/T001 | Requesting contributor, Codex-assisted | set_up | Partial, unchecked | Visual implementation exists; loading/error states, wireframe artifacts and contract reviews remain |
 
 ## Latest Handoff
+
+### Tiki Media Merge Into the Web Snapshot - 2026-10-17
+
+- Direct user request: merge image and video data into
+  `data/processed/web_integration/products_full.json`. Confirmed with the user
+  that the scope is the 100 imported sample products and that the URLs come from
+  the live public Tiki product API, because the six 2023 source CSVs hold only
+  `number_of_images` and `has_video` and no media URLs at all.
+- Continues the existing offline web-snapshot work. No new feature or task ID was
+  invented and no acceptance checkbox was changed. No pull, stash, commit or push;
+  the contributor's existing uncommitted changes on
+  `feature/data-pipeline-handoff` were left untouched.
+- Fetched one request per second: 100 requested, 92 resolved, 8 HTTP 404 because
+  those listings were delisted since 2023. Merged 92 verified `image_url` values,
+  92 `thumbnail_url`, full `image_urls` galleries, 3 `video_url` and a
+  `media_source` provenance object onto exactly those 100 products.
+- Snapshot `has_video` and `image_count` were not overwritten. The live API agreed
+  with the 2023 `has_video` flag for 92 of 92 and matched every product id; live
+  image counts differ for 33 of 92, which is expected for listings that changed.
+- Checks: every merged image and video URL returned HTTP 200 at merge time; a
+  per-product SHA-256 fingerprint of all non-media fields was recorded during the
+  merge and recomputed from the written file, confirming all 41,576 products and
+  all pre-existing fields unchanged, ids unique and media keys present on exactly
+  the 100 sample products. The pre-merge input hash matched the documented
+  `98c28e4b...`; the merged file is `a1393f5e...`, 252,384,304 bytes.
+- Added `ml/src/export/media/` with the scripts, exact commands and limitations.
+  Updated the export document and `verification.json`. The pre-merge snapshot is
+  kept as ignored `products_full.before_media_20261017.json`; fetched media live
+  in ignored `data/external/tiki_media_sample.json`.
+- Not done: no backend import of these URLs, no database or UI change, no media
+  fetched for the remaining 41,476 products, and no archiving of the external CDN
+  assets, which may break at any time. Team review remains the next step.
+
+### Complete Offline Web Snapshot - 2026-10-16
+
+- User requested one file containing all products, attributes, statuses and
+  recommendations. Added reusable `ml/src/export/web.py` and export regression
+  test; no new task ID or existing feature acceptance was invented.
+- Created ignored `data/processed/web_integration/products_full.json`: 41,576
+  unique products, all 71 scoring columns, 42,652 recommendations on 27,696
+  products, and 41,603 original raw records nested by source product ID.
+  Size 252,148,028 bytes. Input hashes and quality limitations are embedded.
+- Preserved typed nulls/booleans/numbers, parsed evidence/peer/recommendation
+  JSON, original raw attributes, duplicate variants and model/rule provenance.
+  Five products have ambiguous original same-file row selection; variants are
+  retained and selection is null. No source image URLs or app store mapping
+  exist; those fields remain null. Model A scope guards remain intact.
+- Updated shared data contract and ML README; full field mapping, reproducible
+  command and backend import guidance are in [export guide](ml/web-integration-export.md).
+  Mai/Nhung/Huy need to review the new offline format before real integration;
+  the planned CSV import endpoint and synthetic UI statuses are not adapters for it.
+- Verification: `.venv/bin/python -B -m unittest discover -s ml/tests -v`
+  passed all 37 tests. Real-file strict JSON, unique/full IDs, clean attributes,
+  complete status and flat action equality, all peer references/no self peers,
+  scope guards and unchanged source hashes passed. `git diff --check` passed;
+  generated full snapshot is ignored. Local `verification.json` holds counts.
+- Limitations: 63% taxonomy accuracy / `quality_acceptance=false` unchanged.
+  Database import, web rendering, authentication and tenant guards not tested.
+  No retraining/rescoring, commit or push; existing dirty files preserved.
+- Next: Mai imports the snapshot through a reviewed server-side adapter with
+  explicit store mappings; Huy consumes paginated authorized DTOs and the six
+  canonical status values. Obtain actual image assets separately if needed.
 
 ### Six Statuses and Rule-Based Actions - 2026-10-12
 
