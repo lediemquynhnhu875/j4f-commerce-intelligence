@@ -5,7 +5,7 @@ Tạo thêm một **Web Service Python** tên `sellens-ml` trên Render. Fronten
 ```text
 Người dùng → Vercel → Backend Next.js (Render) → FastAPI ML (Render)
                                │                      ↑
-                               └→ Neon                └ Model + tập so sánh từ R2 riêng tư
+                               └→ Neon                └ ZIP từ GitHub Release riêng tư
 ```
 
 ## 1. Lấy đúng bộ model và dữ liệu tham chiếu
@@ -20,22 +20,23 @@ Nhờ người huấn luyện cung cấp ba file thuộc **cùng lần chạy ta
 
 Hai file `product_statuses.csv` và `product_recommendations.csv` là kết quả đã xuất cho các sản phẩm cũ. Để tính cho sản phẩm mới, cần file `.joblib` của nhóm và corpus đi kèm. Nếu bộ đó bị mất, nhóm ML cần chạy lại từ dữ liệu nguồn theo quy trình trong [ML README](../../ml/README.md) để tạo một bundle mới. File `.joblib` phải đến từ người huấn luyện hoặc kho lưu trữ mà nhóm kiểm soát vì khi nạp, định dạng này có thể thực thi mã. [Tài liệu về model persistence của scikit-learn](https://scikit-learn.org/stable/model_persistence.html).
 
-Tại thư mục gốc dự án, dùng Python của **môi trường huấn luyện** để đóng gói. Các đường dẫn sau là ví dụ. Nếu file đang nằm ngoài repo, điền đường dẫn tuyệt đối tương ứng.
+Tại thư mục gốc dự án, dùng Python của **môi trường huấn luyện** để đóng gói. Lệnh dưới đây dùng bố cục đặt trực tiếp hai file vào `ml/artifacts/` và CSV vào `data/processed/`. Có thể dùng đường dẫn mặc định trong bảng hoặc đường dẫn tuyệt đối bằng cách thay giá trị `--artifact-dir` và `--corpus`.
 
 ```powershell
-New-Item -ItemType Directory -Force ml/artifacts | Out-Null
-python -m ml.src.serving.assets pack --artifact-dir "ml/artifacts/taxonomy_v2_run" --corpus "data/processed/taxonomy_v2_run/clean_products.csv" --output "ml/artifacts/sellens-ml-v2.zip"
+python -m ml.src.serving.assets pack --artifact-dir "ml/artifacts" --corpus "data/processed/clean_products.csv" --output "ml/artifacts/sellens-ml-v2.zip"
 (Get-FileHash "ml/artifacts/sellens-ml-v2.zip" -Algorithm SHA256).Hash.ToLower()
 python --version
 ```
 
 Ghi lại SHA-256 và phiên bản Python. File ZIP chứa bảng phiên bản các thư viện ML để Render cài đúng phiên bản khi build. Nếu bản huấn luyện dùng bản thư viện chỉ có trên một hệ điều hành, cần môi trường huấn luyện tương thích Linux. Nếu đóng gói bộ khác, dùng tên ZIP mới và giữ bundle, báo cáo, corpus và cấu hình cùng một lần chạy.
 
-## 2. Upload ZIP lên bucket riêng tư
+## 2. Đưa ZIP lên một GitHub Release trong repo private
 
-1. Mở **Cloudflare Dashboard → R2 Object Storage → Create bucket**. Ví dụ đặt tên `sellens-ml-assets`. Giữ bucket ở chế độ riêng tư.
-2. Vào bucket → **Upload** → chọn `sellens-ml-v2.zip`. Ghi lại **tên bucket** và **object key**. Ví dụ object key là `sellens-ml-v2.zip` nếu upload ngay ở thư mục gốc.
-3. Ở trang tổng quan R2, mở **Manage API tokens** và tạo một token **Object Read** chỉ cho bucket trên. Lưu **Access Key ID**, **Secret Access Key** và **S3 API endpoint**. Dùng endpoint R2 dạng `https://<account-id>.r2.cloudflarestorage.com`. [Tạo API token R2](https://developers.cloudflare.com/r2/api/tokens/) · [Upload object](https://developers.cloudflare.com/r2/objects/upload-objects/).
+1. Trên GitHub, tạo một repo **Private** riêng tên `sellens-ml-assets`. Chọn **Add a README** khi tạo để repo có nhánh đầu tiên.
+2. Trong repo riêng này, mở **Releases → Draft a new release**. Chọn **Choose a tag**, tạo tag `v2`, đặt tên release và đính kèm `sellens-ml-v2.zip` vào phần Assets. Bấm **Publish release** để API có thể tìm theo tag. Giữ repo ở chế độ **Private**. [Cách tạo GitHub Release](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository#creating-a-release).
+3. Trong tài khoản GitHub sở hữu hoặc có quyền cấp token cho repo đó, mở **Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token**. Chọn đúng **Resource owner**, chọn **Only select repositories** rồi chỉ chọn `sellens-ml-assets`. Trong **Repository permissions**, cấp **Contents → Read-only**. Lưu token để nhập vào Render. [Cách tạo fine-grained token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-fine-grained-personal-access-token) · [Quyền tải release asset](https://docs.github.com/en/rest/releases/assets#get-a-release-asset).
+
+ZIP nằm trong **Assets** của release, ngoài lịch sử commit. Render tìm đúng tag và tên file, tải bằng token chỉ đọc rồi so SHA-256 trước khi giải nén. Khi đổi bản model, dùng tag mới và cập nhật hash trong môi trường Render.
 
 ## 3. Tạo dịch vụ ML trên Render
 
@@ -48,7 +49,7 @@ Ghi lại SHA-256 và phiên bản Python. File ZIP chứa bảng phiên bản c
 | Branch | Nhánh chứa code đã merge hoặc nhánh dùng cho staging |
 | Region | Chọn cùng vùng với backend, ví dụ **Singapore** |
 | Root Directory | Để trống để build từ gốc repo |
-| Build Command | `python -m pip install -r ml/requirements-serve.txt && python -m ml.src.serving.assets fetch && python -m pip install -r ml/artifacts/serving/requirements-model.txt` |
+| Build Command | `python -m ml.src.serving.assets fetch-github && python -m pip install -r ml/requirements-serve.txt -r ml/artifacts/serving/requirements-model.txt` |
 | Start Command | `python -m uvicorn ml.src.serving.app:app --host 0.0.0.0 --port $PORT --workers 1` |
 | Advanced → Health Check Path | `/health/ready` |
 
@@ -59,18 +60,17 @@ Trong **Environment Variables** của `sellens-ml`, thêm:
 | Biến | Giá trị |
 | --- | --- |
 | `PYTHON_VERSION` | Phiên bản đầy đủ từ bước 1, ví dụ `3.12.4` nếu đúng với bộ của nhóm |
-| `ML_ASSET_S3_ENDPOINT` | S3 API endpoint của R2 |
-| `ML_ASSET_BUCKET` | Tên bucket |
-| `ML_ASSET_KEY` | Object key ZIP trong bucket |
-| `ML_ASSET_ACCESS_KEY_ID` | Access Key ID của token chỉ đọc |
-| `ML_ASSET_SECRET_ACCESS_KEY` | Secret Access Key tương ứng |
+| `ML_ASSET_GITHUB_REPOSITORY` | Tên repo private theo dạng `ten-tai-khoan/sellens-ml-assets` |
+| `ML_ASSET_GITHUB_TAG` | Tag đã publish, ví dụ `v2` |
+| `ML_ASSET_GITHUB_FILE` | Tên file đính kèm, ví dụ `sellens-ml-v2.zip` |
+| `ML_ASSET_GITHUB_TOKEN` | Fine-grained token có quyền `Contents: read` của repo tài sản |
 | `ML_ASSET_SHA256` | SHA-256 của ZIP ở bước 1 |
 | `ML_SERVICE_TOKEN` | Một khóa ngẫu nhiên mới, dùng chung giữa ML và backend |
 | `OMP_NUM_THREADS` | `1` |
 | `OPENBLAS_NUM_THREADS` | `1` |
 | `MKL_NUM_THREADS` | `1` |
 
-Tạo khóa bằng lệnh `python -c "import secrets; print(secrets.token_hex(32))"`. Lưu khóa và thông tin R2 trong Render Environment. [Render Environment Variables](https://render.com/docs/configure-environment-variables) · [Chọn phiên bản Python](https://render.com/docs/python-version).
+Tạo khóa bằng lệnh `python -c "import secrets; print(secrets.token_hex(32))"`. Lưu khóa gọi ML và token đọc GitHub trong Environment của Render. [Render Environment Variables](https://render.com/docs/configure-environment-variables) · [Chọn phiên bản Python](https://render.com/docs/python-version).
 
 Bấm **Deploy Web Service**. Khi live, mở URL dạng `https://sellens-ml.onrender.com/health/ready`. Kết quả dự kiến:
 
@@ -116,7 +116,8 @@ Luồng xử lý mỗi lần chạy một sản phẩm. File import dùng lại 
 
 | Hiện tượng | Kiểm tra |
 | --- | --- |
-| ML deploy lỗi ở dòng tải ZIP | Bucket, object key, quyền đọc và SHA-256. Upload ZIP phiên bản mới thì cập nhật hash tương ứng. |
+| GitHub trả HTTP 401, 403 hoặc 404 | Kiểm tra repo dạng `owner/repo`, tag đã publish, token còn hạn và có quyền `Contents: read` đúng repo private. |
+| Sai SHA-256 khi tải ZIP | Đối chiếu tên file đã đính kèm và mã SHA-256 của chính file ZIP trên máy. |
 | Health check lỗi sau build | Xem log startup. Bundle, báo cáo và taxonomy/corpus phải cùng bộ. Kiểm tra phiên bản Python và thư viện hoặc giới hạn RAM. |
 | **Dịch vụ phân tích ML chưa được cấu hình** | Kiểm tra backend đã redeploy với hai biến `ML_SERVICE_URL` và `ML_SERVICE_TOKEN`. |
 | ML chưa sẵn sàng hoặc phản hồi quá lâu | Mở health check đến khi trả `ready`, rồi bấm lại. Backend chờ ML tối đa 30 giây và chỉ lưu sau khi nhận phản hồi hợp lệ. |

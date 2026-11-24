@@ -14,9 +14,11 @@ The fitted estimator and matching corpus are stored outside the Git checkout.
 
 - Run the existing fitted Model A on a separate CPU FastAPI service. The
   operator provides a trusted bundle, matched calibration report and taxonomy
-  v2 corpus. Private object storage holds the archive. Render verifies its
-  SHA-256 at build time and the app checks dependency and artifact compatibility
-  at startup.
+  v2 corpus. The pilot uses a Release asset in a dedicated private GitHub
+  repository. Render fetches it using read-only access and verifies its SHA-256
+  before extraction. The app checks dependency and artifact compatibility
+  at startup. The existing R2 fetch command is available if the operator selects
+  object storage later.
 - Keep import atomic and independent of inference. The store owner explicitly
   analyzes a single saved product. The backend sends only the allowlisted fields
   required for inference. The service computes comparable products from its

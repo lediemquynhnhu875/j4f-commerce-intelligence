@@ -5,11 +5,16 @@ import csv
 import hashlib
 import json
 import os
+import re
 import shutil
 import sys
 from importlib.metadata import version
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from typing import BinaryIO
+from urllib.error import HTTPError, URLError
+from urllib.parse import quote, urlsplit
+from urllib.request import HTTPRedirectHandler, Request, build_opener
 from zipfile import ZIP_DEFLATED, ZipFile
 
 DEFAULT_DIR = Path("ml/artifacts/serving")
@@ -80,6 +85,20 @@ def unpack(archive: Path, output: Path, expected_hash: str) -> None:
                 shutil.copyfileobj(item, target)
 
 
+def _extract_download(body: BinaryIO, output: Path, expected_hash: str) -> None:
+    with TemporaryDirectory() as directory:
+        archive = Path(directory) / "assets.zip"
+        with archive.open("wb") as target:
+            total = 0
+            while chunk := body.read(1024 ** 2):
+                total += len(chunk)
+                if total > MAX_BYTES:
+                    raise ValueError("Serving archive exceeds the size limit")
+                target.write(chunk)
+        unpack(archive, output, expected_hash)
+    print("Verified and extracted serving archive")
+
+
 def fetch(output: Path) -> None:
     import boto3
     from botocore.config import Config
@@ -92,14 +111,72 @@ def fetch(output: Path) -> None:
         config=Config(signature_version="s3v4", connect_timeout=10, read_timeout=30),
     )
     obj = client.get_object(Bucket=os.environ["ML_ASSET_BUCKET"], Key=os.environ["ML_ASSET_KEY"])
-    with obj["Body"] as body, TemporaryDirectory() as directory:
+    with obj["Body"] as body:
         if obj["ContentLength"] > MAX_BYTES:
             raise ValueError("Serving archive exceeds the size limit")
-        archive = Path(directory) / "assets.zip"
-        with archive.open("wb") as target:
-            shutil.copyfileobj(body, target)
-        unpack(archive, output, os.environ["ML_ASSET_SHA256"])
-    print("Verified and extracted serving archive")
+        _extract_download(body, output, os.environ["ML_ASSET_SHA256"])
+
+
+class _HttpsRedirect(HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        if urlsplit(newurl).scheme != "https":
+            raise ValueError("GitHub Release download redirected to a non-HTTPS URL")
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+def _github_request(url: str, token: str, accept: str) -> Request:
+    request = Request(url, headers={
+        "Accept": accept,
+        "X-GitHub-Api-Version": "2026-03-10",
+        "User-Agent": "sellens-ml-assets",
+    })
+    # Release downloads can redirect to a presigned URL. Keep the token on the API request.
+    request.add_unredirected_header("Authorization", f"Bearer {token}")
+    return request
+
+
+def fetch_github(output: Path) -> None:
+    repository = os.environ["ML_ASSET_GITHUB_REPOSITORY"]
+    tag = os.environ["ML_ASSET_GITHUB_TAG"]
+    name = os.environ.get("ML_ASSET_GITHUB_FILE", "sellens-ml-v2.zip")
+    token = os.environ["ML_ASSET_GITHUB_TOKEN"]
+    expected_hash = os.environ["ML_ASSET_SHA256"]
+    if (not re.fullmatch(r"[A-Za-z0-9-]+/[A-Za-z0-9_.-]+", repository)
+            or repository.rsplit("/", 1)[-1] in {".", ".."}):
+        raise ValueError("ML_ASSET_GITHUB_REPOSITORY must be owner/repository")
+    api = f"https://api.github.com/repos/{repository}/releases"
+    opener = build_opener(_HttpsRedirect())
+    try:
+        metadata_request = _github_request(
+            f"{api}/tags/{quote(tag, safe='')}", token, "application/vnd.github+json",
+        )
+        with opener.open(metadata_request, timeout=30) as response:
+            release = json.load(response)
+        asset = next(
+            (item for item in release.get("assets", []) if item.get("name") == name),
+            None,
+        )
+        if asset is None:
+            raise ValueError(f"GitHub Release {tag!r} has no uploaded asset named {name!r}")
+        asset_id = asset.get("id")
+        if type(asset_id) is not int or asset_id <= 0:
+            raise ValueError("GitHub Release returned an invalid asset ID")
+        if asset["size"] > MAX_BYTES:
+            raise ValueError("Serving archive exceeds the size limit")
+        download_request = _github_request(
+            f"{api}/assets/{asset_id}", token, "application/octet-stream",
+        )
+        with opener.open(download_request, timeout=30) as response:
+            _extract_download(response, output, expected_hash)
+    except HTTPError as error:
+        status = error.code
+        error.close()
+        raise RuntimeError(
+            f"GitHub Release request returned HTTP {status}; "
+            "check repository, published tag, and the token's Contents: read access"
+        ) from None
+    except (URLError, TimeoutError):
+        raise RuntimeError("Could not connect to the GitHub Release download") from None
 
 
 def main() -> None:
@@ -112,13 +189,15 @@ def main() -> None:
     extract = commands.add_parser("unpack")
     extract.add_argument("--archive", type=Path, required=True)
     extract.add_argument("--sha256", required=True)
-    for command in (extract, commands.add_parser("fetch")):
+    for command in (extract, commands.add_parser("fetch"), commands.add_parser("fetch-github")):
         command.add_argument("--output", type=Path, default=DEFAULT_DIR)
     args = parser.parse_args()
     if args.command == "pack":
         pack(args.artifact_dir, args.corpus, args.output)
     elif args.command == "unpack":
         unpack(args.archive, args.output, args.sha256)
+    elif args.command == "fetch-github":
+        fetch_github(args.output)
     else:
         fetch(args.output)
 

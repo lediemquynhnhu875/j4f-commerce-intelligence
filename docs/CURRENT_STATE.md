@@ -2,6 +2,24 @@
 
 Updated: 2026-11-24 (Asia/Saigon).
 
+## GitHub Release bundle for the ML pilot
+
+The F004 deployment pilot on `refactor` now supports storing the verified model
+archive as a Release asset in a dedicated private GitHub repository. The new
+`fetch-github` command downloads the asset by tag/name and checks the pinned
+SHA-256 before extraction. Use the updated [Render guide](ml/trien-khai-ml-render.md).
+The local deployment archive `ml/artifacts/sellens-ml-v2.zip` is ready for the
+private `v2` Release. It was packed with Python 3.13.13 and scikit-learn 1.9.1
+(the version recorded in the model), with the other supplied versions kept.
+SHA-256: `572c89b57561465a716c61232544042137b05989d6428f4aacfc418bcf3b4de8`.
+The actual bundle passed checksum extraction and local FastAPI readiness and
+inference checks. All 41 ML tests passed on Python 3.13.13. Dependency
+resolution succeeded for x86-64 Linux. Release publication remains pending.
+
+The Python suite passed all 41 tests. New mocked checks cover asset selection,
+checksum mismatch and keeping the credential off the HTTPS redirect. A real
+private GitHub download and cloud deploy are pending.
+
 ## Live Model A deployment pilot
 
 The F004 pilot on `refactor` connects store-owned products to a separate CPU
