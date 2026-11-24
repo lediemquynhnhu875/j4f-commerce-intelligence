@@ -1,3 +1,4 @@
+import { requiredEnv } from "../src/server/config";
 import { readFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { pool, transaction } from "../src/server/db";
@@ -129,6 +130,10 @@ try {
         "SELECT id FROM users WHERE role='admin' AND is_active=true ORDER BY id LIMIT 1",
       );
       if (!actor.rows[0]) throw new Error("An active admin is required");
+      const ownerStore=await client.query(`SELECT s.id FROM stores s JOIN users u ON u.id=s.owner_user_id
+        WHERE lower(u.email)=lower($1) AND u.role='reviewer' AND u.is_active AND s.is_active`,[requiredEnv("SEED_USER1_EMAIL")]);
+      if(!ownerStore.rows[0]) throw new Error("Configured import owner has no active store");
+
       const run = await insert(client, "analysis_runs", {
         run_key: sampleRunKey,
         source_sha256: sourceHash,
@@ -154,6 +159,7 @@ try {
           });
         for (const p of selected.filter((p) => p.product_type === group.type)) {
           const product = await insert(client, "products", {
+            store_id: ownerStore.rows[0].id,
             category_id: category.id,
             name: p.product_name,
             description: p.description,

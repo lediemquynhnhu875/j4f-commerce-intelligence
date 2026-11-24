@@ -1,5 +1,5 @@
 "use client";
-import { DEMO_ACCOUNTS, rolePages, type Role } from "@/lib/preview-fixtures";
+import type { Role, WorkspacePage } from "@/lib/workspace-pages";
 import { Badge, Icon } from "../ui";
 
 export function Header({
@@ -7,19 +7,19 @@ export function Header({
   page,
   onOpenMenu,
   onOpenNotifications,
-  live = false,
   profile,
-  pages = rolePages[role],
+  pages,
+  storeName,
 }: {
   role: Role;
   page: string;
   onOpenMenu: () => void;
   onOpenNotifications: () => void;
-  live?: boolean;
-  profile?: { name: string; initials: string };
-  pages?: { slug: string; label: string; icon: string }[];
+  profile: { name: string; initials: string };
+  pages: WorkspacePage[];
+  storeName?: string;
 }) {
-  const account = profile ?? DEMO_ACCOUNTS.find((a) => a.role === role)!;
+  const account = profile;
   return (
     <header className="topbar">
       <button
@@ -35,7 +35,7 @@ export function Header({
             <Icon name="store" size={16} />
             <span>
               Cửa hàng:
-              <strong>{live ? " J4F Shop" : "Test Store"}</strong>
+              <strong> {storeName ?? "Đang tải cửa hàng…"}</strong>
             </span>
           </span>
         ) : (
@@ -43,7 +43,7 @@ export function Header({
             <strong>Quản trị hệ thống Sellens</strong>
             <small>
               <i className="dot" />{" "}
-              {live ? "Dữ liệu đã kết nối" : "Bản xem trước giao diện"}
+              Dữ liệu đã kết nối
             </small>
           </div>
         )}
@@ -53,12 +53,10 @@ export function Header({
         </span>
       </div>
       <div className="topbar-right">
-        <Badge tone={live ? "green" : "purple"}>
-          {live ? "CONNECTED" : "MOCK DATA"}
-        </Badge>
+        <Badge tone="green">CONNECTED</Badge>
         <button
           className="icon-button notification-button"
-          aria-label={live ? "Thông báo" : "Thông báo demo"}
+          aria-label="Thông báo"
           onClick={onOpenNotifications}
         >
           <Icon name="bell" />
@@ -70,9 +68,7 @@ export function Header({
             <small>
               {role === "admin"
                 ? "Quản trị viên"
-                : live
-                  ? "Người dùng"
-                  : "Chủ cửa hàng"}
+                : "Người dùng"}
             </small>
           </div>
           <span className="avatar">{account.initials}</span>

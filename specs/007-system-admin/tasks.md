@@ -1,4 +1,8 @@
 ---
+
+> Current ownership: [one User / one store](../store-ownership.md), implemented and verified on configured Neon. Earlier multi-store/shared-catalog assumptions are superseded.
+
+> Current release amendment: [connected workspace scope](../release-scope.md). Demo routes are removed. Admin product/category screens are retired; User catalog write/import and ownership work remain pending. Older preview/catalog milestones below are historical and do not define the current navigation.
 description: Proposed implementation backlog; all ownership is proposed.
 ---
 
@@ -100,7 +104,7 @@ Task IDs were revised at the user's request before any task was claimed or compl
   - Related deliverables: `frontend/src/app/api/v1/admin/categories/route.ts` and `frontend/src/app/api/v1/admin/categories/[categoryId]/route.ts`; catalog service validates metadata edits separately from immutable source/analysis snapshots.
   - Verification: Reassignment-history and category validation tests.
 
-- [ ] T009 [US2] Build category/product assignment management screens in `frontend/src/features/admin/catalog-management.tsx`.
+- [ ] T009 [US2] RETIRED from current UI release: Build category/product assignment management screens in `frontend/src/features/admin/catalog-management.tsx`.
   - Primary owner (proposed): **Huy**. Reviewer: **Như**. Collaborators: None.
   - Dependencies: T008, T001.
   - Completion criteria: Explicit store mapping shown; archive/reassign consequences explained; F002 import panel reused.
@@ -130,7 +134,7 @@ Task IDs were revised at the user's request before any task was claimed or compl
 
 - [ ] T012 Verify Admin management and monitoring handoff in `docs/qa/admin-results.md`.
   - Primary owner (proposed): **Như**. Reviewer: **Mai**. Collaborators: Mai, Huy.
-  - Dependencies: T007, T009, T011.
+  - Dependencies: T007, T011. T009 is retired from the current UI release; see ../release-scope.md.
   - Completion criteria: Reviewed direct API and UI evidence covers permissions, suspension, history-safe reassignment and real operational counters.
   - Verification: Execute quickstart and verify no unsupported configuration editor exists.
 
@@ -209,3 +213,18 @@ remaining delivery; they do not add a cyclic prerequisite.
 | FR-007 | `T010`, `T011` |
 | FR-008 | `T010`, `T012` |
 | FR-009 | `T002`, `T012` |
+
+## Account/privacy amendment — 2026-11-13
+
+- [x] Replace shared account pending state with per-account optimistic updates,
+  rollback and immediate activation/suspension button changes.
+- [x] Add dedicated suspended-account login feedback using shared popups.
+- [x] Implement aggregate-only admin overview/monitor/version pages and protect
+  detailed customer API routes, including existing aliases.
+- [x] Verify real HTTP suspension/reactivation, session revocation, unchanged
+  existing accounts and admin/user access boundaries.
+- [x] Verify browser confirmation, isolated pending state, activation without
+  reload and retained Admin navigation.
+- [ ] Integrate real analysis-request/job counts when model serving is available.
+
+This amendment supersedes earlier Admin access to customer analysis details.

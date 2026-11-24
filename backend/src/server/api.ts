@@ -24,9 +24,12 @@ import {
   actionPatchSchema,
   productFilterSchema,
 } from "./validation";
+import * as stores from "./services/stores";
 import * as catalog from "./services/catalog";
 import * as analyses from "./services/analyses";
 import * as actions from "./services/actions";
+import { previewImport, commitImport } from "./services/imports";
+import { systemSummary } from "./services/admin-summary";
 
 type Outcome = { body: unknown; status?: number };
 type Context = {
@@ -50,18 +53,22 @@ function adminRoute(handler: Handler): Route {
 
 // Read each endpoint as: HTTP method + URL -> access guard + named handler.
 export const routes: Record<string, Route> = {
+  "GET /api/v1/admin/summary": adminRoute(async () => ({ body: { data: await systemSummary() } })),
+  "POST /api/v1/products/import/preview": userRoute(async ({ request, actor }) => ({ body: { data: await previewImport((await body(request)).items, actor!) } })),
   "GET /api/v1/health": publicRoute(health),
   "GET /api/v1/ready": publicRoute(readiness),
   "POST /api/v1/auth/login": publicRoute(loginAccount),
   "GET /api/v1/auth/me": userRoute(currentAccount),
   "POST /api/v1/auth/logout": userRoute(logoutAccount),
 
+  "GET /api/v1/stores": userRoute(listStores),
+  "GET /api/v1/stores/me": userRoute(myStore),
   "GET /api/v1/products": userRoute(listProducts),
   "POST /api/v1/products/import": userRoute(importProducts),
   "GET /api/v1/products/:id": userRoute(getProduct),
-  "POST /api/v1/products": adminRoute(createProduct),
-  "PATCH /api/v1/products/:id": adminRoute(updateProduct),
-  "DELETE /api/v1/products/:id": adminRoute(deleteProduct),
+  "POST /api/v1/products": userRoute(createProduct),
+  "PATCH /api/v1/products/:id": userRoute(updateProduct),
+  "DELETE /api/v1/products/:id": userRoute(deleteProduct),
   "GET /api/v1/products/:id/analyses": userRoute(listProductAnalyses),
 
   "GET /api/v1/categories": userRoute(listCategories),
@@ -98,6 +105,13 @@ export const routes: Record<string, Route> = {
 };
 
 // Endpoint handlers: HTTP input/output only; business logic remains in services.
+async function listStores({actor,url}:Context):Promise<Outcome> {
+  const {page,limit}=pagination(url);
+  return {body:await stores.listStores(actor!,page,limit)};
+}
+async function myStore({actor}:Context):Promise<Outcome> {
+  return {body:{data:await stores.ownStore(actor!)}};
+}
 async function health(): Promise<Outcome> {
   return { body: { status: "ok" } };
 }
@@ -122,7 +136,7 @@ async function logoutAccount({ request }: Context): Promise<Outcome> {
   ]);
   return { body: { data: { logged_out: true } } };
 }
-async function listProducts({ url }: Context): Promise<Outcome> {
+async function listProducts({ url, actor }: Context): Promise<Outcome> {
   const { page, limit } = pagination(url);
 
   const rawParams = {
@@ -144,7 +158,7 @@ async function listProducts({ url }: Context): Promise<Outcome> {
       maxPrice: filters.max_price,
       minSold: filters.min_sold,
       minRating: filters.min_rating,
-    }),
+    }, actor!),
   };
 }
 async function getProduct({ params }: Context): Promise<Outcome> {
@@ -169,7 +183,7 @@ async function importProducts({ request, actor }: Context): Promise<Outcome> {
     : (payload as { items: unknown[] })?.items;
   return {
     body: {
-      data: await catalog.importProducts(
+      data: await commitImport(
         items as Array<Record<string, unknown>>,
         actor!,
       ),
@@ -178,24 +192,26 @@ async function importProducts({ request, actor }: Context): Promise<Outcome> {
   };
 }
 
-async function updateProduct({ request, params }: Context): Promise<Outcome> {
+async function updateProduct({ request, params, actor }: Context): Promise<Outcome> {
+  await stores.ownStore(actor!);
   const fields = parse(productSchema.partial(), await body(request));
   nonempty(fields);
   return {
     body: { data: await catalog.update(pool(), "products", params.id, fields) },
   };
 }
-async function deleteProduct({ params }: Context): Promise<Outcome> {
+async function deleteProduct({ params, actor }: Context): Promise<Outcome> {
+  await stores.ownStore(actor!);
   return { body: { data: await catalog.deleteRecord("products", params.id) } };
 }
-async function listProductAnalyses({ url, params }: Context): Promise<Outcome> {
+async function listProductAnalyses({ url, params, actor }: Context): Promise<Outcome> {
   await catalog.getRecord("products", params.id);
   const { page, limit } = pagination(url);
-  return { body: await analyses.listAnalyses(page, limit, params.id) };
+  return { body: await analyses.listAnalyses(page, limit, params.id, actor!) };
 }
-async function listCategories({ url }: Context): Promise<Outcome> {
+async function listCategories({ url, actor }: Context): Promise<Outcome> {
   const { page, limit } = pagination(url);
-  return { body: await catalog.listRecords("categories", page, limit) };
+  return { body: await catalog.listStoreCategories(actor!, page, limit) };
 }
 async function getCategory({ params }: Context): Promise<Outcome> {
   return { body: { data: await catalog.getRecord("categories", params.id) } };
@@ -224,13 +240,13 @@ function optionalFilter(url: URL, field: string) {
   const value = url.searchParams.get(field) ?? undefined;
   return value ? parse(id, value) : undefined;
 }
-async function listAnalyses({ url }: Context): Promise<Outcome> {
+async function listAnalyses({ url, actor }: Context): Promise<Outcome> {
   const { page, limit } = pagination(url);
   return {
     body: await analyses.listAnalyses(
       page,
       limit,
-      optionalFilter(url, "product_id"),
+      optionalFilter(url, "product_id"), actor!,
     ),
   };
 }
@@ -248,18 +264,18 @@ async function createAnalysis({ request, actor }: Context): Promise<Outcome> {
     status: 201,
   };
 }
-async function listAnalysisActions({ url, params }: Context): Promise<Outcome> {
+async function listAnalysisActions({ url, params, actor }: Context): Promise<Outcome> {
   await analyses.getAnalysis(params.id);
   const { page, limit } = pagination(url);
-  return { body: await actions.listActions(page, limit, params.id) };
+  return { body: await actions.listActions(page, limit, params.id, actor!) };
 }
-async function listActions({ url }: Context): Promise<Outcome> {
+async function listActions({ url, actor }: Context): Promise<Outcome> {
   const { page, limit } = pagination(url);
   return {
     body: await actions.listActions(
       page,
       limit,
-      optionalFilter(url, "analysis_id"),
+      optionalFilter(url, "analysis_id"), actor!,
     ),
   };
 }
@@ -366,8 +382,15 @@ async function dispatch(request: Request, path: string[]): Promise<Outcome> {
     access === "public"
       ? undefined
       : await authenticate(request, access === "admin");
+  if (actor?.role === "admin" && ["products", "categories", "analyses", "analysis-results", "actions"].includes(path[0]))
+    throw new ApiError(403, "STORE_DATA_PRIVATE", "Dữ liệu chi tiết thuộc quyền truy cập của chủ cửa hàng.");
   const params = selected?.params ?? fallback.params;
   if (params.id) parse(id, params.id);
+  if (actor && params.id) {
+    const resource=path[0] === "analysis-results" ? "analyses" : path[0];
+    if (["products","categories","analyses","actions"].includes(resource))
+      await stores.assertRecord(actor,resource as "products"|"categories"|"analyses"|"actions",params.id);
+  }
   if (!selected)
     throw new ApiError(
       405,

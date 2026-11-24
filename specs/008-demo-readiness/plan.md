@@ -1,5 +1,7 @@
 # Implementation Plan: Final Integration, Evaluation, and Demo Readiness
 
+> Current release amendment: [connected workspace scope](../release-scope.md). Demo routes are removed. Admin product/category screens are retired; User catalog write/import and ownership work remain pending. Older preview/catalog milestones below are historical and do not define the current navigation.
+
 **Branch**: Current checkout retained; proposed `feature/demo-readiness` | **Date**: 2026-10-09 | **Spec**: [spec.md](spec.md)
 
 **Input**: `specs/008-demo-readiness/spec.md`

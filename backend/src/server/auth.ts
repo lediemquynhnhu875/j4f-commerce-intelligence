@@ -86,16 +86,32 @@ export async function login(email: string, password: string) {
     password,
     rows[0]?.password_hash ?? `scrypt:${"0".repeat(32)}:${"0".repeat(128)}`,
   );
-  if (!valid || !rows[0]?.is_active)
-    throw new ApiError(401, "INVALID_CREDENTIALS", "Invalid email or password");
+  if (!valid || !rows[0])
+    throw new ApiError(
+      401,
+      "INVALID_CREDENTIALS",
+      "Email hoặc mật khẩu không đúng.",
+    );
+  if (!rows[0].is_active)
+    throw new ApiError(
+      403,
+      "ACCOUNT_SUSPENDED",
+      "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.",
+    );
   return transaction(async (client) => {
     // Recheck after password derivation; suspension/password changes must not race login.
     const current = await client.query(
       "SELECT * FROM users WHERE id=$1 FOR SHARE",
       [rows[0].id],
     );
+    if (current.rows[0] && !current.rows[0].is_active)
+      throw new ApiError(
+        403,
+        "ACCOUNT_SUSPENDED",
+        "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.",
+      );
     if (
-      !current.rows[0]?.is_active ||
+      !current.rows[0] ||
       current.rows[0].password_hash !== rows[0].password_hash
     )
       throw new ApiError(

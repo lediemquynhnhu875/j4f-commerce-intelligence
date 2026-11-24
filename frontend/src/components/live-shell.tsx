@@ -1,4 +1,5 @@
 "use client";
+import { ErrorPopup } from "@/components/popup";
 import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api-client";
@@ -7,33 +8,21 @@ import { Header } from "./layout/header";
 import { Sidebar } from "./layout/sidebar";
 import { Icon, Modal } from "./ui";
 
-export const livePages = {
-  user: [
-    { slug: "overview", label: "Tổng quan", icon: "grid" },
-    { slug: "products", label: "Danh mục sản phẩm", icon: "box" },
-    { slug: "analysis", label: "Kết quả phân tích", icon: "chart" },
-    { slug: "suggestions", label: "Đề xuất cải thiện", icon: "sparkles" },
-  ],
-  admin: [
-    { slug: "overview", label: "Tổng quan hệ thống", icon: "grid" },
-    { slug: "stores", label: "Quản lý cửa hàng", icon: "store" },
-    { slug: "accounts", label: "Quản lý tài khoản", icon: "users" },
-    { slug: "products", label: "Quản lý sản phẩm", icon: "box" },
-    { slug: "categories", label: "Quản lý danh mục", icon: "box" },
-    { slug: "monitor", label: "Kết quả đã lưu", icon: "chart" },
-    { slug: "configuration", label: "Cấu hình đã lưu", icon: "sliders" },
-  ],
-};
+import { workspacePages as livePages } from "@/lib/workspace-pages";
+export { workspacePages as livePages } from "@/lib/workspace-pages";
+
 export function LiveShell({
   account,
   page,
   children,
   suggestionCount = 0,
+  storeName,
 }: {
   account: Account;
   page: string;
   children: ReactNode;
   suggestionCount?: number;
+  storeName?: string;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false),
@@ -60,7 +49,6 @@ export function LiveShell({
         open={open}
         onClose={() => setOpen(false)}
         onLogout={() => void logout()}
-        live
         pages={livePages[account.role]}
         suggestionCount={suggestionCount}
       />
@@ -70,8 +58,8 @@ export function LiveShell({
           page={page}
           onOpenMenu={() => setOpen(true)}
           onOpenNotifications={() => setNotifications(true)}
-          live
-          pages={livePages[account.role]}
+            pages={livePages[account.role]}
+          storeName={storeName}
           profile={{
             name: account.full_name,
             initials: account.full_name
@@ -83,9 +71,7 @@ export function LiveShell({
         />
         <main id="main-content" className="main-content">
           {error && (
-            <p className="form-error" role="alert">
-              {error}
-            </p>
+            <ErrorPopup message={error} />
           )}
           {children}
           <footer className="app-footer">

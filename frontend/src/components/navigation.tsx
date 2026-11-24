@@ -1,20 +1,18 @@
 "use client";
 import Link from "next/link";
-import { rolePages, type Role } from "@/lib/preview-fixtures";
+import type { Role, WorkspacePage } from "@/lib/workspace-pages";
 import { Icon } from "./ui";
 export function Navigation({
   role,
   current,
   onNavigate,
-  pages = rolePages[role],
-  basePath = "/preview",
-  suggestionCount = 4,
+  pages,
+  suggestionCount = 0,
 }: {
   role: Role;
   current: string;
   onNavigate: () => void;
-  pages?:{slug:string;label:string;icon:string}[];
-  basePath?:string;
+  pages: WorkspacePage[];
   suggestionCount?:number;
 }) {
   return (
@@ -30,7 +28,7 @@ export function Navigation({
       {pages.map((page) => (
         <Link
           key={page.slug}
-          href={`${basePath}/${role}/${page.slug}`}
+          href={`/${role}/${page.slug}`}
           onClick={onNavigate}
           aria-current={current === page.slug ? "page" : undefined}
           className={`nav-link ${current === page.slug ? "active" : ""}`}

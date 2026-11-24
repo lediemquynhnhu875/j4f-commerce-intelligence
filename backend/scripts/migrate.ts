@@ -22,6 +22,11 @@ try {
         if (applied.rows[0].checksum !== checksum) throw new Error("Migration checksum changed; do not edit applied migrations");
         messages.push(`${version}: already applied`); continue;
       }
+      if (version === "004_single_user_store") {
+        const email = process.env.SEED_USER1_EMAIL;
+        if (!email?.trim()) throw new Error("Set SEED_USER1_EMAIL for explicit legacy store assignment");
+        await client.query("SELECT set_config('sellens.legacy_owner_email',$1,true)",[email]);
+      }
       await client.query(sql);
       await client.query("INSERT INTO sellens_migrations(version,checksum) VALUES($1,$2)",[version,checksum]);
       messages.push(`${version}: applied`);

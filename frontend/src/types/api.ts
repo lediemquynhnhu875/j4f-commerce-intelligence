@@ -1,11 +1,21 @@
+export type Store = {
+  id: string;
+  owner_user_id: string;
+  name: string;
+  is_active: boolean;
+  owner?: { id: string; full_name: string };
+  product_count?: number;
+};
 export type Account = {
   id: string;
   full_name: string;
+  updated_at?: string;
   email: string;
   role: "user" | "admin";
   is_active: boolean;
 };
 export type Product = {
+  store_id: string;
   source_system?: string | null;
   source_product_id?: string | null;
   id: string;
@@ -90,7 +100,30 @@ export type List<T> = {
   data: T[];
   pagination: { page: number; limit: number; total: number };
 };
+export type SystemSummary = {
+  accounts: number;
+  active_accounts: number;
+  stores: number;
+  products: number;
+  saved_results: number;
+  analysis_requests: number | null;
+  running_requests: number | null;
+  recent: {
+    store_id: string;
+    store_name: string;
+    product_count: number;
+    completed_at: string;
+  }[];
+  versions: {
+    model_version: string | null;
+    pipeline_version: string;
+    taxonomy_version: string | null;
+    last_used: string;
+  }[];
+};
 export type Dataset = {
+  systemSummary?: SystemSummary;
+  stores?: Store[];
   products: Product[];
   categories: Category[];
   analyses: Analysis[];

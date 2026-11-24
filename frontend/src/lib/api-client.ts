@@ -1,5 +1,11 @@
 import type { List } from "@/types/api";
-declare const window: any;
+type ApiErrorResponse = {
+  error?: {
+    code?: string;
+    message?: string;
+    details?: Array<{ field: string; message: string }>;
+  };
+};
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -36,9 +42,10 @@ export async function api<T>(
     );
   }
 
-  const payload = (await response.json()) as any;
+  const payload: unknown = await response.json();
 
   if (!response.ok) {
+    const errorPayload = payload as ApiErrorResponse;
     if (
       typeof window !== "undefined" &&
       response.status === 401 &&
@@ -47,7 +54,7 @@ export async function api<T>(
       window.dispatchEvent(new Event("sellens-session-expired"));
     }
 
-    const detail = payload.error?.details
+    const detail = errorPayload.error?.details
       ?.map(
         (item: { field: string; message: string }) =>
           `${item.field}: ${item.message}`,
@@ -56,12 +63,14 @@ export async function api<T>(
 
     throw new ApiError(
       response.status,
-      payload.error?.code ?? "API_ERROR",
-      response.status === 401
-        ? "Phiên đăng nhập không hợp lệ hoặc email/mật khẩu không đúng."
-        : payload.error?.code === "STALE_VERSION"
+      errorPayload.error?.code ?? "API_ERROR",
+      errorPayload.error?.code === "ACCOUNT_SUSPENDED"
+        ? "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên."
+        : response.status === 401
+        ? (path === "auth/login" ? "Email hoặc mật khẩu không đúng." : "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.")
+        : errorPayload.error?.code === "STALE_VERSION"
           ? "Dữ liệu đã được cập nhật. Tải lại trước khi lưu."
-          : `${payload.error?.message ?? "Yêu cầu thất bại"}${detail ? ` — ${detail}` : ""}`,
+          : `${errorPayload.error?.message ?? "Yêu cầu thất bại"}${detail ? ` — ${detail}` : ""}`,
     );
   }
 
@@ -98,7 +107,7 @@ export const mlAnalysisLabels: Record<string, string> = {
 };
 export const analysisLabels: Record<string, string> = {
   ...mlAnalysisLabels,
-  no_analysis: "Chưa được phân tích",
+  no_analysis: "Chưa có phân tích",
   unanalyzed: "Chưa được phân tích",
   positive_feedback_below_reference:
     "Phản hồi tích cực, số bán dưới tham chiếu",

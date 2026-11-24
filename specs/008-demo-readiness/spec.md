@@ -1,5 +1,7 @@
 # Feature Specification: Final Integration, Evaluation, and Demo Readiness
 
+> Current release amendment: [connected workspace scope](../release-scope.md). Demo routes are removed. Admin product/category screens are retired; User catalog write/import and ownership work remain pending. Older preview/catalog milestones below are historical and do not define the current navigation.
+
 **Feature Branch**: Not created; proposed implementation branch `feature/demo-readiness`
 
 **Feature ID**: F008 | **Created**: 2026-10-09 | **Status**: Draft for team review

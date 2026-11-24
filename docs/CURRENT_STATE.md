@@ -1,20 +1,90 @@
 # Project State and Handoff
 
-Updated: 2026-10-19 (Asia/Saigon).
+Updated: 2026-11-13 (Asia/Saigon).
+
+## Import, account feedback and admin privacy — 2026-11-13
+
+Requesting contributor, Codex-assisted, authorized amendments to connected
+F002 import/catalog and F007 account/system administration on existing dirty
+`first_demo`. Existing contributor changes retained. No pull/merge/stash performed.
+
+- Added automatic CSV/JSON preview, Vietnamese/English field mapping, numeric and
+  media normalization, ignored-column reporting and all-row validation. Commit
+  derives ownership, serializes same-store imports, revalidates and creates or
+  updates matching products atomically. Sparse updates retain omitted values.
+- Replaced native confirmations and inline runtime error feedback with shared
+  popup dialogs. Account state updates optimistically with independent pending
+  IDs and rollback. Correct-password suspended login returns a dedicated 403.
+- Admin now receives aggregate system/store activity and technical versions.
+  Customer detail API routes reject Admin; the analysis-detail page is removed.
+  Live job counts remain unavailable until model-serving job tracking exists.
+- Catalog defaults to 20 rows with 10/20/50/100 controls and current ML statuses.
+  Legacy states remain selectable when present in the actual store data.
+- General user query optimization remains explicitly deferred. Name-derived
+  identity warns about renames; input size remains 256 KiB/1,000 rows. Saved
+  analyses retain the input snapshot from their original analysis time.
+- Verification passed: both production builds (including TypeScript), frontend
+  ESLint, all 18 backend tests and all eight Edge release/workflow tests. Browser
+  workflow tests intercept HTTP with isolated fixtures; they verify optimistic
+  pending state, reactivation without reload, popup login errors, page sizes and
+  clearing invalid replacement-file previews.
+- Actual local backend checks passed 27 requests against PostgreSQL using a
+  temporary account/store/product, including media/numeric normalization, owner
+  spoof filtering, repeated/sparse updates, all-row errors, atomic rollback,
+  duplicate blocking, aggregate-only Admin access and suspension/reactivation.
+  Temporary records were removed. Existing account state was compared unchanged.
+- Updated `npm run test:http` for preview ownership filtering and Admin privacy;
+  all 61 requests passed with real User1/User2/Admin logins, PostgreSQL counts,
+  cross-store denials and temporary product CRUD. User1 retains 227 products,
+  225 analyses and 255 actions; User2 remains empty. All three accounts are active.
+- `git diff --check` passed. No schema migration was needed. Deployment remains
+  pending; general query optimization and live ML jobs are deferred.
+
+## Runtime mock cleanup — 2026-11-12
+
+- Removed the backend API Explorer client with hardcoded admin credentials and
+  quick login. The backend home page now renders the actual route registry and
+  health/readiness links. Removed the Hello route and unused demo CSS.
+- Removed the synthetic catalog generator and `db:seed` command. Removed the
+  obsolete HTTP test runner tied to the retired ten-product seed. `test:http`
+  now runs the current store-ownership checks using existing development accounts.
+- Neon audit found 225 imported Tiki products plus two manual products without
+  synthetic metadata, 225 ML analyses, 255 ML-rule actions and 264 history rows.
+  Removed inactive integration-test account ID 4 and its empty store after checking
+  all user foreign keys. Retained full-row fingerprints match before/after for
+  business data and the remaining three accounts/two stores.
+- Both production builds and typechecks passed. Frontend lint passed. All 15
+  backend unit tests and four release-browser tests passed. Release tests use
+  isolated HTTP fixtures confined to test execution.
+- Actual local HTTP checks passed 55 requests, including all logins, PostgreSQL
+  counts, store isolation and temporary product CRUD. Additional checks confirmed
+  backend root 200 with no quick login/form, health 200, ready 200 with connected
+  PostgreSQL, removed Hello route 404 and unauthenticated products 401.
+- Actual Edge login through the frontend passed for User1 and User2. Overview,
+  products, analysis, suggestions and the mobile menu passed with real backend
+  responses. User1 has 227 products, User2 has zero.
+- Credential scan checked 682 source/document/build files and found zero matches
+  for the configured development passwords or the former hardcoded admin password.
+  A literal password remains in prior Git history. Change that account password
+  through account management and redeploy Render/Vercel to replace old bundles.
+- No commit, push or deployment performed. See
+  [cleanup scope and audit](../specs/mock-retirement.md). Earlier entries below
+  record historical implementations and verification.
+
 
 ## Agreed Stack and MVP
 
 | Component | Target technology / responsibility |
 | --- | --- |
 | Frontend | Next.js App Router, TypeScript and Tailwind in `frontend/` |
-| Web backend | Next.js / TypeScript in separate `backend/`; real shared-catalog REST API |
-| Database | PostgreSQL on Neon; inspected empty schema, additive migration and repeatable development seed applied |
+| Web backend | Next.js / TypeScript in separate `backend/`; store-scoped PostgreSQL REST API |
+| Database | PostgreSQL on Neon with one store per regular User and imported ML results |
 | Model service | Python/FastAPI reusing `ml/src/`; reconcile service location before integration |
 
-Admin provisions email/password accounts; no public registration. The supplied
-2026-10-14 backend architecture uses a shared catalog, overriding the older store
-plan for this deliverable; frontend store mocks remain unchanged. Source
-`seller_id` does not establish ownership. See [amendment](decisions/0004-shared-catalog-backend.md).
+Admin provisions email/password accounts. Each regular User owns one store.
+User1 owns J4F store and the existing data, while User2 starts empty. Source
+`seller_id` does not establish ownership. See
+[the current store contract](../specs/store-ownership.md).
 Analysis provides snapshot decision support without causal or future-sales guarantees.
 The older [stack decision](decisions/0001-web-database-model-stack.md) placed
 FastAPI in `backend/`; the existing separate Next.js backend has now been extended.
@@ -98,6 +168,57 @@ session started clean, fetched remote refs and branched from `origin/main`.
 | F002/T002; F005/T001–T002; F007/T001 | Requesting contributor, Codex-assisted | set_up | Partial, unchecked | Visual implementation exists; loading/error states, wireframe artifacts and contract reviews remain |
 
 ## Latest Handoff
+
+### One User / One Store Ownership - 2026-11-12
+
+- User explicitly replaces multi-store proposal/shared catalog with one store per
+  regular account. Applied additive migration 004; all 227 existing products now
+  belong to user1's J4F store. User2 and the pre-existing inactive test User each
+  have an empty store. No accounts, analyses or history were deleted.
+- Store ID/owner uniqueness, auto-provision trigger and immutable store assignment
+  preserve scope. Real before/after fingerprints confirm old domain data unchanged
+  apart from products.store_id. Migration rerun confirmed already applied.
+- Backend filters lists/counts/search and guards direct/nested IDs and actions;
+  User imports derive owner store server-side. Admin product writes are denied.
+  Frontend header and Admin store view use persisted stores. Existing UI cleanup
+  and contributor's move from features/connected to page/connected were preserved.
+- Both builds/typechecks, frontend lint, 15 unit tests, 55 real HTTP requests and
+  actual user1/user2 browser checks passed. Temporary import record deleted; account
+  auto-provision check rolled back; test sessions logged out. User2 ends empty.
+  Screenshots/results: ignored tmp/store-browser and tmp/store-http-results.json.
+- Existing deployed code has not been updated: backend redeploy is needed before
+  online scoping applies, then frontend redeploy. No commit/push/deploy performed.
+  See specs/store-ownership.md for contracts, migration 003 source discrepancy,
+  verification details and remaining scope. No ML execution was added.
+
+
+### Retired Demo and Admin Catalog Pages - 2026-11-06
+
+- Direct user request: remove the demo workspace and Admin product/category
+  pages; update Spec Kit for the current release. Removed preview routes,
+  mock-only views/session/fixtures, login demo link and category editor.
+- Shared production layout now requires real profile/navigation props; allowed
+  routes and menus share frontend/src/lib/workspace-pages.ts. Admin catalog URLs
+  are rejected, while User catalog, accounts and saved-result detail remain.
+- specs/release-scope.md and specs/README.md identify active pages and remaining
+  ownership/import/inference work. F001/F002/F007/F008 spec/plan/tasks carry the
+  amendment; F007/T009 is retired with its ID retained, not marked complete.
+- This is frontend cleanup only: database records and existing backend permissions
+  are unchanged. User catalog writes/imports, tenant scoping and live inference
+  are still pending. No commit, push or deployment requested.
+- Validation: final production build, standalone TypeScript check and lint of
+  changed files passed. Four release Playwright/Edge tests passed: 13 retired
+  URLs return 404, login has no preview link, all User pages navigate and all
+  remaining Admin pages/account dialog navigate with isolated API fixtures.
+- Browser checks caught streaming not-found responses with HTTP 200; the narrow
+  src/proxy.ts matcher now rejects retired URLs before rendering. Initial test
+  selectors were adjusted for Next.js retained hidden pages. Generated stale
+  .next/dev/types were cleared after removing routes; no source types disabled.
+- Full npm run lint still fails on 13 pre-existing explicit-any errors in
+  unchanged connected/catalog.tsx and lib/api-client.ts (confirmed against HEAD).
+  Next.js 16.4.0 also emitted a security advisory and initially stopped the build;
+  an unchanged retry passed. Dependency security upgrade remains separate work.
+  Tests are not live database/authentication acceptance; no database writes.
 
 ### Proportional ML Batch and Product Images - 2026-10-19
 
