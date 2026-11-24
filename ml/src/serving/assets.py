@@ -35,7 +35,7 @@ def digest(path: Path) -> str:
         return hashlib.file_digest(stream, "sha256").hexdigest()
 
 
-def pack(artifact_dir: Path, corpus: Path, output: Path) -> None:
+def pack(artifact_dir: Path, corpus: Path, output: Path, taxonomy: Path = Path("ml/config/taxonomy_v2.yml")) -> None:
     metrics = artifact_dir / "model_metrics.json"
     report = json.loads(metrics.read_text(encoding="utf-8"))
     packages = ["joblib", "numpy", "pandas", "PyYAML", "scikit-learn", "scipy", "threadpoolctl"]
@@ -52,7 +52,7 @@ def pack(artifact_dir: Path, corpus: Path, output: Path) -> None:
         ) as target:
             reader = csv.DictReader(source)
             if not set(CORPUS_COLUMNS).issubset(reader.fieldnames or []):
-                raise ValueError("Use clean_products.csv from the matching taxonomy v2 run")
+                raise ValueError("Use clean_products.csv from the taxonomy run that trained this bundle")
             writer = csv.DictWriter(target, CORPUS_COLUMNS)
             writer.writeheader()
             writer.writerows({name: row[name] for name in CORPUS_COLUMNS} for row in reader)
@@ -61,7 +61,7 @@ def pack(artifact_dir: Path, corpus: Path, output: Path) -> None:
             archive.write(metrics, "model_metrics.json")
             archive.write(compact, "corpus.csv")
             archive.write("ml/config/pipeline.yml", "pipeline.yml")
-            archive.write("ml/config/taxonomy_v2.yml", "taxonomy.yml")
+            archive.write(taxonomy, "taxonomy.yml")
             archive.writestr("requirements-model.txt", requirements)
             archive.writestr("manifest.json", json.dumps({
                 "model_version": report["model_version"],
@@ -186,6 +186,7 @@ def main() -> None:
     package.add_argument("--artifact-dir", type=Path, required=True)
     package.add_argument("--corpus", type=Path, required=True)
     package.add_argument("--output", type=Path, required=True)
+    package.add_argument("--taxonomy", type=Path, default=Path("ml/config/taxonomy_v2.yml"))
     extract = commands.add_parser("unpack")
     extract.add_argument("--archive", type=Path, required=True)
     extract.add_argument("--sha256", required=True)
@@ -193,7 +194,7 @@ def main() -> None:
         command.add_argument("--output", type=Path, default=DEFAULT_DIR)
     args = parser.parse_args()
     if args.command == "pack":
-        pack(args.artifact_dir, args.corpus, args.output)
+        pack(args.artifact_dir, args.corpus, args.output, args.taxonomy)
     elif args.command == "unpack":
         unpack(args.archive, args.output, args.sha256)
     elif args.command == "fetch-github":
