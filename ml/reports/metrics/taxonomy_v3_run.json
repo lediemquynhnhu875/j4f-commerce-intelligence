@@ -1,0 +1,129 @@
+{
+  "generated_at": "2026-11-24T18:07:59.704297+00:00",
+  "run_mode": "experimental_user_requested_rerun",
+  "taxonomy_version": "v3-head-noun",
+  "source_products_sha256": "04d762026c361b071f4a73519533eac8fddfae2a74f521c371ca2bd2562117ae",
+  "taxonomy_sha256": "210d69d97a684f37e5d277ad7d44d23303d4ea715cbb7ab41125a8ba9c67fe27",
+  "rows": 41576,
+  "source_counts": {
+    "name_rule": 27014,
+    "name_gender_rule": 9726,
+    "category_rule": 2296,
+    "unmatched_default": 2012,
+    "name_context_rule": 282,
+    "description_rule": 246
+  },
+  "out_of_scope_rows": 3096,
+  "quality_acceptance": false,
+  "sufficient_peer_products": 37514,
+  "peer_quality_reason_counts": {
+    "passed": 37514,
+    "peer_similarity_below_minimum": 3094,
+    "peer_count_below_minimum": 967,
+    "invalid_essential_data": 1
+  },
+  "model_metrics": {
+    "model_version": "j4f-20261124T180857Z",
+    "generated_at": "2026-11-24T18:08:57.341296+00:00",
+    "training_rows": 41575,
+    "excluded_invalid_rows": 1,
+    "peer_baseline": {
+      "roc_auc": 0.6532597146163799,
+      "pr_auc": 0.6237608996441704,
+      "brier_score": 0.23082610688530014,
+      "rmsle_all": 1.512862625252987,
+      "spearman_all": 0.2773970069326134
+    },
+    "model_a_actionable": {
+      "estimator_backend": "lightgbm",
+      "folds": 5,
+      "seller_groups": 3806,
+      "roc_auc": 0.6973539383425098,
+      "pr_auc": 0.6855021261615868,
+      "brier_score": 0.21993494183932102,
+      "conditional_mae_log1p": 1.0139248644044738,
+      "rmsle_all": 1.3296622383020624,
+      "spearman_all": 0.3785889542542075,
+      "prediction_coverage_all": 0.8990499098015634,
+      "prediction_coverage_evaluation": 0.8981119638401055,
+      "conformal_calibration_rows": 20336,
+      "conformal_evaluation_rows": 21239,
+      "conformal_radius_log1p": 2.1090557958212766
+    },
+    "model_b_with_outcome_correlated_feedback": {
+      "estimator_backend": "lightgbm",
+      "folds": 5,
+      "seller_groups": 3806,
+      "roc_auc": 0.8656087775562764,
+      "pr_auc": 0.8979715660940398,
+      "brier_score": 0.1258822911532787,
+      "conditional_mae_log1p": 0.47962294224952245,
+      "rmsle_all": 0.6363197336609253,
+      "spearman_all": 0.7316578471880391,
+      "prediction_coverage_all": 0.9016957306073361,
+      "prediction_coverage_evaluation": 0.9033381985969208,
+      "conformal_calibration_rows": 20336,
+      "conformal_evaluation_rows": 21239,
+      "conformal_radius_log1p": 0.9808113603970681
+    },
+    "model_b_minus_model_a": {
+      "roc_auc": 0.1682548392137666,
+      "pr_auc": 0.21246943993245304,
+      "brier_score": -0.09405265068604232,
+      "rmsle_all": -0.6933425046411371,
+      "spearman_all": 0.35306889293383154
+    },
+    "interpretation": "Model B may score better because review_count and rating_average accumulate after sales. It must not be used for the primary opportunity flag."
+  },
+  "scoring_summary": {
+    "rows": 41576,
+    "scored_at": "2026-11-24T18:08:59.945275+00:00",
+    "model_versions": [
+      "j4f-20261124T180857Z"
+    ],
+    "scoring_rules_versions": [
+      "rule-based-v2-good-peer-video"
+    ],
+    "status_counts": {
+      "positive_feedback_low_sales": 0,
+      "low_rating_low_sales": 0,
+      "performing_well": 17669,
+      "untapped_potential": 5965,
+      "difficult_to_sell": 11462,
+      "insufficient_data": 6480
+    },
+    "status_reason_counts": {
+      "sales_not_below_prediction_interval": 17669,
+      "zero_sales_low_reference_probability": 11462,
+      "zero_sales_high_reference_probability": 5965,
+      "out_of_scope_product": 3096,
+      "peer_similarity_below_minimum": 2652,
+      "peer_count_below_minimum": 491,
+      "insufficient_feedback_for_low_sales_interpretation": 134,
+      "unresolved_product_type": 106,
+      "invalid_essential_data": 1
+    },
+    "products_with_recommendations": 26601,
+    "recommendation_count": 41208,
+    "action_counts": {
+      "Bổ sung ảnh rõ chất liệu, kích thước và các góc sử dụng.": 15368,
+      "Rà soát định vị giá và giá trị khác biệt của sản phẩm.": 13443,
+      "Kiểm tra từ khóa trong tên, khả năng xuất hiện khi tìm kiếm và trạng thái tồn kho.": 5965,
+      "Kiểm tra khả năng bổ sung video sản phẩm ngắn.": 3747,
+      "Bổ sung chất liệu, kích thước, công dụng và hướng dẫn sử dụng.": 2545,
+      "Đọc đánh giá và kiểm tra vấn đề chất lượng hoặc trải nghiệm; phân nhóm phản hồi trước khi thay đổi sản phẩm.": 140
+    },
+    "rule_id_counts": {
+      "add_product_images": 15368,
+      "review_price_positioning": 13443,
+      "review_visibility_and_stock": 5965,
+      "consider_product_video": 3747,
+      "improve_product_description": 2545,
+      "review_quality_feedback": 140
+    },
+    "analysis_is_hypothesis": true,
+    "output": "data/processed/taxonomy_v3_run/product_scores.csv"
+  },
+  "output_dir": "data/processed/taxonomy_v3_run",
+  "artifact_dir": "ml/artifacts/taxonomy_v3_run"
+}
