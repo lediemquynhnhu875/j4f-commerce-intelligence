@@ -6,13 +6,19 @@ import { test, expect } from "@playwright/test";
  * make the product analysable. It must never turn into a recommendation, and
  * it must not appear on analyses that did reach a conclusion.
  */
-test("undecided analyses explain the reason, the observable gaps and the unblocking step", async ({ page }) => {
+test("undecided analyses explain the reason, the observable gaps and the unblocking step", async ({
+  page,
+}) => {
   const email = process.env.SEED_USER1_EMAIL,
     password = process.env.SEED_USER1_PASSWORD;
   const undecided = process.env.UNDECIDED_PRODUCT_ID;
   const concluded = process.env.CONCLUDED_PRODUCT_ID;
-  if (!email || !password) throw new Error("Provide seed test credentials through environment variables");
-  if (!undecided || !concluded) throw new Error("Provide product IDs through environment variables");
+  if (!email || !password)
+    throw new Error(
+      "Provide seed test credentials through environment variables",
+    );
+  if (!undecided || !concluded)
+    throw new Error("Provide product IDs through environment variables");
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   try {
@@ -30,17 +36,29 @@ test("undecided analyses explain the reason, the observable gaps and the unblock
     // The explanation must carry the stored numbers rather than generic wording.
     await expect(reason.locator("p")).toContainText(/\d/);
 
-    await expect(page.getByText("Cần gì để phân tích được sản phẩm này")).toBeVisible();
+    await expect(
+      page.getByText("Cần gì để phân tích được sản phẩm này"),
+    ).toBeVisible();
     await expect(page.locator(".unblock-step p")).not.toBeEmpty();
-    await expect(page.getByText("không phải một khuyến nghị về doanh số", { exact: false })).toBeVisible();
+    await expect(
+      page.getByText("không phải một khuyến nghị về doanh số", {
+        exact: false,
+      }),
+    ).toBeVisible();
 
     // The observable comparison stays available and stays explicitly non-causal.
     await expect(page.locator(".observable-summary")).toBeVisible();
-    await expect(page.getByText("Chênh lệch ở đây không chứng minh nguyên nhân", { exact: false })).toBeVisible();
+    await expect(
+      page.getByText("Chênh lệch ở đây không chứng minh nguyên nhân", {
+        exact: false,
+      }),
+    ).toBeVisible();
     await expect(page.locator("tbody tr").first()).toBeVisible();
 
     // An empty reference cell says why instead of showing a bare dash.
-    await expect(page.getByText("Chưa đủ cơ sở — xem lý do ở trên", { exact: false })).toBeVisible();
+    await expect(
+      page.getByText("Chưa đủ cơ sở — xem lý do ở trên", { exact: false }),
+    ).toBeVisible();
 
     // None of this may leak onto a concluded analysis.
     await page.goto(`/user/analysis?product=${concluded}`);
@@ -52,12 +70,18 @@ test("undecided analyses explain the reason, the observable gaps and the unblock
     // The catalog filter removes exactly the undecided products.
     await page.goto("/user/products");
     const footer = page.locator(".table-footer").first();
-    const total = Number((await footer.textContent())?.match(/\/\s*(\d+)\s*sản phẩm/)?.[1]);
+    const total = Number(
+      (await footer.textContent())?.match(/\/\s*(\d+)\s*sản phẩm/)?.[1],
+    );
     expect(total).toBeGreaterThan(0);
     await page.getByText("Chỉ hiện sản phẩm đã phân tích được").click();
-    const filtered = Number((await footer.textContent())?.match(/\/\s*(\d+)\s*sản phẩm/)?.[1]);
+    const filtered = Number(
+      (await footer.textContent())?.match(/\/\s*(\d+)\s*sản phẩm/)?.[1],
+    );
     expect(filtered).toBeLessThan(total);
-    for (const badge of await page.locator("tbody tr .status-badge").allTextContents())
+    for (const badge of await page
+      .locator("tbody tr .status-badge")
+      .allTextContents())
       expect(badge).not.toBe("Chưa đủ dữ liệu");
 
     expect(errors).toEqual([]);

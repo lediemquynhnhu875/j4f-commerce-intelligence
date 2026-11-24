@@ -3,19 +3,52 @@ import { ErrorPopup } from "@/components/popup";
 import { useState, useRef, type FormEvent } from "react";
 import { usePopup } from "@/components/popup";
 import { api } from "@/lib/api-client";
-import type { Dataset, Account } from "@/types/api";
+import type { Account, List } from "@/types/api";
 import { Badge, Empty, Modal, Panel } from "@/components/ui";
+import {
+  AdminListPagination,
+  AdminListSearch,
+  useAdminList,
+} from "@/components/admin/admin-list";
 
-export function LiveAccounts({
-  data,
+import { WorkspaceLayout } from "@/components/layout/workspace-layout";
+import { exportAdminWorkspace } from "@/lib/workspace-data";
+import { useAuth } from "@/page/auth";
+
+export default function AdminAccounts() {
+  const { account } = useAuth();
+  const [refreshVersion, setRefreshVersion] = useState(0);
+  const refresh = () => setRefreshVersion((version) => version + 1);
+  return (
+    <WorkspaceLayout
+      page="accounts"
+      description="Quản lý dữ liệu đã lưu trong hệ thống."
+      onExport={exportAdminWorkspace}
+      onRefresh={refresh}
+    >
+      <AccountsList
+        actor={account}
+        refresh={refresh}
+        refreshVersion={refreshVersion}
+      />
+    </WorkspaceLayout>
+  );
+}
+
+function AccountsList({
   actor,
   refresh,
+  refreshVersion,
 }: {
-  data: Dataset;
   actor: Account;
-  refresh: () => Promise<void>;
+  refresh: () => void;
+  refreshVersion: number;
 }) {
   const popup = usePopup();
+  const [status, setStatus] = useState("");
+  const list = useAdminList<List<Account>>("admin/accounts", refreshVersion, {
+    status,
+  });
   const [overrides, setOverrides] = useState<Record<string, Account>>({});
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
   const inFlight = useRef(new Set<string>());
@@ -39,7 +72,7 @@ export function LiveAccounts({
       });
       setAdding(false);
       popup.notify("Đã tạo tài khoản và thiết lập quyền truy cập.");
-      await refresh();
+      refresh();
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -70,6 +103,7 @@ export function LiveAccounts({
         },
       );
       setOverrides((rows) => ({ ...rows, [account.id]: result.data }));
+      if (status) refresh();
       popup.notify(
         result.data.is_active
           ? "Đã kích hoạt tài khoản."
@@ -100,7 +134,27 @@ export function LiveAccounts({
           </button>
         }
       >
-        {error && !adding && <ErrorPopup message={error} />}
+        <AdminListSearch
+          label="Tìm theo tên hoặc email"
+          onSubmit={list.submitSearch}
+        >
+          <select
+            aria-label="Trạng thái tài khoản"
+            value={status}
+            onChange={(event) => {
+              setStatus(event.target.value);
+              list.setPage(1);
+            }}
+          >
+            <option value="">Mọi trạng thái</option>
+            <option value="active">Hoạt động</option>
+            <option value="suspended">Tạm khóa</option>
+          </select>
+        </AdminListSearch>
+        {list.error && <ErrorPopup message={list.error} />}
+        {!list.result && !list.error && (
+          <p role="status">Đang tải tài khoản…</p>
+        )}
         <div className="table-scroll">
           <table>
             <thead>
@@ -113,7 +167,7 @@ export function LiveAccounts({
               </tr>
             </thead>
             <tbody>
-              {data.accounts
+              {(list.result?.data ?? [])
                 .map((original) =>
                   overrides[original.id] &&
                   (overrides[original.id].updated_at ?? "") >=
@@ -151,7 +205,14 @@ export function LiveAccounts({
             </tbody>
           </table>
         </div>
-        {!data.accounts.length && <Empty />}
+        {list.result && !list.result.data.length && <Empty />}
+        {list.result && (
+          <AdminListPagination
+            page={list.page}
+            total={list.result.pagination.total}
+            onChange={list.setPage}
+          />
+        )}
       </Panel>
       {adding && (
         <Modal

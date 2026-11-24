@@ -12,10 +12,18 @@ import { quantity } from "./analysis-presentation";
  */
 
 export const metricLabels: Record<string, string> = {
-  price: "Giá bán", discount_rate: "Giảm giá", image_count: "Số ảnh", has_video: "Video sản phẩm",
-  description_length: "Độ dài mô tả", rating_average: "Điểm đánh giá", review_count: "Số đánh giá",
-  observed_sales: "Số bán", quantity_sold: "Số bán", sale_probability: "Xác suất có số bán",
-  reference_sales: "Mức tham chiếu", peer_quality: "Chất lượng nhóm đối chiếu",
+  price: "Giá bán",
+  discount_rate: "Giảm giá",
+  image_count: "Số ảnh",
+  has_video: "Video sản phẩm",
+  description_length: "Độ dài mô tả",
+  rating_average: "Điểm đánh giá",
+  review_count: "Số đánh giá",
+  observed_sales: "Số bán",
+  quantity_sold: "Số bán",
+  sale_probability: "Xác suất có số bán",
+  reference_sales: "Mức tham chiếu",
+  peer_quality: "Chất lượng nhóm đối chiếu",
 };
 
 export const insufficientReasonLabels: Record<string, string> = {
@@ -23,7 +31,8 @@ export const insufficientReasonLabels: Record<string, string> = {
   peer_count_below_minimum: "Quá ít sản phẩm cùng loại để so sánh",
   out_of_scope_product: "Nằm ngoài phạm vi phân tích",
   unresolved_product_type: "Chưa xác định được loại sản phẩm",
-  insufficient_feedback_for_low_sales_interpretation: "Chưa đủ phản hồi để diễn giải",
+  insufficient_feedback_for_low_sales_interpretation:
+    "Chưa đủ phản hồi để diễn giải",
   invalid_essential_data: "Thiếu dữ liệu cơ bản của tin đăng",
 };
 
@@ -46,10 +55,14 @@ function num(value: unknown): number | null {
 }
 
 function record(value: unknown): Record<string, unknown> {
-  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
 }
 
-export function explainInsufficient(analysis: Analysis): InsufficientExplanation {
+export function explainInsufficient(
+  analysis: Analysis,
+): InsufficientExplanation {
   const comparison = record(analysis.comparison_json);
   const config = record(comparison.peer_config);
   const input = record(analysis.input_snapshot_json);
@@ -65,7 +78,9 @@ export function explainInsufficient(analysis: Analysis): InsufficientExplanation
   switch (reason) {
     case "peer_similarity_below_minimum":
       return {
-        reason, label, owner: "seller",
+        reason,
+        label,
+        owner: "seller",
         detail:
           `Hệ thống tìm được ${quantity(peerCount)} sản phẩm cùng loại để đối chiếu, nhưng độ tương đồng trung bình ` +
           `chỉ đạt ${quantity(similarity)} — dưới ngưỡng tối thiểu ${quantity(minSimilarity)}. ` +
@@ -76,7 +91,9 @@ export function explainInsufficient(analysis: Analysis): InsufficientExplanation
       };
     case "peer_count_below_minimum":
       return {
-        reason, label, owner: "data",
+        reason,
+        label,
+        owner: "data",
         detail:
           `Chỉ tìm được ${quantity(peerCount)} sản phẩm cùng loại, dưới mức tối thiểu ${quantity(minCount)} mà quy tắc yêu cầu. ` +
           `Với ít mẫu như vậy, một vài sản phẩm cá biệt đủ sức kéo lệch toàn bộ mức tham chiếu.`,
@@ -86,7 +103,9 @@ export function explainInsufficient(analysis: Analysis): InsufficientExplanation
       };
     case "out_of_scope_product":
       return {
-        reason, label, owner: "model",
+        reason,
+        label,
+        owner: "model",
         detail:
           "Sản phẩm không thuộc nhóm thời trang mà mô hình được xây dựng và đánh giá. " +
           "Đây không phải lỗi dữ liệu của tin đăng: hệ thống cố ý không kết luận ngoài phạm vi đã kiểm chứng.",
@@ -96,7 +115,9 @@ export function explainInsufficient(analysis: Analysis): InsufficientExplanation
       };
     case "unresolved_product_type":
       return {
-        reason, label, owner: "seller",
+        reason,
+        label,
+        owner: "seller",
         detail:
           "Tên và mô tả chưa đủ căn cứ để xếp sản phẩm vào một loại trong danh mục phân loại, " +
           "nên hệ thống chưa biết phải lấy nhóm nào ra đối chiếu.",
@@ -105,7 +126,9 @@ export function explainInsufficient(analysis: Analysis): InsufficientExplanation
       };
     case "insufficient_feedback_for_low_sales_interpretation":
       return {
-        reason, label, owner: "seller",
+        reason,
+        label,
+        owner: "seller",
         detail:
           `Lượng bán ghi nhận (${quantity(sold)}) thấp hơn cận dưới của mức tham chiếu, nhưng sản phẩm mới có ` +
           `${quantity(reviews)} đánh giá. Với từng đó phản hồi, chưa thể phân biệt được đây là vấn đề chất lượng ` +
@@ -116,19 +139,24 @@ export function explainInsufficient(analysis: Analysis): InsufficientExplanation
       };
     case "invalid_essential_data":
       return {
-        reason, label, owner: "seller",
+        reason,
+        label,
+        owner: "seller",
         detail:
           "Tin đăng thiếu hoặc sai những trường bắt buộc để tính toán, ví dụ giá bán, nên không thể đối chiếu.",
-        unblock: "Bổ sung các trường còn thiếu trong tin đăng rồi nhập lại dữ liệu.",
+        unblock:
+          "Bổ sung các trường còn thiếu trong tin đăng rồi nhập lại dữ liệu.",
       };
     default:
       return {
-        reason: reason || "unknown", label, owner: "data",
-        detail:
-          analysis.status_reason
-            ? `Hệ thống ghi nhận lý do “${analysis.status_reason}” nhưng chưa có diễn giải cho mã này.`
-            : "Kết quả đã lưu không ghi lý do cụ thể.",
-        unblock: "Liên hệ người phụ trách dữ liệu để bổ sung diễn giải cho mã lý do này.",
+        reason: reason || "unknown",
+        label,
+        owner: "data",
+        detail: analysis.status_reason
+          ? `Hệ thống ghi nhận lý do “${analysis.status_reason}” nhưng chưa có diễn giải cho mã này.`
+          : "Kết quả đã lưu không ghi lý do cụ thể.",
+        unblock:
+          "Liên hệ người phụ trách dữ liệu để bổ sung diễn giải cho mã lý do này.",
       };
   }
 }
@@ -142,7 +170,14 @@ export type ObservedGap = {
 };
 
 /** Metrics that still mean something without a sales conclusion. */
-const comparableMetrics = ["image_count", "has_video", "description_length", "review_count", "price", "discount_rate"];
+const comparableMetrics = [
+  "image_count",
+  "has_video",
+  "description_length",
+  "review_count",
+  "price",
+  "discount_rate",
+];
 
 /**
  * Smallest absolute difference worth showing. Without this, a product with no
@@ -172,8 +207,12 @@ export function observedGaps(analysis: Analysis): ObservedGap[] {
     if (metric === "has_video") {
       const share = num(item.peer_share) ?? num(item.good_peer_share);
       if (item.observed === false && share !== null && share > 0.15)
-        gaps.push({ metric, label, concern: true,
-          text: `Chưa có video, trong khi ${quantity(Math.round(share * 100))}% sản phẩm cùng nhóm có video` });
+        gaps.push({
+          metric,
+          label,
+          concern: true,
+          text: `Chưa có video, trong khi ${quantity(Math.round(share * 100))}% sản phẩm cùng nhóm có video`,
+        });
       continue;
     }
     const observed = num(item.observed);
@@ -185,16 +224,35 @@ export function observedGaps(analysis: Analysis): ObservedGap[] {
     if (floor !== undefined && Math.abs(observed - peer) < floor) continue;
     const percent = quantity(Math.round(Math.abs(ratio) * 100));
     if (metric === "price")
-      gaps.push({ metric, label, concern: ratio > 0.3,
-        text: ratio > 0 ? `Cao hơn trung vị nhóm ${percent}%` : `Thấp hơn trung vị nhóm ${percent}%` });
+      gaps.push({
+        metric,
+        label,
+        concern: ratio > 0.3,
+        text:
+          ratio > 0
+            ? `Cao hơn trung vị nhóm ${percent}%`
+            : `Thấp hơn trung vị nhóm ${percent}%`,
+      });
     else if (metric === "discount_rate")
-      gaps.push({ metric, label, concern: ratio < 0,
-        text: ratio > 0 ? `Giảm giá sâu hơn nhóm ${percent}%` : `Giảm giá ít hơn nhóm ${percent}%` });
+      gaps.push({
+        metric,
+        label,
+        concern: ratio < 0,
+        text:
+          ratio > 0
+            ? `Giảm giá sâu hơn nhóm ${percent}%`
+            : `Giảm giá ít hơn nhóm ${percent}%`,
+      });
     else
-      gaps.push({ metric, label, concern: ratio < 0,
-        text: ratio < 0
-          ? `Thấp hơn trung vị nhóm ${percent}% (${quantity(observed)} so với ${quantity(peer)})`
-          : `Cao hơn trung vị nhóm ${percent}% (${quantity(observed)} so với ${quantity(peer)})` });
+      gaps.push({
+        metric,
+        label,
+        concern: ratio < 0,
+        text:
+          ratio < 0
+            ? `Thấp hơn trung vị nhóm ${percent}% (${quantity(observed)} so với ${quantity(peer)})`
+            : `Cao hơn trung vị nhóm ${percent}% (${quantity(observed)} so với ${quantity(peer)})`,
+      });
   }
   return gaps;
 }

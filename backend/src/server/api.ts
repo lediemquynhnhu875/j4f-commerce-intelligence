@@ -21,15 +21,23 @@ import {
   loginSchema,
   analysisSchema,
   actionSchema,
+  actionCardFilters,
   actionPatchSchema,
   productFilterSchema,
+  adminListSearch,
+  storeListSort,
+  accountListStatus,
+  adminSummaryView,
+  isoDate,
 } from "./validation";
 import * as stores from "./services/stores";
 import * as catalog from "./services/catalog";
 import * as analyses from "./services/analyses";
 import * as actions from "./services/actions";
 import { previewImport, commitImport } from "./services/imports";
+import { runProductAnalysis } from "./services/live-analysis";
 import { systemSummary } from "./services/admin-summary";
+import { storeOverview } from "./services/overview";
 
 type Outcome = { body: unknown; status?: number };
 type Context = {
@@ -53,7 +61,7 @@ function adminRoute(handler: Handler): Route {
 
 // Read each endpoint as: HTTP method + URL -> access guard + named handler.
 export const routes: Record<string, Route> = {
-  "GET /api/v1/admin/summary": adminRoute(async () => ({ body: { data: await systemSummary() } })),
+  "GET /api/v1/admin/summary": adminRoute(getSystemSummary),
   "POST /api/v1/products/import/preview": userRoute(async ({ request, actor }) => ({ body: { data: await previewImport((await body(request)).items, actor!) } })),
   "GET /api/v1/health": publicRoute(health),
   "GET /api/v1/ready": publicRoute(readiness),
@@ -63,13 +71,18 @@ export const routes: Record<string, Route> = {
 
   "GET /api/v1/stores": userRoute(listStores),
   "GET /api/v1/stores/me": userRoute(myStore),
+  "GET /api/v1/workspace/summary": userRoute(workspaceSummary),
+  "GET /api/v1/workspace/overview": userRoute(async ({ actor }) => ({ body: { data: await storeOverview(actor!) } })),
+  "GET /api/v1/analysis-workspace": userRoute(analysisWorkspace),
   "GET /api/v1/products": userRoute(listProducts),
+  "GET /api/v1/products/:id/analyses/:analysisId": userRoute(productAnalysis),
   "POST /api/v1/products/import": userRoute(importProducts),
   "GET /api/v1/products/:id": userRoute(getProduct),
   "POST /api/v1/products": userRoute(createProduct),
   "PATCH /api/v1/products/:id": userRoute(updateProduct),
   "DELETE /api/v1/products/:id": userRoute(deleteProduct),
   "GET /api/v1/products/:id/analyses": userRoute(listProductAnalyses),
+  "POST /api/v1/products/:id/analyses": userRoute(analyzeProduct),
 
   "GET /api/v1/categories": userRoute(listCategories),
   "GET /api/v1/categories/:id": userRoute(getCategory),
@@ -105,9 +118,17 @@ export const routes: Record<string, Route> = {
 };
 
 // Endpoint handlers: HTTP input/output only; business logic remains in services.
+async function getSystemSummary({ url }: Context): Promise<Outcome> {
+  const view = parse(adminSummaryView, url.searchParams.get("view") ?? undefined);
+  return { body: { data: await systemSummary(view) } };
+}
 async function listStores({actor,url}:Context):Promise<Outcome> {
   const {page,limit}=pagination(url);
-  return {body:await stores.listStores(actor!,page,limit)};
+  const search = actor!.role === "admin"
+    ? parse(adminListSearch, url.searchParams.get("search") ?? "") : "";
+  const sort = actor!.role === "admin"
+    ? parse(storeListSort, url.searchParams.get("sort") ?? undefined) : undefined;
+  return { body: await stores.listStores(actor!, page, limit, search, sort) };
 }
 async function myStore({actor}:Context):Promise<Outcome> {
   return {body:{data:await stores.ownStore(actor!)}};
@@ -141,6 +162,10 @@ async function listProducts({ url, actor }: Context): Promise<Outcome> {
 
   const rawParams = {
     search: url.searchParams.get("search") ?? undefined,
+    view: url.searchParams.get("view") ?? undefined,
+    status: url.searchParams.get("status") ?? undefined,
+    sort: url.searchParams.get("sort") ?? undefined,
+    concluded_only: url.searchParams.get("concluded_only") ?? undefined,
     category_id: url.searchParams.get("category_id") ?? undefined,
     min_price: url.searchParams.get("min_price") ?? undefined,
     max_price: url.searchParams.get("max_price") ?? undefined,
@@ -150,16 +175,37 @@ async function listProducts({ url, actor }: Context): Promise<Outcome> {
 
   const filters = parse(productFilterSchema, rawParams);
 
-  return {
-    body: await catalog.listProducts(page, limit, {
-      search: filters.search,
-      categoryId: filters.category_id,
-      minPrice: filters.min_price,
-      maxPrice: filters.max_price,
-      minSold: filters.min_sold,
-      minRating: filters.min_rating,
-    }, actor!),
+  const baseFilters = {
+    search: filters.search,
+    categoryId: filters.category_id,
+    minPrice: filters.min_price,
+    maxPrice: filters.max_price,
+    minSold: filters.min_sold,
+    minRating: filters.min_rating,
   };
+  if (filters.view === "catalog") {
+    return { body: await catalog.listCatalog(page, limit, {
+      ...baseFilters,
+      status: filters.status,
+      sort: filters.sort,
+      concludedOnly: filters.concluded_only === "true",
+    }, actor!) };
+  }
+  return { body: await catalog.listProducts(page, limit, baseFilters, actor!) };
+}
+async function workspaceSummary({ actor }: Context): Promise<Outcome> {
+  return { body: { data: await stores.workspaceSummary(actor!) } };
+}
+async function analysisWorkspace({ url, actor }: Context): Promise<Outcome> {
+  const from = parse(isoDate, url.searchParams.get("from"));
+  const to = parse(isoDate, url.searchParams.get("to"));
+  if (from > to) throw new ApiError(422, "VALIDATION_ERROR", "Invalid analysis date range");
+  return { body: { data: await analyses.analysisWorkspace(
+    actor!, optionalFilter(url, "product_id"), optionalFilter(url, "analysis_id"), from, to,
+  ) } };
+}
+async function productAnalysis({ params, actor }: Context): Promise<Outcome> {
+  return { body: { data: await analyses.productAnalysis(actor!, params.id, parse(id, params.analysisId)) } };
 }
 async function getProduct({ params }: Context): Promise<Outcome> {
   return { body: { data: await catalog.getRecord("products", params.id) } };
@@ -204,6 +250,16 @@ async function deleteProduct({ params, actor }: Context): Promise<Outcome> {
   await stores.ownStore(actor!);
   return { body: { data: await catalog.deleteRecord("products", params.id) } };
 }
+async function analyzeProduct({ request, params, actor }: Context): Promise<Outcome> {
+  const key = request.headers.get("idempotency-key");
+  if (!key || key.length > 200 || !/^[!-~]+$/.test(key))
+    throw new ApiError(422, "ANALYSIS_KEY_REQUIRED", "Cần gửi mã yêu cầu phân tích hợp lệ.");
+  // Dispatch already authenticated this bearer before checking store ownership.
+  const token = request.headers.get("authorization")!.slice("Bearer ".length);
+  const data = await runProductAnalysis(actor!, params.id, key, token);
+  return { status: data.reused ? 200 : 201, body: { data } };
+}
+
 async function listProductAnalyses({ url, params, actor }: Context): Promise<Outcome> {
   await catalog.getRecord("products", params.id);
   const { page, limit } = pagination(url);
@@ -242,6 +298,10 @@ function optionalFilter(url: URL, field: string) {
 }
 async function listAnalyses({ url, actor }: Context): Promise<Outcome> {
   const { page, limit } = pagination(url);
+  if (url.searchParams.get("view") === "picker") {
+    const { search } = parse(actionCardFilters, { search: url.searchParams.get("search") ?? undefined });
+    return { body: await analyses.listAnalysisChoices(page, limit, search ?? "", actor!) };
+  }
   return {
     body: await analyses.listAnalyses(
       page,
@@ -271,6 +331,15 @@ async function listAnalysisActions({ url, params, actor }: Context): Promise<Out
 }
 async function listActions({ url, actor }: Context): Promise<Outcome> {
   const { page, limit } = pagination(url);
+  if (url.searchParams.get("view") === "cards") {
+    const filters = parse(actionCardFilters, {
+      analysis_id: url.searchParams.get("analysis_id") ?? undefined,
+      type: url.searchParams.get("type") ?? undefined,
+      status: url.searchParams.get("status") ?? undefined,
+      search: url.searchParams.get("search") ?? undefined,
+    });
+    return { body: await actions.listActionCards(page, limit, filters, actor!) };
+  }
   return {
     body: await actions.listActions(
       page,
@@ -314,7 +383,9 @@ async function listActionHistory({ url, params }: Context): Promise<Outcome> {
 }
 async function listAccounts({ url }: Context): Promise<Outcome> {
   const { page, limit } = pagination(url);
-  return { body: await catalog.listRecords("users", page, limit) };
+  const search = parse(adminListSearch, url.searchParams.get("search") ?? "");
+  const status = parse(accountListStatus, url.searchParams.get("status") ?? undefined);
+  return { body: await catalog.listAccounts(page, limit, search, status ? status === "active" : null) };
 }
 async function getAccount({ params }: Context): Promise<Outcome> {
   return { body: { data: await catalog.getRecord("users", params.id) } };
@@ -382,7 +453,7 @@ async function dispatch(request: Request, path: string[]): Promise<Outcome> {
     access === "public"
       ? undefined
       : await authenticate(request, access === "admin");
-  if (actor?.role === "admin" && ["products", "categories", "analyses", "analysis-results", "actions"].includes(path[0]))
+  if (actor?.role === "admin" && ["products", "categories", "analyses", "analysis-results", "actions", "workspace", "analysis-workspace"].includes(path[0]))
     throw new ApiError(403, "STORE_DATA_PRIVATE", "Dữ liệu chi tiết thuộc quyền truy cập của chủ cửa hàng.");
   const params = selected?.params ?? fallback.params;
   if (params.id) parse(id, params.id);
@@ -419,7 +490,7 @@ export async function handle(request: Request, path: string[]) {
         throw new ApiError(403, "ORIGIN_DENIED", "Origin is not allowed");
       headers["Access-Control-Allow-Origin"] = origin;
       headers["Access-Control-Allow-Methods"] = "GET,POST,PATCH,DELETE,OPTIONS";
-      headers["Access-Control-Allow-Headers"] = "Authorization,Content-Type";
+      headers["Access-Control-Allow-Headers"] = "Authorization,Content-Type,Idempotency-Key";
     }
     if (request.method === "OPTIONS")
       return new Response(null, { status: 204, headers });

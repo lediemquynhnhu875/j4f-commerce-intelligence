@@ -293,6 +293,34 @@ Authoritative feature details:
 [actions](../../specs/006-improvement-workflow/contracts/interfaces.md), and
 [Admin](../../specs/007-system-admin/contracts/interfaces.md).
 
+## Live Model A pilot
+
+`POST /api/v1/products/:id/analyses` requires the active owning User and an
+`Idempotency-Key` of 1–200 printable non-space ASCII characters. The application
+constructs the request from the saved product. Responses are 201 for a new
+successful run and 200 when replaying the same key and snapshot, with
+`{data:{id,status,reused}}`. Snapshot changes cause 409. Failed calls return
+controlled 4xx/5xx responses without a saved result. Any existing product
+analysis remains available. Import preview and commit do not invoke ML.
+
+Backend sends a separate, bearer-authenticated `POST /v1/infer` request with
+`schema_version: "sellens-inference-v1"`. Allowed product fields are name,
+up to 10,000 description characters, category name, source product ID,
+price, original price, quantity sold, rating, review count, image count and
+video presence. Sales and feedback are observations for scoring rules, excluded
+from Model A features. The pilot supports VND and uses a fixed corpus; other
+stores' private application data stays in Neon. IDs in the training corpus
+return 409. No raw peer rows are returned.
+
+Results save the Model A version, taxonomy/rules versions and the bundle,
+corpus, taxonomy and configuration hashes. Input version, comparable-product
+evidence, new original suggestions and their audit events are saved atomically.
+Gap remains observed minus reference in the app database. Missing numeric
+values are JSON null; insufficient basis may be saved with a specific reason.
+The pilot is synchronous and does not persist technical processing failures.
+See the [deployment guide](../ml/trien-khai-ml-render.md) and
+[architecture decision](../decisions/0012-live-model-a-pilot.md).
+
 ## Current import and admin privacy contract — 2026-11-13
 
 This amendment supersedes earlier Admin catalog/detail permissions above.
@@ -315,3 +343,95 @@ technical `versions`. `analysis_requests` and `running_requests` are null until
 job tracking exists. Detailed customer product/category/analysis/action routes
 return 403 for Admin. Correct-password suspended login returns
 `403 ACCOUNT_SUSPENDED`; wrong credentials remain 401.
+
+## Saved analysis timeline — 2026-11-18
+
+The Analysis page uses the existing owner-scoped
+`GET /api/v1/products/:id/analyses` endpoint. The chart maps `analyzed_at`
+to the horizontal time axis and frozen `input_snapshot_json.quantity_sold`
+to the vertical sales axis. Every analysis has a selectable marker. Missing
+sales use a separate diamond marker outside the numeric scale. Zero is a
+valid observation. The selected analysis controls the evidence and actions.
+The page defaults to the newest result within the active range. Date filters
+are inclusive in Asia/Ho_Chi_Minh, from the most recent June 1 through the
+current date by default. Explicit analysis IDs select results within that range.
+
+
+## Store-scoped workspace reads
+
+- `GET /api/v1/workspace/summary` returns `store_name`,
+  `latest_analyzed_at`, `proposed_count`, and `legacy_statuses` for the
+  authenticated active store.
+- `GET /api/v1/analysis-workspace?from=YYYY-MM-DD&to=YYYY-MM-DD` accepts
+  optional `product_id` or `analysis_id` for a bookmarked analysis. The owner
+  receives `product` with `category_name`, a `timeline` of `id`,
+  `analyzed_at` and frozen `quantity_sold`, and `latest` with `analysis`
+  and `actions`, or null when there is no result in range. Boolean `has_analysis`
+  indicates whether any result exists for the scoped product across all dates. Vietnam calendar
+  days are inclusive. Timeline order is `analyzed_at DESC, id DESC`.
+- `GET /api/v1/products/:id/analyses/:analysisId` returns the matching
+  `{analysis, actions}` only when the product belongs to the authenticated
+  active store and the analysis belongs to the product. Unavailable IDs return
+  404. Admin is denied access to these owner routes.
+- `GET /api/v1/products?view=catalog` returns the requested page and total
+  after applying name/code search, category, latest status and the concluded
+  filter. The server supports default concluded-first ordering, price
+  ascending and quantity sold descending with product ID as the tie-breaker.
+  Each row exposes product table fields, `latest_status`, `product_type`,
+  and `action_titles`. The response also includes `undecided_count` in
+  the current product search/category scope before status filtering.
+
+
+## Admin pagination and reporting
+
+- `GET /api/v1/stores?page=1&limit=50` accepts optional `search` for Admin
+  store name or ID, and optional `sort=products_desc|products_asc`. Sorting
+  applies to the full matched set before pagination, includes empty stores,
+  and breaks equal product counts by ascending store ID. Admin responses include `totals.stores` and
+  `totals.products` for the whole system. The page count uses the matching
+  stores. User responses preserve owner scope and contain no system totals.
+- `GET /api/v1/admin/accounts?page=1&limit=50` supports optional literal
+  case-insensitive name/email `search` and `status=active|suspended`.
+  Counts reflect the filters. The legacy `accounts` alias shares the handler.
+- `GET /api/v1/admin/summary` accepts `view=overview|monitor|configuration`.
+  Overview includes system totals and recent activity, monitor includes
+  `recent`, and configuration includes `versions`. Omitting the view
+  returns the full aggregate contract. These endpoints require active Admin
+  authorization.
+
+
+## Current store statistics
+
+- `store_stats` stores one current aggregate row per `store_id`, including
+  product and saved-analysis totals, the latest result's status distribution,
+  category counts, and open work counters. `proposed_count` includes all saved
+  analyses for the sidebar. `pending_review_count` counts only proposals on
+  the latest analysis of each product for the overview card.
+- `store_current_analysis` stores one current pointer per analyzed product to
+  maintain accurate deltas and limit priority reads. Latest order is
+  `analyzed_at DESC, id DESC`. The immutable source records remain in
+  `product_analyses`.
+- `GET /api/v1/workspace/overview` returns `summary`, saved `metrics`,
+  `categories`, up to eight `priority` rows and up to four `suggestions`
+  scoped to the authenticated active store. An account with no active store
+  receives null summary and metrics and empty lists.
+- Migration 005 backfills and installs triggers in the same transaction.
+  Product, result and action changes and their counter changes commit or
+  roll back together. The Admin store endpoint uses the same saved counts
+  for both sort directions and keeps its existing pagination contract.
+
+
+## Paginated suggestion cards
+
+- `GET /api/v1/actions?view=cards&page=1&limit=20` scopes the results to the
+  authenticated active store. It accepts `analysis_id`, `type`, `status`,
+  and literal `search` across action title and ID. It orders by
+  `updated_at DESC, id DESC` before applying the requested page.
+- The response extends the paginated action shape with `product` on each
+  card, unfiltered `status_counts` and `types`, filtered
+  `matched_status_counts`, and a `has_analyses` flag. Counts describe all
+  matches in their respective scope. The UI groups the current page by
+  status in Kanban.
+- `GET /api/v1/analyses?view=picker` returns paged IDs and product names for
+  the add-work dialog. Optional search matches product name or analysis ID.
+  The default action and analysis endpoints retain their existing contracts.

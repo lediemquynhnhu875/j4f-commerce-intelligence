@@ -121,12 +121,57 @@ export type SystemSummary = {
     last_used: string;
   }[];
 };
-export type Dataset = {
-  systemSummary?: SystemSummary;
-  stores?: Store[];
-  products: Product[];
-  categories: Category[];
-  analyses: Analysis[];
-  actions: Action[];
-  accounts: Account[];
+export type WorkspaceSummary = {
+  store_name: string | null;
+  latest_analyzed_at: string | null;
+  proposed_count: number;
+  legacy_statuses: string[];
+};
+export type AnalysisPoint = Pick<Analysis, "id" | "analyzed_at"> & {
+  quantity_sold: unknown;
+};
+export type ProductAnalysis = { analysis: Analysis; actions: Action[] };
+export type AnalysisWorkspace = {
+  has_analysis: boolean;
+  product: (Product & { category_name: string | null }) | null;
+  timeline: AnalysisPoint[];
+  latest: ProductAnalysis | null;
+};
+export type CatalogProduct = Pick<Product,
+  "id" | "store_id" | "name" | "category_id" | "price" | "currency" |
+  "source_product_id" | "thumbnail_url" | "quantity_sold" | "rating_average" | "review_count"
+> & {
+  latest_status: string | null;
+  product_type: string | null;
+  action_titles: string[];
+};
+
+
+export type StoreOverview = {
+  summary: WorkspaceSummary | null;
+  metrics: {
+    product_count: number;
+    analyzed_product_count: number;
+    reference_product_count: number;
+    review_product_count: number;
+    ml_product_count: number;
+    in_progress_count: number;
+    pending_review_count: number;
+    open_suggestion_count: number;
+    status_counts: Record<string, number>;
+  } | null;
+  categories: { id: string; name: string; count: number }[];
+  priority: (Pick<Product, "id" | "name" | "source_product_id" | "thumbnail_url"> & {
+    analysis_id: string;
+    classification: string | null;
+    observed_sold: unknown;
+    reference_sold: string | null;
+    sales_gap: string | null;
+    status: string;
+  })[];
+  suggestions: (Pick<Action, "id" | "type" | "status" | "title" | "analysis_id"> & {
+    product_id: string;
+    product_name: string;
+    evidence: unknown;
+  })[];
 };

@@ -1,6 +1,207 @@
 # Project State and Handoff
 
-Updated: 2026-11-13 (Asia/Saigon).
+Updated: 2026-11-24 (Asia/Saigon).
+
+## GitHub Release bundle for the ML pilot
+
+The F004 deployment pilot on `refactor` now supports storing the verified model
+archive as a Release asset in a dedicated private GitHub repository. The new
+`fetch-github` command downloads the asset by tag/name and checks the pinned
+SHA-256 before extraction. Use the updated [Render guide](ml/trien-khai-ml-render.md).
+The local deployment archive `ml/artifacts/sellens-ml-v2.zip` is ready for the
+private `v2` Release. It was packed with Python 3.13.13 and scikit-learn 1.9.1
+(the version recorded in the model), with the other supplied versions kept.
+SHA-256: `572c89b57561465a716c61232544042137b05989d6428f4aacfc418bcf3b4de8`.
+The actual bundle passed checksum extraction and local FastAPI readiness and
+inference checks. All 41 ML tests passed on Python 3.13.13. Dependency
+resolution succeeded for x86-64 Linux. Release publication remains pending.
+
+The Python suite passed all 41 tests. New mocked checks cover asset selection,
+checksum mismatch and keeping the credential off the HTTPS redirect. A real
+private GitHub download and cloud deploy are pending.
+
+## Live Model A deployment pilot
+
+The F004 pilot on `refactor` connects store-owned products to a separate CPU
+FastAPI service. Import still updates the catalog. A User can then request an
+analysis, which saves the input snapshot, output, and new recommendations in
+one transaction. Migration 006 reconciles product media columns for fresh
+databases. See the [Render guide](ml/trien-khai-ml-render.md) and
+[ADR 0012](decisions/0012-live-model-a-pilot.md).
+
+Verified locally with a synthetic trained bundle and isolated PostgreSQL
+(PGlite). Edge uploaded a CSV through the real frontend proxy, triggered the
+live FastAPI call and displayed saved evidence. Direct API tests covered import
+media, owner isolation, idempotent replay, frozen snapshots after reimport,
+recommendation audit entries, and service outage preserving history.
+The backend build, type check and 18 unit tests passed. Frontend production
+build, lint, test type check and 22 Edge tests passed. The Python suite ran
+38 tests including model service scenarios. The team's model bundle and corpus
+were unavailable in this checkout. Render, R2, Vercel and Neon production
+verification remain pending. No existing cloud data was modified.
+
+## Playwright TypeScript configuration
+
+`frontend/tests/tsconfig.json` loads the existing Node.js type definitions for
+Playwright test files. This fixes TS2591 on the import test's Buffer fixtures.
+TypeScript checked all eight test files and the affected Edge import test passed.
+
+## User and Admin screen structure
+
+Workspace screens now live in `frontend/src/page/user` and `frontend/src/page/admin`.
+The User product list and filters are in `page/user/product.tsx`.
+The shared `page/auth.tsx` checks the session and role before a screen mounts.
+`components/layout/workspace-layout.tsx` renders the common workspace frame.
+The Next.js route maps the existing URLs to screens, including `/user/products`
+and `/user/suggestions`.
+
+Frontend lint, production build and all 21 Edge release tests passed. The new
+auth test verifies that anonymous and wrong-role visits start no page data requests.
+
+## Compact catalog filters
+
+Catalog-only styles reduce button padding, remove label margins and cap
+the desktop search field. Frontend lint and build passed. Edge on the
+production build measured the desktop row at 36 px versus 66 px before.
+The 390 px mobile layout had no horizontal overflow in the filter panel.
+
+## Server-paginated suggestions
+
+The User suggestions workspace on `improve_query` requests 20 enriched cards
+per page with server-side filters and a stable updated-time and ID order.
+List and Kanban share a page. The add-work picker reads paginated analysis
+choices when opened. Full exports continue to load in response to the
+explicit export action.
+
+Frontend lint and both builds passed, with 20 Edge tests and 18 backend unit
+tests. Read-only Neon checks verified a 113-action store, the order and 20-row
+size of the first two pages, filtered totals, the lightweight picker, and
+store isolation. Deployed navigation latency remains unmeasured.
+
+## Current database reference
+
+The [current database diagram and query walkthrough](architecture/sellens-database.md)
+describes the configured Neon schema and the current checkout's read paths.
+Verified all 16 live table names, the 10 diagram entities, the shown foreign
+keys and the document's repository links. The [DBML source](architecture/sellens-current.dbml)
+was generated from Neon schema metadata. Both the legacy and current DBML parsers verified
+16 tables, 161 columns and 18 foreign keys. The DBML source records PostgreSQL
+CHECK constraints and descending or partial indexes in comments for editor compatibility.
+The multi-store proposal is historical.
+
+## Current store statistics
+
+F005 overview and F007 Admin ranking on `remove_demo`. See
+[ADR 0011](decisions/0011-current-store-statistics.md). Migration 005 applied
+to the configured Neon database through the repository migration runner.
+
+- Backfill matched 3,808 stores, 41,578 products, 41,706 saved analyses and
+  42,813 proposed actions. The latest-analysis pointers and current action
+  counts matched live source rows. Rollback checks covered concurrent
+  same-store inserts, catalog edits and deletion, category movement, older
+  and newer analyses, and closing a suggestion.
+- The User overview calls one owner-scoped API. It reads stored totals
+  and receives up to eight priority items and four action previews. The Admin
+  store endpoint uses the ordered counter index and the Admin overview sums
+  the stored product and analysis counts.
+- One Neon `EXPLAIN ANALYZE` run of the descending Admin first page used
+  `store_stats_most_products` and reported 2.7 ms of PostgreSQL execution time.
+  The previous measured aggregation plan took 34.7 ms. These are single-query
+  samples. End-to-end production time under load remains unmeasured.
+- Frontend lint and both builds passed. All 18 backend unit tests and 19
+  Edge release tests passed. Application deployment is pending.
+
+## Store ordering by product count
+
+Admin can sort matching stores by most or fewest products. PostgreSQL sorts
+before returning the requested 50-row page. Store ID breaks ties, and the
+UI resets to page one when the order changes. Verified both directions,
+search and pagination against 3,808 stores on Neon. Read-only SQL fixtures
+covered zero counts. Frontend lint, build and all 18 Edge tests passed.
+Backend typecheck and all 18 unit tests passed.
+
+## Empty state for product analyses
+
+Products with no saved analysis retain their product card and display one
+empty-state message. Stored analyses outside a selected date range keep the
+date controls available and hide the empty plot. The workspace API indicates
+whether the selected product has any saved history with `has_analysis`.
+
+Frontend lint and both builds passed. All 18 Edge release tests and 18 backend
+unit tests passed. Read-only Neon checks covered a product without any analyses
+and a product with a saved result both inside and outside the requested dates.
+
+## Admin pagination and reporting requests
+
+F007/T004, T007 and T009–T011 amendment on `remove_demo`. See
+[ADR 0010](decisions/0010-admin-paginated-reads.md).
+
+- Admin stores and accounts now load 50 rows per page. Store totals remain
+  system-wide when the list is filtered. Overview, monitor and configuration
+  query their own aggregate view. Export loads the complete data bundle on
+  demand.
+- Read-only Neon checks confirmed 3,808 stores and 41,578 allocated products,
+  50 distinct rows on each of the first two pages, store search, account
+  filters, and the original User store scope.
+- Backend typecheck, build and all 18 unit tests passed. Frontend lint,
+  build and all 16 Edge release tests passed. The browser tests verified
+  one list request on initial navigation and one per page or filter change.
+- Deployment and end-to-end Render/Vercel timing remain pending.
+
+## Responsive sales timeline
+
+The Analysis chart uses the measured plot width for its SVG coordinates. Axis
+labels keep their proportions and fewer date labels appear in narrow layouts.
+Frontend lint and build passed. All 14 Edge release tests passed, including the
+chart resize check at 1760 px and 390 px.
+
+## Store-scoped workspace queries — 2026-11-19
+
+F005/T009–T011 and F002/T014 amendments on `remove_demo`, implemented in
+the original repository at the contributor's request. See [ADR 0009](decisions/0009-store-scoped-workspace-queries.md).
+
+- Analysis now reads one scoped product, the Vietnam date range projection,
+  and latest in-range evidence with actions. Selecting an older point reads
+  one product/analysis pair. The picker links to the paginated catalog.
+- Catalog filters, sorts and paginates in PostgreSQL. Catalog and Analysis load
+  a small store summary for the shared header. Full JSON exports load on demand.
+- Backend typecheck, build and all 18 unit tests passed. Frontend lint, build
+  and all 13 Edge release tests passed. The tests include a 40,000-product
+  pagination fixture, one initial analysis data request and one older-detail
+  request without repeating the timeline request.
+- Read-only Neon checks verified six saved dates for SP-190606301, the newest
+  result by timestamp, the older action links, catalog paging and status
+  filtering, and denial of cross-store reads. For the sampled 56-product store
+  the old analysis flow's core JSON exceeded 470 KB and the new analysis
+  response plus header summary was approximately 8.4 KB before compression.
+- Deploy backend and frontend together, with the new backend available first.
+  Measure end-to-end latency on Render/Vercel and catalog server time on a large
+  single-store dataset. The 40,000-product browser fixture tests request
+  behavior. It supplies no production latency evidence.
+
+## Saved analysis timeline — 2026-11-18
+
+F005 Analysis-page amendment on `remove_demo`. The requesting contributor
+clarified that the chart and evidence history represent saved ML analysis
+results already imported, rather than edits to the catalog. The uncommitted
+product-version implementation and unapplied migration 005 were removed.
+
+- The sales chart is directly above Observed Evidence and uses
+  `analyzed_at` and the frozen `input_snapshot_json.quantity_sold`.
+  Selection updates the URL and uses the original analysis for evidence and
+  actions. Axis labels explicitly identify quantity sold and time. The separate
+  history selector table has been removed. Results missing sales use selectable
+  diamond markers below the numeric scale.
+- Existing API and database schema support the feature. Read-only Neon
+  inspection found one result for the product in the supplied screenshot.
+  Across stores, 41,451 analyzed products had one result and 125 had two.
+- Frontend build and lint passed. Edge release tests use isolated HTTP
+  fixtures. All 10 tests passed, including one-point rendering and switching the
+  evidence from the newest result to the older result. After the chart-only
+  selection change, the frontend build and all three timeline Edge tests
+  passed. The timeline now defaults to the most recent June 1 through today
+  in Vietnam, with date controls that filter chart and evidence together.
+  Frontend build and all four targeted Edge tests passed. Deployment is pending.
 
 ## Import, account feedback and admin privacy — 2026-11-13
 
@@ -156,6 +357,10 @@ session started clean, fetched remote refs and branched from `origin/main`.
 
 | Feature / task ID | Owner | Branch | Status | Dependencies / notes |
 | --- | --- | --- | --- | --- |
+| F004/T003, T006–T012 deployment-testing amendment | Requesting contributor, Codex-assisted | refactor | Pilot implemented and verified locally | Deploy with the team's trusted artifact and run acceptance on Render, Vercel and Neon |
+| F005 overview and F007 Admin ranking statistics | Requesting contributor, Codex-assisted | remove_demo | Neon migration applied and application verified locally | Deploy both applications and measure end-to-end latency |
+| F007/T004, T007 and T009–T011 Admin page queries | Requesting contributor, Codex-assisted | remove_demo | Implemented and verified locally | Deploy both applications and measure navigation latency |
+| F005/T009–T011 and F002/T014 scoped query optimization | Requesting contributor, Codex-assisted | remove_demo | Implemented and locally verified | Deploy both components and measure end-to-end latency on a larger store |
 | F006/T011 suggestion product thumbnails | Requesting contributor, Codex-assisted | first_demo | Scoped presentation verified | Linked product thumbnail and missing/broken-image fallback; desktop/mobile list/Kanban checks and lint passed; original acceptance unchanged |
 | F001/T002; F001/T014 sidebar presentation correction | Requesting contributor, Codex-assisted | first_demo | Scoped correction verified | Shared CSS heading dimensions fixed; 12 desktop/mobile layout checks and frontend lint passed; original acceptance unchanged |
 | F001/T007; F002/T006; F007/T005 multi-store amendment | Requesting contributor, Codex-assisted | feature/backend-neon-mvp | Schema proposal prepared; unapplied, acceptance unchecked | One User owns many stores; explicit legacy assignment and future scoped API/UI required |

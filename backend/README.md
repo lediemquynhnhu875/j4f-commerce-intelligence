@@ -35,8 +35,10 @@ files or Express dependency are required.
 The live frontend consumes these authenticated PostgreSQL-backed APIs.
 
 The schema uses one store per regular User. API role `user` maps to database
-`reviewer`. Saved analyses come from imported ML snapshots. Live inference remains
-pending. The public API directory contains endpoint metadata and health links.
+`reviewer`. Saved analyses come from imported ML snapshots and User-triggered live
+inference when the model service is configured. See the
+[Render ML deployment guide](../docs/ml/trien-khai-ml-render.md).
+The public API directory contains endpoint metadata and health links.
 
 ## Installation and environment
 
@@ -102,7 +104,7 @@ Imports exactly 100 products across five types (20 each), 100 saved analyses and
 matching suggestions/history. All writes are atomic. Exact reruns insert nothing;
 different source bytes under the fixed run key stop without overwriting. Preserve
 the original input for verification. This uses the shared catalog and preserves
-the separate manual catalog entries; live inference remains pending. Results are experimental.
+the separate manual catalog entries. These offline imports are experimental.
 See [scope](../docs/decisions/0007-bounded-ml-sample-import.md).
 
 With the backend running, verify the source, database and real HTTP responses:
@@ -185,7 +187,7 @@ registration or arbitrary-SQL endpoint exists; account DTOs never include hashes
 | `/auth/me`, `/auth/logout` | GET / POST | Active account / revoke current token |
 | `/products`, `/products/:id` | GET | Active account; list/detail |
 | `/products`, `/products/:id` | POST / PATCH, DELETE | Admin create/update/delete; references block deletion |
-| `/products/:id/analyses` | GET | Active account; linked results |
+| `/products/:id/analyses` | GET, POST | Active owning User; list saved results or run live ML with an `Idempotency-Key` header |
 | `/categories`, `/categories/:id` | GET | Active account |
 | `/categories`, `/categories/:id` | POST / PATCH, DELETE | Admin mutations |
 | `/analyses`, `/analyses/:id` | GET | Active account; product/analyst relationships |
@@ -275,3 +277,14 @@ and isolated browser fixtures remain confined to test execution.
 - Suspended accounts with a correct password receive `403 ACCOUNT_SUSPENDED`.
 - `npm test` includes import parser/normalization regressions. No migration is
   required for this update on the existing media/store schema.
+
+
+### Store statistics
+
+Apply `005_store_stats.sql` through `npm run db:migrate` before deploying the
+version that reads the overview and Admin count tables. The migration takes
+write locks during its single-transaction backfill. Normal writes maintain
+the totals by trigger, including the bundled import scripts. Preserve the
+statistics triggers when maintaining fixtures or restoring catalog data.
+The Git attribute for migration 005 preserves the applied file's checksum
+across checkout platforms.

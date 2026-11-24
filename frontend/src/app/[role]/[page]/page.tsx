@@ -1,7 +1,32 @@
-import { Suspense } from "react";
+import { Suspense, type ComponentType } from "react";
 import { notFound } from "next/navigation";
-import { isWorkspacePage } from "@/lib/workspace-pages";
-import { LivePage } from "@/components/live-page";
+import { isWorkspacePage, type Role } from "@/lib/workspace-pages";
+import { Auth } from "@/page/auth";
+import UserOverview from "@/page/user/overview";
+import UserProduct from "@/page/user/product";
+import UserAnalysis from "@/page/user/analysis";
+import UserSuggestion from "@/page/user/suggestion";
+import AdminOverview from "@/page/admin/overview";
+import AdminStores from "@/page/admin/stores";
+import AdminAccounts from "@/page/admin/accounts";
+import AdminMonitor from "@/page/admin/monitor";
+import AdminConfiguration from "@/page/admin/configuration";
+
+const screens: Record<Role, Record<string, ComponentType>> = {
+  user: {
+    overview: UserOverview,
+    products: UserProduct,
+    analysis: UserAnalysis,
+    suggestions: UserSuggestion,
+  },
+  admin: {
+    overview: AdminOverview,
+    stores: AdminStores,
+    accounts: AdminAccounts,
+    monitor: AdminMonitor,
+    configuration: AdminConfiguration,
+  },
+};
 
 async function Workspace({
   params,
@@ -10,7 +35,14 @@ async function Workspace({
 }) {
   const { role, page } = await params;
   if (!isWorkspacePage(role, page)) notFound();
-  return <LivePage role={role as "user" | "admin"} page={page} />;
+  const Screen = screens[role][page];
+  if (!Screen) notFound();
+
+  return (
+    <Auth role={role}>
+      <Screen />
+    </Auth>
+  );
 }
 export default function Page({
   params,

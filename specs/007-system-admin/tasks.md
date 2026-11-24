@@ -228,3 +228,24 @@ remaining delivery; they do not add a cyclic prerequisite.
 - [ ] Integrate real analysis-request/job counts when model serving is available.
 
 This amendment supersedes earlier Admin access to customer analysis details.
+
+
+## Admin pagination and isolated reporting requests
+
+- [x] Load 50 stores or accounts per request. Apply store search and
+  account name, email and status filters before pagination.
+- [x] Return global store and assigned-product totals alongside the store page.
+- [x] Request only the overview, monitor or configuration aggregate view.
+  Keep the complete data bundle available when exporting.
+- [x] Verify request counts, page boundaries and account state changes with Edge.
+  Verify store totals, search, account filters and User store scope on Neon.
+- [ ] Measure navigation latency on Render and Vercel after deployment.
+
+
+- [x] Sort matched Admin stores by product count in both directions before
+  pagination. Verified 50-row requests, page reset, search, stable ties,
+  and zero-product stores with Edge and read-only SQL checks.
+
+
+- [x] Use stored product counts for both Admin ranking directions and
+  sum the stored per-store counts for system metrics.

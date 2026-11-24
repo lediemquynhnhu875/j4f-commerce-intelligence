@@ -1,0 +1,2 @@
+# Keep the exact bytes of the already-applied Neon 005 migration across platforms.
+backend/db/migrations/005_store_stats.sql -text

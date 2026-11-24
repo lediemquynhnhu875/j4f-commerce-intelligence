@@ -31,7 +31,7 @@ export const ruleTypes: Record<string, string> = {
   review_visibility_and_stock: "verify_listing_and_stock",
 };
 const numeric = z.number().finite().nonnegative();
-const suggestion = z
+export const mlSuggestionSchema = z
   .object({
     rule_id: z.string().refine((value) => Object.hasOwn(ruleTypes, value)),
     evidence: z.string().min(1),
@@ -75,7 +75,7 @@ export const sourceProductSchema = z
     peer_config: z.record(z.string(), z.json()),
     peer_quality_reason: z.string().nullable(),
     evidence: z.array(z.record(z.string(), z.json())),
-    recommendations: z.array(suggestion),
+    recommendations: z.array(mlSuggestionSchema),
     valid_for_model: z.literal(true),
     selected_raw_source_index: numeric.int(),
     source_captured_at: z.iso.datetime({ offset: true }).nullable(),

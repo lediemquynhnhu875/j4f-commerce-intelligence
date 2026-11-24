@@ -96,9 +96,7 @@ export function LiveLogin() {
                 <Icon name="eye" />
               </button>
             </div>
-            {error && (
-              <ErrorPopup message={error} />
-            )}
+            {error && <ErrorPopup message={error} />}
             <button className="button primary login-submit" disabled={pending}>
               {pending ? "Đang đăng nhập…" : "Đăng nhập"}
               <Icon name="arrow" />

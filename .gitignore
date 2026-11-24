@@ -48,3 +48,5 @@ ml/artifacts/*
 tmp/
 .cache/
 
+.vercel
+j4f-commerce-intelligence 23.25.32/

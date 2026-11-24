@@ -9,6 +9,13 @@ so full ML readiness is not established. See
 [the evidence audit](../docs/verification/planning-audit.md) and
 [F003 verification tasks](../specs/003-ml-readiness/tasks.md).
 
+## Serve Model A
+
+Deploy the CPU FastAPI service from the repository root. The service requires the
+trusted v2 training bundle, its calibration report, and the matching reference
+corpus. The [Vietnamese Render guide](../docs/ml/trien-khai-ml-render.md) covers
+packaging, storage, configuration and testing an upload.
+
 ## Outputs
 
 | Stage | Main output |

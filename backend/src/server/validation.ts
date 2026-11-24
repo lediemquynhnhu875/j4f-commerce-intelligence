@@ -202,20 +202,27 @@ export const actionStatuses = [
   "rejected",
   "cancelled",
 ] as const;
+const actionTypes = [
+  "review_price",
+  "complete_description",
+  "review_images_or_video",
+  "review_images",
+  "review_video",
+  "inspect_reviews",
+  "verify_listing_and_stock",
+  "verify_exposure",
+  "other",
+] as const;
+export const actionCardFilters = z.object({
+  analysis_id: id.optional(),
+  type: z.enum(actionTypes).optional(),
+  status: z.enum(actionStatuses).optional(),
+  search: z.string().trim().max(200).optional(),
+});
 export const actionSchema = z
   .object({
     analysis_id: id,
-    type: z.enum([
-      "review_price",
-      "complete_description",
-      "review_images_or_video",
-      "review_images",
-      "review_video",
-      "inspect_reviews",
-      "verify_listing_and_stock",
-      "verify_exposure",
-      "other",
-    ]),
+    type: z.enum(actionTypes),
     title: text(255),
     description: optionalText(),
     original_suggestion_json: json,
@@ -290,7 +297,12 @@ export function pagination(url: URL) {
   });
 }
 
+export const isoDate = z.iso.date();
 export const productFilterSchema = z.object({
+  view: z.enum(["catalog"]).optional(),
+  status: z.string().max(80).optional(),
+  sort: z.enum(["price", "sales"]).optional(),
+  concluded_only: z.enum(["true", "false"]).optional(),
   search: z.string().max(200).optional(),
   category_id: id.optional(),
   min_price: z.coerce.number().min(0).optional(),
@@ -298,3 +310,9 @@ export const productFilterSchema = z.object({
   min_sold: z.coerce.number().int().min(0).optional(),
   min_rating: z.coerce.number().min(0).max(5).optional(),
 });
+
+export const adminListSearch = z.string().trim().max(200);
+export const storeListSort = z.enum(["products_desc", "products_asc"]).optional();
+export type StoreListSort = z.infer<typeof storeListSort>;
+export const accountListStatus = z.enum(["active", "suspended"]).optional();
+export const adminSummaryView = z.enum(["overview", "monitor", "configuration"]).optional();

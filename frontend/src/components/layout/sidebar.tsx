@@ -31,10 +31,7 @@ export function Sidebar({
         />
       )}
       <aside className={`sidebar ${open ? "open" : ""}`}>
-        <Link
-          href={`/${role}/overview`}
-          className="logo-link"
-        >
+        <Link href={`/${role}/overview`} className="logo-link">
           <Logo />
         </Link>
         <button
@@ -59,12 +56,10 @@ export function Sidebar({
         />
         <div className="sidebar-bottom">
           <div className="baseline">
-            <i className="dot" /> Dữ liệu phân tích{" "}
-            <span>Đã lưu</span>
+            <i className="dot" /> Dữ liệu phân tích <span>Đã lưu</span>
           </div>
           <button className="logout-button" onClick={onLogout}>
-            <Icon name="logout" size={17} />{" "}
-            Đăng xuất
+            <Icon name="logout" size={17} /> Đăng xuất
           </button>
         </div>
       </aside>

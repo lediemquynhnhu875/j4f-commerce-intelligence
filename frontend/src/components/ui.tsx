@@ -243,13 +243,13 @@ export function Empty({
   description = "Thử thay đổi từ khóa hoặc đặt lại bộ lọc.",
 }: {
   title?: string;
-  description?: string;
+  description?: string | null;
 }) {
   return (
     <div className="empty">
       <Icon name="search" size={34} />
       <h3>{title}</h3>
-      <p>{description}</p>
+      {description && <p>{description}</p>}
     </div>
   );
 }
@@ -275,14 +275,22 @@ export function Modal({
       ref={ref}
       className="modal"
       aria-label={title}
-      onCancel={(event) => { event.preventDefault(); onClose(); }}
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
+      }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <div className="modal-head">
         <h2>{title}</h2>
-        <button type="button" className="icon-button" aria-label="Đóng" onClick={onClose}>
+        <button
+          type="button"
+          className="icon-button"
+          aria-label="Đóng"
+          onClick={onClose}
+        >
           <Icon name="close" />
         </button>
       </div>

@@ -19,5 +19,5 @@ export const workspacePages = {
 
 export function isWorkspacePage(role: string, page: string): role is Role {
   if (role !== "user" && role !== "admin") return false;
-  return (role === "user" && page === "analysis") || workspacePages[role].some(item => item.slug === page);
+  return workspacePages[role].some((item) => item.slug === page);
 }

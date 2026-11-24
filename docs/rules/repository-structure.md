@@ -4,7 +4,7 @@
 
 - Next.js serves the connected frontend and isolated previews in `frontend/` and web API in `backend/`.
 - The web backend owns application logic, PostgreSQL access on Neon, and user actions.
-- Python/FastAPI model serving remains pending and reuses `ml/src/`; no service was moved.
+- Python/FastAPI serves experimental inference from `ml/src/serving/` and reuses the trained Model A and offline scoring rules.
 - The backend has a verified PostgreSQL REST runtime; the frontend uses a same-origin cookie proxy.
 - See [the current scope amendment](../decisions/0004-shared-catalog-backend.md).
 
@@ -20,23 +20,19 @@
 
 ## `frontend/` - Huy (UI), Mai (web backend and database)
 
-- The contributor's later integration request supersedes the earlier disconnected
-  scope. Live `/user/*` and `/admin/*` use APIs; preview workspace pages stay
-  synthetic. `/preview` and `/preview/login` use real login; mock login lives at
-  the explicitly named `/preview/demo-login`.
-- `src/app/api/backend/`: server-side HTTP proxy; opaque session token stays in HttpOnly cookies.
-- `src/features/connected/`: real catalog, analyses, actions/audit and Admin management.
-- `src/components/live-*.tsx`, `src/lib/api-client.ts`, `use-live-session.ts` and
-  `src/types/api.ts`: live workspace/session composition, client and DTOs.
-- `src/components/`: reusable UI components; `layout/header.tsx` and
-  `layout/sidebar.tsx` are composed by `layout/app-shell.tsx`.
-- `src/features/admin/`: four Admin screen files: `overview.tsx`, `stores.tsx`,
-  `monitor.tsx` and `configuration.tsx`.
-- `src/features/user/`: four User screen files: `overview.tsx` (dashboard),
-  `product-list.tsx` (catalog), `evidence-panel.tsx` (analysis) and
-  `suggestions-view.tsx` (improvements). Keep reusable helpers in `components/`.
-- `src/lib/`: API client and generic helpers; keep database and model-service
-  integration code in server-only modules when the application is initialized.
+- `src/app/[role]/[page]/page.tsx`: maps URL slugs to User and Admin screens.
+- `src/app/api/backend/`: server-side HTTP proxy. Session cookies are HttpOnly.
+- `src/page/user/`: `overview.tsx`, `product.tsx`, `analysis.tsx` and
+  `suggestion.tsx` define the User screens. The route maps the singular file names
+  to the existing plural URLs for products and suggestions.
+- `src/page/admin/`: `overview.tsx`, `stores.tsx`, `accounts.tsx`,
+  `monitor.tsx` and `configuration.tsx` define the Admin screens.
+- `src/page/auth.tsx`: workspace session and role boundary. Backend guards
+  enforce role and data ownership independently.
+- `src/components/`: reusable UI. `layout/workspace-layout.tsx` renders
+  the shared page frame and receives page descriptions and controls as props.
+- `src/lib/`: API client, the generic workspace request hook and shared helpers.
+  Database and model-service integration belongs in server-only modules.
 - `src/types/`: shared TypeScript types.
 - `tests/`: web UI and web API tests.
 
