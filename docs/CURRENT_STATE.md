@@ -2,6 +2,109 @@
 
 Updated: 2026-11-13 (Asia/Saigon).
 
+
+
+
+
+
+## Three-store ownership matrix preparation — 2026-11-17
+
+Mai, Codex-assisted; user explicitly continued. Live User1/User2 ownership test
+passed93 requests; Gia Dung store9 imported57 products/analyses and71 work with
+idempotent rerun and UI evidence. Added an environment-only credential pair runner
+for three accounts, six directions, stable identity/count checks and aggregate
+reports. Seven fixture-only Node tests passed; live three-account check awaits
+user execution. No API/schema/data/media/deploy changes or live credentials here.
+See verification/three-store-runner.md and README_THREE_STORE_CHECK.md.
+
+
+## Two-populated-store ownership regression — 2026-11-17
+
+Mai, Codex-assisted; user-authorized WS1 test update. User's Gentlemen→store2
+dry-run planned56 products/analyses and98 actions, no reuse. Updated store HTTP
+test to per-owner SQL counts, symmetric ownership checks, shared-category/search
+semantics, new read endpoints and data fingerprints. Default is business-read-only
+with safe denial probes; optional temporary-product CRUD and rolled-back auto-store
+checks remain. Existing test no longer assumes User2 empty/User1 owns all data.
+
+Real API/auth/services exercised through in-process dispatch + isolated PostgreSQL/
+WASM:86 default and100 fixture requests passed, both directions and2 SQL assignee
+checks.23 backend tests and TypeScript passed. Live Neon apply and HTTP checks await
+user-local execution; no live write/deploy/commit/push performed here. See
+[verification](verification/two-populated-store-http.md) and
+[instructions](../README_GENTLEMEN_IMPORT.md). Acceptance remains open.
+
+
+## Two-store demo plan preparation — 2026-11-17
+
+Mai, Codex-assisted; user-authorized WS1/F002 continuation after live UI checks.
+User screenshots confirmed overview256 products, preserved action278 audit and
+bounded profile loading. Added a read-only demo-seller planner using the verified
+full bundle and current Neon source-ID ownership inventory. It proposes empty
+store reuse/new account slots; no provision, import, reassignment or deletion.
+Full-source checks on isolated PostgreSQL/WASM and TypeScript passed; real plan
+awaits user-local read-only execution. No Git metadata/commit/push/live connection.
+Existing HTTP tests' empty-User2/all-data-User1 assumptions must be updated before
+populating two shops. Feature acceptance remains open. See
+[verification](verification/demo-store-plan.md) and
+[instructions](../README_DEMO_STORES_PLAN.md).
+
+
+## Bounded User workspace reads — 2026-11-17
+
+Mai, Codex-assisted; user-authorized continuation of F002/F004/F005/F006
+performance/integration amendments. User confirmed live catalog search balo44
+results, limit10, page2 showing11–20 /44. New store aggregate, selected-profile,
+work-page and choice APIs replace remaining User allPages collections; result
+history/suggestions/audit/analysis chooser are paged. Existing mutation/ownership
+guards and frozen evidence remain unchanged.006 adds indexes only.
+
+23 backend tests, both builds/typechecks, scoped lint, PostgreSQL/WASM ownership/
+scale readers and React DOM workflows passed; catalog DOM regression also passed.
+Native browser and live Neon checks remain user-side. No Neon write, full import,
+deploy, commit or push performed here. Source ZIP has no Git metadata. Full WS1
+acceptance remains open, including mapping/storage/full import/deploy and broader
+permission tests. See [verification](verification/user-workspace-pagination.md)
+and [installation](../README_WORKSPACE_PAGINATION.md).
+
+
+## Catalog server pagination — 2026-11-17
+
+Mai, Codex-assisted; user-authorized F002/connected catalog continuation. User's
+Neon Atuni import succeeded (29 new products/analyses,17 actions;1 analysis reused);
+idempotent rerun inserted zero. User UI showed256 products, accepted/rejected
+action history, required rejection reason, and a User2 cross-store read404.
+
+Added a centrally guarded products/catalog API and read-only service, strict
+filters, deterministic latest-analysis/page summaries, additive005 indexes and
+a dedicated paged catalog frontend bypassing allPages. No existing data, auth,
+route semantics or applied migrations changed; no Neon write in this session.
+21 backend tests, both typechecks/builds, scoped lint, SQL fixture/scale checks
+and React DOM interaction checks passed. Chromium could not start under the
+environment socket restriction; real browser/Neon checks remain pending. Other
+screens retain their original allPages loaders; complete WS1/full-scale import
+is not yet accepted. See [verification](verification/catalog-server-pagination.md)
+and [installation](../README_CATALOG_PAGINATION.md).
+
+
+## Offline full ML import preparation — 2026-11-17
+
+Mai, Codex-assisted; user-authorized continuation of F002/F004 import amendments.
+Current source supplied as ZIP without Git metadata; no remote synchronization,
+commit/push or live database access. Added standard-library snapshot/CSV validator,
+checksummed bundle exporter, explicit seller/store mapping, read-only store list,
+and a dry-run-first transactional CLI reusing existing analysis_runs and preserving
+existing product/analysis/action/history records. No route or migration changes.
+
+Full source validation passed (41,576 products/42,652 actions); 6 new Python tests,
+18 existing backend tests and TypeScript passed. Isolated PGlite SQL checks passed
+for dry-run, apply, idempotency, preservation, conflicts and rollback. Real Neon
+inspection/import and full-scale performance remain unverified. Ownership mapping
+is still required; no seller-to-account relationship was inferred. Full WS1 remains
+incomplete. See [verification](verification/full-ml-import-preparation.md) and
+[local instructions](../README_ML_IMPORT.md).
+
+
 ## Import, account feedback and admin privacy — 2026-11-13
 
 Requesting contributor, Codex-assisted, authorized amendments to connected

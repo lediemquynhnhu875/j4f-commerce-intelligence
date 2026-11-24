@@ -1,7 +1,7 @@
 "use client";
 import { ErrorPopup } from "@/components/popup";
 import { useCallback, useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+
 import Link from "next/link";
 import { AdminSystem } from "@/page/connected/admin-summary";
 import { api, allPages, ApiError } from "@/lib/api-client";
@@ -10,22 +10,15 @@ import type {
   SystemSummary,
   Account,
   Store,
-  Product,
-  Category,
-  Analysis,
-  Action,
   Dataset,
 } from "@/types/api";
 import { LiveShell, livePages } from "./live-shell";
 import { Empty, Panel, Logo, Icon, Badge } from "./ui";
 import { exportSaved } from "@/lib/analysis-presentation";
 import { LiveStoresUnavailable } from "@/page/connected/administration";
-import {
-  LiveCatalog,
-  LiveOverview,
-  LiveAnalysis,
-} from "@/page/connected/catalog";
-import { LiveActions } from "@/page/connected/actions";
+import { UserWorkspace } from "@/page/connected/user-workspace";
+import { PagedCatalog } from "@/page/connected/paged-catalog";
+
 import { LiveAccounts } from "@/page/connected/admin";
 
 export function LivePage({
@@ -36,39 +29,17 @@ export function LivePage({
   page: string;
 }) {
   const session = useLiveSession();
-  const params = useSearchParams();
+
   const { account, refresh: refreshSession } = session;
   const [data, setData] = useState<Dataset | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const fetchData = useCallback(async (): Promise<Dataset> => {
-    if (role === "admin") {
-      const [summary, accounts, stores] = await Promise.all([
-        api<{ data: SystemSummary }>("admin/summary"),
-        allPages<Account>("admin/accounts"),
-        allPages<Store>("stores"),
-      ]);
-      return {
-        systemSummary: summary.data,
-        accounts,
-        stores,
-        products: [],
-        categories: [],
-        analyses: [],
-        actions: [],
-      };
-    }
-    const [products, categories, analyses, actions, accounts, stores] =
-      await Promise.all([
-        allPages<Product>("products"),
-        allPages<Category>("categories"),
-        allPages<Analysis>("analyses"),
-        allPages<Action>("actions"),
-        Promise.resolve([]),
-        allPages<Store>("stores"),
-      ]);
-    return { products, categories, analyses, actions, accounts, stores };
-  }, [role]);
+    const [summary, accounts, stores] = await Promise.all([
+      api<{data:SystemSummary}>("admin/summary"),allPages<Account>("admin/accounts"),allPages<Store>("stores")
+    ]);
+    return {systemSummary:summary.data,accounts,stores,products:[],categories:[],analyses:[],actions:[]};
+  }, []);
   const reportError = useCallback(
     (err: unknown) => {
       setError((err as Error).message);
@@ -78,7 +49,7 @@ export function LivePage({
     [refreshSession],
   );
   useEffect(() => {
-    if (!account || account.role !== role) return;
+    if (!account || account.role !== role || role === "user") return;
     let active = true;
     void fetchData()
       .then((result) => {
@@ -96,7 +67,7 @@ export function LivePage({
     return () => {
       active = false;
     };
-  }, [account, role, fetchData, reportError]);
+  }, [account, role, page, fetchData, reportError]);
   async function refreshData() {
     setLoading(true);
     setError("");
@@ -148,6 +119,7 @@ export function LivePage({
         </Link>
       </main>
     );
+  if (role === "user") return page === "products" ? <PagedCatalog account={session.account} /> : <UserWorkspace account={session.account} page={page}/>;
   const title =
     livePages[role].find((item) => item.slug === page)?.label ??
     (page === "analysis" ? "Kết quả phân tích" : "Cửa hàng chưa khả dụng");
@@ -175,12 +147,10 @@ export function LivePage({
       >
         <div>
           <span className="eyebrow">
-            {role === "admin"
-              ? "SELLENS · SYSTEM WORKSPACE"
-              : "SELLENS · WORKSPACE"}
+            {"SELLENS · SYSTEM WORKSPACE"}
           </span>
           <h1>
-            {role === "user" && page === "overview"
+            {page === "overview" && session.account.role === "user"
               ? `Xin chào ${session.account.full_name}`
               : title}
           </h1>
@@ -188,9 +158,7 @@ export function LivePage({
             {(
               {
                 overview:
-                  role === "admin"
-                    ? "Theo dõi tài khoản, cửa hàng và hoạt động phân tích của hệ thống."
-                    : "Theo dõi sản phẩm và ưu tiên cơ hội cải thiện hiệu quả bán hàng.",
+                  "Theo dõi tài khoản, cửa hàng và hoạt động phân tích của hệ thống.",
                 products:
                   "Quản lý danh mục và đối chiếu tín hiệu quan sát từ snapshot.",
                 analysis:
@@ -268,26 +236,7 @@ export function LivePage({
       {!error &&
         data &&
         (page === "overview" ? (
-          role === "admin" ? (
-            <AdminSystem data={data} />
-          ) : (
-            <LiveOverview data={data} role={role} />
-          )
-        ) : page === "products" ? (
-          <LiveCatalog data={data} role={role} refresh={refreshData} />
-        ) : page === "analysis" ? (
-          <LiveAnalysis
-            data={data}
-            role={role}
-            productId={params.get("product")}
-            analysisId={params.get("analysis")}
-          />
-        ) : page === "suggestions" ? (
-          <LiveActions
-            data={data}
-            actor={session.account}
-            refresh={refreshData}
-          />
+          <AdminSystem data={data}/>
         ) : page === "accounts" ? (
           <LiveAccounts
             data={data}

@@ -48,3 +48,8 @@ ml/artifacts/*
 tmp/
 .cache/
 
+
+# Local source/data archives
+/code_hien_tai.zip
+/ml_data.zip
+/sellens_source.zip

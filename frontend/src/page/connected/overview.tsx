@@ -6,7 +6,7 @@ import { analysisColor } from "@/lib/status-colors";
 import { Donut } from "@/components/charts/donut";
 import { Badge, Empty, Icon, Panel, Stat } from "@/components/ui";
 import { analysisLabels, mlAnalysisLabels } from "@/lib/api-client";
-import type { Analysis, Dataset } from "@/types/api";
+import type { OverviewAnalysis, OverviewData, OverviewSummary } from "@/types/api";
 import { ProductIdentity } from "@/components/products/product-identity";
 import { quantity, productCode } from "@/lib/analysis-presentation";
 
@@ -38,11 +38,13 @@ const percent = (count: number, total: number) =>
 export function LiveOverview({
   data,
   role,
+  summary,
 }: {
-  data: Dataset;
+  data: OverviewData;
+  summary?: OverviewSummary;
   role: "user" | "admin";
 }) {
-  const latest = new Map<string, Analysis>();
+  const latest = new Map<string, OverviewAnalysis>();
   for (const row of data.analyses) {
     const old = latest.get(row.product_id);
     if (
@@ -62,14 +64,14 @@ export function LiveOverview({
   );
   const active = actions.filter((row) => activeStates.has(row.status));
   const reviewIds = new Set(active.map((row) => row.analysis_id));
-  const total = products.length;
-  const noAnalysis = total - current.length;
-  const hasMl = current.some((row) => row.status_schema_version === "ml_v2");
+  const total = summary?.total ?? products.length;
+  const noAnalysis = summary ? total-summary.analyzed_products : total-current.length;
+  const hasMl = summary?.has_ml ?? current.some((row) => row.status_schema_version === "ml_v2");
   const groups = Object.entries(analysisLabels)
     .map(([status, label]) => ({
       status,
       label,
-      count: current.filter((row) => row.status === status).length,
+      count: summary ? (summary.status_counts[status] ?? 0) : current.filter((row) => row.status === status).length,
       color: analysisColor(status),
     }))
     .filter(
@@ -82,7 +84,7 @@ export function LiveOverview({
       count: noAnalysis,
       color: analysisColor("no_analysis"),
     });
-  const categories = data.categories
+  const categories = summary ? [...summary.categories] : data.categories
     .map((category) => ({
       id: category.id,
       name: category.name,
@@ -93,7 +95,7 @@ export function LiveOverview({
     (row) =>
       !data.categories.some((category) => category.id === row.category_id),
   ).length;
-  if (uncategorized)
+  if (uncategorized && !summary)
     categories.push({
       id: "none",
       name: "Chưa phân loại",
@@ -112,9 +114,9 @@ export function LiveOverview({
           : Number(b.priority_score);
       return bScore - aScore || (BigInt(a.id) < BigInt(b.id) ? -1 : 1);
     });
-  const missingBasis = current.filter(
-    (row) => row.reference_sold === null,
-  ).length;
+  const missingBasis = summary?.no_reference ?? current.filter(row => row.reference_sold === null).length;
+  const analyzedCount = summary?.analyzed_products ?? current.length;
+  const reviewCount = summary?.review_products ?? reviewIds.size;
   return (
     <div className="live-overview">
       <div className="overview-source">
@@ -133,14 +135,14 @@ export function LiveOverview({
         />
         <Stat
           label="Có mức tham chiếu"
-          value={current.length - missingBasis}
+          value={analyzedCount - missingBasis}
           suffix="sản phẩm"
           note="Có giá trị tham chiếu đã lưu"
           tone="blue"
         />
         <Stat
           label="Cần rà soát"
-          value={reviewIds.size}
+          value={reviewCount}
           suffix="sản phẩm"
           note="Có đề xuất đang chờ duyệt hoặc thực hiện"
           tone="pink"
@@ -156,7 +158,7 @@ export function LiveOverview({
         />
         <Stat
           label="Đang thực hiện"
-          value={actions.filter((row) => row.status === "in_progress").length}
+          value={summary?.in_progress ?? actions.filter((row) => row.status === "in_progress").length}
           suffix="việc"
           note="Tiến độ công việc đã lưu"
           tone="blue"
@@ -164,7 +166,7 @@ export function LiveOverview({
         />
         <Stat
           label="Đề xuất cần duyệt"
-          value={actions.filter((row) => row.status === "proposed").length}
+          value={summary?.proposed ?? actions.filter((row) => row.status === "proposed").length}
           suffix="việc"
           note="Chờ xem bằng chứng và quyết định"
           tone="green"
@@ -174,7 +176,7 @@ export function LiveOverview({
       <div className="grid-two overview-charts">
         <Panel
           title="Phân bố trạng thái phân tích"
-          subtitle={`${current.length}/${total} sản phẩm có kết quả · Tỷ lệ trên ${total} sản phẩm đang xem`}
+          subtitle={`${analyzedCount}/${total} sản phẩm có kết quả · Tỷ lệ trên ${total} sản phẩm đang xem`}
           action={
             <span className="tile-icon">
               <Icon name="chart" />
@@ -275,7 +277,7 @@ export function LiveOverview({
       )}
       <Panel
         title="Sản phẩm cần ưu tiên rà soát"
-        subtitle={`${priority.length} sản phẩm có đề xuất đang mở · Hiển thị tối đa 8 sản phẩm theo điểm ưu tiên đã lưu`}
+        subtitle={`${reviewCount} sản phẩm có đề xuất đang mở · Hiển thị tối đa 8 sản phẩm theo điểm ưu tiên đã lưu`}
         action={
           <Link className="text-link" href={`/${role}/products`}>
             Xem danh mục <Icon name="arrow" size={16} />
@@ -375,7 +377,7 @@ export function LiveOverview({
       <Panel
         title="Đề xuất cải thiện đang theo dõi"
         subtitle="Hành động và bằng chứng gốc của kết quả đang xem"
-        action={<Badge tone="gradient">{active.length} đề xuất đang mở</Badge>}
+        action={<Badge tone="gradient">{summary?.active_actions ?? active.length} đề xuất đang mở</Badge>}
       >
         {!active.length ? (
           <Empty title="Chưa có công việc cần theo dõi" />

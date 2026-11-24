@@ -1,10 +1,10 @@
 "use client";
-import { ErrorPopup } from "@/components/popup";
-import { useEffect, useState } from "react";
+
+
 import Link from "next/link";
 import { StatusBadge } from "@/components/status-badge";
 import { useRouter } from "next/navigation";
-import { api, allPages, analysisLabels, price } from "@/lib/api-client";
+import { analysisLabels, price } from "@/lib/api-client";
 import {
   actionTypeLabels,
   exportSaved,
@@ -19,7 +19,7 @@ import {
   UnblockPanel,
 } from "@/components/analysis/insufficient-data";
 import { isInsufficient, metricLabels } from "@/lib/insufficient-data";
-import type { Analysis, Dataset, Product } from "@/types/api";
+import type { Dataset, DetailResponse, ProductOption } from "@/types/api";
 
 // Presentation association only: an action must already exist on this analysis.
 const metricActionTypes: Record<string, readonly string[]> = {
@@ -72,11 +72,16 @@ export function LiveAnalysis({
   role,
   productId,
   analysisId,
+  history,
+  options, suggestionPagination,
 }: {
   data: Dataset;
   role: "user" | "admin";
   productId: string | null;
   analysisId: string | null;
+  history?: DetailResponse["history"];
+  options?: ProductOption[];
+  suggestionPagination?: DetailResponse["actions_pagination"];
 }) {
   const router = useRouter();
   const selectedId =
@@ -88,65 +93,9 @@ export function LiveAnalysis({
       ),
     )?.id ??
     data.products[0]?.id;
-  const [product, setProduct] = useState<Product | null>(null),
-    [rows, setRows] = useState<Analysis[]>([]),
-    [loading, setLoading] = useState(true),
-    [error, setError] = useState("");
-  useEffect(() => {
-    let active = true;
-    const controller = new AbortController();
-    async function load() {
-      setLoading(true);
-      setError("");
-      setProduct(null);
-      setRows([]);
-      try {
-        if (!selectedId) return;
-        const [detail, history] = await Promise.all([
-          api<{ data: Product }>(`products/${encodeURIComponent(selectedId)}`, {
-            signal: controller.signal,
-          }),
-          allPages<Analysis>(
-            `products/${encodeURIComponent(selectedId)}/analyses`,
-            controller.signal,
-          ),
-        ]);
-        if (active) {
-          setProduct(detail.data);
-          setRows(history);
-        }
-      } catch (err) {
-        if (active && (err as Error).name !== "AbortError")
-          setError((err as Error).message);
-      } finally {
-        if (active) setLoading(false);
-      }
-    }
-    void load();
-    return () => {
-      active = false;
-      controller.abort();
-    };
-  }, [selectedId]);
-  const analysis = analysisId
-    ? rows.find((row) => row.id === analysisId)
-    : [...rows].sort(
-        (a, b) =>
-          b.analyzed_at.localeCompare(a.analyzed_at) ||
-          (BigInt(a.id) > BigInt(b.id) ? -1 : 1),
-      )[0];
-  if (loading)
-    return (
-      <Panel>
-        <p role="status">Đang tải phân tích…</p>
-      </Panel>
-    );
-  if (error)
-    return (
-      <Panel>
-        <ErrorPopup message={error} />
-      </Panel>
-    );
+  const product = data.products.find(p=>p.id===selectedId) ?? null;
+  const rows=data.analyses;
+  const analysis = analysisId ? rows.find(row=>row.id===analysisId) : rows[0];
   if (!product) return <Empty title="Catalog chưa có sản phẩm" />;
   const input = analysis?.input_snapshot_json ?? {};
   const observed = input.quantity_sold ?? null,
@@ -206,7 +155,7 @@ export function LiveAnalysis({
               router.push(`/${role}/analysis?product=${event.target.value}`)
             }
           >
-            {data.products.map((row) => (
+            {[product,...(options ?? data.products).filter(p=>p.id!==product.id)].map((row) => (
               <option key={row.id} value={row.id}>
                 {row.name}
               </option>
@@ -220,11 +169,12 @@ export function LiveAnalysis({
                 product,
                 analysis,
                 suggestions,
+                suggestions_pagination: suggestionPagination,
               })
             }
           >
             <Icon name="download" size={16} />
-            Xuất kết quả đã lưu
+            Xuất kết quả đang xem
           </button>
         </div>
       </div>
@@ -549,7 +499,7 @@ export function LiveAnalysis({
         </>
       )}
       <Panel title="Lịch sử kết quả">
-        {rows.map((row) => (
+        {(history ?? rows).map((row) => (
           <p key={row.id}>
             <Link
               className="text-link"

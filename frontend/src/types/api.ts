@@ -130,3 +130,26 @@ export type Dataset = {
   actions: Action[];
   accounts: Account[];
 };
+
+// Catalog list summaries deliberately omit frozen evidence and action audit payloads.
+export type CatalogAnalysis = Pick<Analysis, "id" | "product_id" | "status" | "product_type" | "analyzed_at">;
+export type CatalogAction = Pick<Action, "id" | "analysis_id" | "title">;
+export type CatalogData = { products: Product[]; categories: Category[]; analyses: CatalogAnalysis[]; actions: CatalogAction[] };
+export type CatalogQuery = { q: string; category_id: string; status: string; type: string; sort: "" | "price" | "sales"; analysable_only: boolean; page: number; limit: number };
+export type CatalogResponse = List<Product> & {
+  categories: Category[]; analyses: CatalogAnalysis[]; actions: CatalogAction[]; store: Store;
+  facets: { statuses: string[]; types: string[] };
+  summary: { total: number; undecided_count: number; proposed_actions: number };
+};
+
+export type OverviewAnalysis=Pick<Analysis,'id'|'product_id'|'status'|'status_schema_version'|'product_type'|'priority_score'|'reference_sold'|'sales_gap'|'analyzed_at'|'input_snapshot_json'>;
+export type OverviewAction=Pick<Action,'id'|'analysis_id'|'type'|'title'|'status'|'original_suggestion_json'>;
+export type OverviewData={products:Product[];analyses:OverviewAnalysis[];actions:OverviewAction[];categories:Category[]};
+export type OverviewSummary={total:number;analyzed_products:number;no_reference:number;has_ml:boolean;last_analysis_at:string|null;review_products:number;active_actions:number;in_progress:number;proposed:number;global_proposed:number;status_counts:Record<string,number>;categories:{id:string;name:string;count:number}[]};
+export type OverviewResponse={store:Store;data:OverviewData;summary:OverviewSummary};
+export type ProductOption=Pick<Product,'id'|'name'>;
+export type AnalysisOption=Pick<Analysis,'id'|'product_id'|'status'|'analyzed_at'|'product'>;
+export type DetailResponse={store:Store;proposed_actions:number;data:Dataset;history:Pick<Analysis,'id'|'product_id'|'status'|'analyzed_at'>[];history_pagination:List<never>['pagination'];actions_pagination:List<never>['pagination']};
+export type WorkData={products:Product[];analyses:Pick<Analysis,'id'|'product_id'|'product'>[];actions:Action[]};
+export type WorkQuery={q:string;status:string;type:string;page:number;limit:number};
+export type WorkResponse={store:Store;data:WorkData;pagination:List<never>['pagination'];summary:{total:number;states:Record<string,number>};facets:{types:string[]};filtered_states:Record<string,number>};

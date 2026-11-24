@@ -8,8 +8,10 @@ import { StatusBadge } from "@/components/status-badge";
 import { ProductIdentity } from "@/components/products/product-identity";
 import { actionColor } from "@/lib/status-colors";
 import { actionTypeLabels } from "@/lib/analysis-presentation";
-import { api, allPages, actionLabels } from "@/lib/api-client";
-import type { Dataset, Action, History, Account } from "@/types/api";
+import { api, actionLabels } from "@/lib/api-client";
+import type { WorkData, WorkQuery, WorkResponse, Action, History, Account, List, AnalysisOption } from "@/types/api";
+import { PageControls } from "@/components/page-controls";
+import { useWorkspaceRead, useDebouncedSearch } from "@/lib/use-workspace-read";
 import { Badge, Empty, Icon, Modal, Panel, Stat } from "@/components/ui";
 
 const nextStates: Record<string, string[]> = {
@@ -23,18 +25,23 @@ const nextStates: Record<string, string[]> = {
 export function LiveActions({
   data,
   actor,
-  refresh,
+  refresh, query, changeQuery, remote, loading,
 }: {
-  data: Dataset;
+  data: WorkData;
+  query: WorkQuery;
+  changeQuery:(patch:Partial<WorkQuery>)=>void;
+  remote: Pick<WorkResponse,"pagination"|"summary"|"facets"|"filtered_states">;
+  loading:boolean;
   actor: Account;
   refresh: () => Promise<void>;
 }) {
   const params = useSearchParams();
-  const [page, setPage] = useState(1);
+  const setPage=(page:number)=>changeQuery({page});
   const [kanban, setKanban] = useState(false);
-  const [category, setCategory] = useState("");
-  const [filter, setFilter] = useState("");
-  const [search, setSearch] = useState("");
+  const {type:category,status:filter,q:search}=query;
+  const setCategory=(type:string)=>changeQuery({type});
+  const setFilter=(status:string)=>changeQuery({status});
+  const setSearch=(q:string)=>changeQuery({q});
   const [pending, setPending] = useState(false);
   const popup = usePopup();
   const [error, setError] = useState("");
@@ -44,6 +51,7 @@ export function LiveActions({
   const [audit, setAudit] = useState<{
     action: Action;
     rows: History[];
+    pagination: List<History>["pagination"];
   } | null>(null);
   async function mutate(action: Action, fields: Record<string, unknown>) {
     setPending(true);
@@ -88,14 +96,12 @@ export function LiveActions({
     }
     await mutate(editor!, fields);
   }
-  async function history(action: Action) {
+  async function history(action: Action, page=1) {
     setPending(true);
     setError("");
     try {
-      setAudit({
-        action,
-        rows: await allPages<History>(`actions/${action.id}/history`),
-      });
+      const result=await api<List<History>>(`actions/${action.id}/history?page=${page}&limit=20`);
+      setAudit({action,rows:result.data,pagination:result.pagination});
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -137,21 +143,14 @@ export function LiveActions({
       setPending(false);
     }
   }
-  const rows = data.actions.filter(
-    (row) =>
-      (!params.get("analysis") || row.analysis_id === params.get("analysis")) &&
-      (!category || row.type === category) &&
-      (!filter || row.status === filter) &&
-      `${row.title} ${row.id}`.toLowerCase().includes(search.toLowerCase()),
-  );
-  const sortedRows = [...rows].sort(
-    (a, b) =>
-      b.updated_at.localeCompare(a.updated_at) ||
-      (BigInt(a.id) > BigInt(b.id) ? -1 : 1),
-  );
-  const pages = Math.max(1, Math.ceil(rows.length / 12)),
-    activePage = Math.min(page, pages);
-  const visible = sortedRows.slice((activePage - 1) * 12, activePage * 12);
+  const [manualSearch,setManualSearch]=useState("");
+  const [manualPage,setManualPage]=useState(1);
+  const [manualId,setManualId]=useState("");
+  const debouncedManual=useDebouncedSearch(manualSearch);
+  const choices=useWorkspaceRead<List<AnalysisOption>>(adding?`analyses/options?page=${manualPage}&limit=20&q=${encodeURIComponent(debouncedManual)}`:null);
+  const rows=loading?[]:data.actions;
+  const visible=rows;
+  const states=remote.summary.states;
   const renderCard = (action: Action) => {
     const analysis = data.analyses.find((row) => row.id === action.analysis_id);
     const product = data.products.find(
@@ -285,22 +284,20 @@ export function LiveActions({
       <div className="stats-grid five">
         <Stat
           label="Tổng đề xuất"
-          value={data.actions.length}
+          value={remote.summary.total}
           note="Công việc và đề xuất đã lưu"
           icon="sparkles"
         />
         <Stat
           label="Mới phát hiện"
-          value={data.actions.filter((a) => a.status === "proposed").length}
+          value={states.proposed ?? 0}
           note="Chờ duyệt hành động"
           tone="pink"
         />
         <Stat
           label="Đang theo dõi"
           value={
-            data.actions.filter((a) =>
-              ["accepted", "in_progress"].includes(a.status),
-            ).length
+            (states.accepted ?? 0)+(states.in_progress ?? 0)
           }
           note="Đã chấp nhận / đang làm"
           tone="blue"
@@ -308,14 +305,14 @@ export function LiveActions({
         />
         <Stat
           label="Đã hoàn thành"
-          value={data.actions.filter((a) => a.status === "completed").length}
+          value={states.completed ?? 0}
           note="Hoàn thành việc, chưa đo hiệu quả"
           tone="green"
           icon="check"
         />
         <Stat
           label="Đã từ chối"
-          value={data.actions.filter((a) => a.status === "rejected").length}
+          value={states.rejected ?? 0}
           note="Giữ nguyên bằng chứng"
           tone="gray"
         />
@@ -370,8 +367,9 @@ export function LiveActions({
           </div>
           <button
             className="button primary"
-            disabled={!data.analyses.length}
+            disabled={pending}
             onClick={() => {
+              setManualSearch("");setManualPage(1);setManualId("");
               setAdding(true);
               setError("");
             }}
@@ -390,7 +388,7 @@ export function LiveActions({
           >
             Tất cả
           </button>
-          {[...new Set(data.actions.map((a) => a.type))].map((type) => (
+          {remote.facets.types.map((type) => (
             <button
               key={type}
               className={category === type ? "selected" : ""}
@@ -415,7 +413,7 @@ export function LiveActions({
       {error && !editor && !adding && (
         <ErrorPopup message={error} />
       )}
-      {!rows.length ? (
+      {loading ? <Panel><p role="status">Đang tải trang đề xuất…</p></Panel> : !rows.length ? (
         <Panel>
           <Empty title="Chưa có công việc phù hợp" />
         </Panel>
@@ -430,7 +428,7 @@ export function LiveActions({
               <h3 style={{ color: actionColor(status) }}>
                 {label}
                 <span>
-                  {rows.filter((row) => row.status === status).length}
+                  {rows.filter((row) => row.status === status).length} / {remote.filtered_states[status] ?? 0}
                 </span>
               </h3>
               {rows.filter((row) => row.status === status).map(renderCard)}
@@ -440,32 +438,10 @@ export function LiveActions({
       ) : (
         <>
           <div className="grid-two">{visible.map(renderCard)}</div>
-          <div className="table-footer">
-            <span>
-              {rows.length
-                ? `${(activePage - 1) * 12 + 1}–${Math.min(activePage * 12, rows.length)}`
-                : "0"}{" "}
-              / {rows.length} đề xuất
-            </span>
-            <div className="pagination">
-              <button
-                aria-label="Trang đề xuất trước"
-                disabled={activePage <= 1}
-                onClick={() => setPage(activePage - 1)}
-              >
-                ‹
-              </button>
-              <button
-                aria-label="Trang đề xuất sau"
-                disabled={activePage >= pages}
-                onClick={() => setPage(activePage + 1)}
-              >
-                ›
-              </button>
-            </div>
-          </div>
         </>
       )}
+      {kanban && <p className="muted">Kanban hiển thị các đề xuất của trang hiện tại; số ở mỗi cột là đang xem / tổng phù hợp.</p>}
+      <PageControls pagination={remote.pagination} onPage={setPage} label="đề xuất" disabled={loading||pending}/>
       <div className="opportunity-banner">
         <span className="brand-mark">
           <Icon name="sparkles" size={26} />
@@ -548,14 +524,18 @@ export function LiveActions({
           <form className="connected-form" onSubmit={create}>
             <label>
               Phân tích
-              <select name="analysis_id" required>
-                {data.analyses.map((row) => (
+              <input aria-label="Tìm phân tích cho công việc" placeholder="Tên sản phẩm hoặc mã phân tích…" value={manualSearch} onChange={e=>{setManualSearch(e.currentTarget.value);setManualPage(1);setManualId("");}}/>
+              <select name="analysis_id" required value={manualId || choices.data?.data[0]?.id || ""} onChange={e=>setManualId(e.currentTarget.value)}>
+                {(choices.data?.data ?? []).map((row) => (
                   <option value={row.id} key={row.id}>
                     #{row.id} · {row.product.name}
                   </option>
                 ))}
               </select>
             </label>
+            {choices.loading && <p role="status">Đang tải lựa chọn phân tích…</p>}
+            {choices.error && <ErrorPopup message={choices.error}/>}
+            {choices.data && <PageControls pagination={choices.data.pagination} label="lựa chọn phân tích" disabled={choices.loading} onPage={p=>{setManualPage(p);setManualId("");}}/>}
             <label>
               Tiêu đề
               <input name="title" maxLength={255} required />
@@ -571,7 +551,7 @@ export function LiveActions({
             {error && (
               <ErrorPopup message={error} />
             )}
-            <button className="button primary" disabled={pending}>
+            <button className="button primary" disabled={pending||choices.loading||manualSearch!==debouncedManual||!choices.data?.data.length}>
               Tạo công việc
             </button>
           </form>
@@ -601,6 +581,7 @@ export function LiveActions({
             </Panel>
           ))}
           {!audit.rows.length && <Empty title="Chưa có lịch sử" />}
+          <PageControls pagination={audit.pagination} label="lịch sử" disabled={pending} onPage={p=>void history(audit.action,p)}/>
         </Modal>
       )}
     </>

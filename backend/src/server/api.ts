@@ -25,6 +25,8 @@ import {
   productFilterSchema,
 } from "./validation";
 import * as stores from "./services/stores";
+import * as workspace from "./services/workspace";
+import { catalogPage, catalogQuerySchema } from "./services/catalog-page";
 import * as catalog from "./services/catalog";
 import * as analyses from "./services/analyses";
 import * as actions from "./services/actions";
@@ -63,7 +65,10 @@ export const routes: Record<string, Route> = {
 
   "GET /api/v1/stores": userRoute(listStores),
   "GET /api/v1/stores/me": userRoute(myStore),
+  "GET /api/v1/stores/me/summary": userRoute(storeOverview),
   "GET /api/v1/products": userRoute(listProducts),
+  "GET /api/v1/products/catalog": userRoute(pagedCatalog),
+  "GET /api/v1/products/options": userRoute(productOptions),
   "POST /api/v1/products/import": userRoute(importProducts),
   "GET /api/v1/products/:id": userRoute(getProduct),
   "POST /api/v1/products": userRoute(createProduct),
@@ -78,6 +83,8 @@ export const routes: Record<string, Route> = {
   "DELETE /api/v1/categories/:id": adminRoute(deleteCategory),
 
   "GET /api/v1/analyses": userRoute(listAnalyses),
+  "GET /api/v1/analyses/workspace": userRoute(analysisWorkspace),
+  "GET /api/v1/analyses/options": userRoute(analysisOptions),
   "GET /api/v1/analyses/:id": userRoute(getAnalysis),
   "POST /api/v1/analyses": adminRoute(createAnalysis),
   "GET /api/v1/analyses/:id/actions": userRoute(listAnalysisActions),
@@ -87,6 +94,7 @@ export const routes: Record<string, Route> = {
   "GET /api/v1/analysis-results/:id/actions": userRoute(listAnalysisActions),
 
   "GET /api/v1/actions": userRoute(listActions),
+  "GET /api/v1/actions/workspace": userRoute(workspaceActions),
   "GET /api/v1/actions/:id": userRoute(getAction),
   "POST /api/v1/actions": userRoute(createAction),
   "PATCH /api/v1/actions/:id": userRoute(updateAction),
@@ -135,6 +143,29 @@ async function logoutAccount({ request }: Context): Promise<Outcome> {
     tokenHash(request.headers.get("authorization")!.slice(7)),
   ]);
   return { body: { data: { logged_out: true } } };
+}
+async function storeOverview({actor}:Context):Promise<Outcome>{
+ return {body:await workspace.workspaceRead(db=>workspace.readOverview(db,actor!))};
+}
+async function productOptions({actor,url}:Context):Promise<Outcome>{
+ const query=parse(workspace.choiceQuery,Object.fromEntries(url.searchParams));
+ return {body:await workspace.workspaceRead(db=>workspace.readChoices(db,actor!,query,"products"))};
+}
+async function analysisOptions({actor,url}:Context):Promise<Outcome>{
+ const query=parse(workspace.choiceQuery,Object.fromEntries(url.searchParams));
+ return {body:await workspace.workspaceRead(db=>workspace.readChoices(db,actor!,query,"analyses"))};
+}
+async function analysisWorkspace({actor,url}:Context):Promise<Outcome>{
+ const query=parse(workspace.detailQuery,Object.fromEntries(url.searchParams));
+ return {body:await workspace.workspaceRead(db=>workspace.readDetail(db,actor!,query))};
+}
+async function workspaceActions({actor,url}:Context):Promise<Outcome>{
+ const query=parse(workspace.workQuery,Object.fromEntries(url.searchParams));
+ return {body:await workspace.workspaceRead(db=>workspace.readWorkPage(db,actor!,query))};
+}
+async function pagedCatalog({ url, actor }: Context): Promise<Outcome> {
+  const query = parse(catalogQuerySchema, Object.fromEntries(url.searchParams));
+  return { body: await catalogPage(actor!, query) };
 }
 async function listProducts({ url, actor }: Context): Promise<Outcome> {
   const { page, limit } = pagination(url);

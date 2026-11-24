@@ -7,16 +7,16 @@ import { StatusBadge } from "@/components/status-badge";
 import { analysisColor } from "@/lib/status-colors";
 import { useRouter } from "next/navigation";
 import { api, analysisLabels, display, price } from "@/lib/api-client";
-import type { Dataset, Product } from "@/types/api";
+import type { CatalogData, CatalogQuery, CatalogResponse, Product } from "@/types/api";
 import { Empty, Icon, Modal, Panel } from "@/components/ui";
 import { ProductIdentity } from "@/components/products/product-identity";
 import { productCode } from "@/lib/analysis-presentation";
 import { ImportProducts } from "@/components/products/import-products";
 import { usePopup } from "@/components/popup";
 import { mlAnalysisLabels } from "@/lib/api-client";
-import { isInsufficient } from "@/lib/insufficient-data";
 
-function latest(data: Dataset, productId: string) {
+
+function latest(data: CatalogData, productId: string) {
   return data.analyses
     .filter((row) => row.product_id === productId)
     .sort(
@@ -27,65 +27,39 @@ function latest(data: Dataset, productId: string) {
 }
 export { LiveOverview } from "./overview";
 
-export function LiveCatalog({
-  data,
-  role,
-  refresh,
-}: {
-  data: Dataset;
+export function LiveCatalog({ data, role, refresh, query, changeQuery, pagination, facets, summary, loading }: {
+  data: CatalogData;
   role: "user" | "admin";
   refresh: () => Promise<void>;
+  query: CatalogQuery;
+  changeQuery: (patch: Partial<CatalogQuery>) => void;
+  pagination: CatalogResponse["pagination"];
+  facets: CatalogResponse["facets"];
+  summary: CatalogResponse["summary"];
+  loading: boolean;
 }) {
-  const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("");
-  const [status, setStatus] = useState("");
-  const [sort, setSort] = useState("");
-  const [analysableOnly, setAnalysableOnly] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const router = useRouter();
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
   const popup = usePopup();
   const [editor, setEditor] = useState<Product | "new" | null>(null);
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
-
-  const concluded = (product: Product) => {
-    const current = latest(data, product.id);
-    return Boolean(current) && !isInsufficient(current.status);
-  };
-
-  const rows = data.products
-    .filter(
-      (row) =>
-        `${row.name} ${row.id} ${productCode(row)}`
-          .toLowerCase()
-          .includes(search.toLowerCase()) &&
-        (!category || row.category_id === category) &&
-        (!status ||
-          (latest(data, row.id)?.status ?? "no_analysis") === status) &&
-        (!analysableOnly || concluded(row)),
-    )
-    .sort((a, b) =>
-      sort === "price"
-        ? Number(a.price ?? Infinity) - Number(b.price ?? Infinity)
-        : sort === "sales"
-          ? Number(b.quantity_sold ?? -1) - Number(a.quantity_sold ?? -1)
-          : Number(concluded(b)) - Number(concluded(a)),
-    );
-
-  const undecidedCount = data.products.filter((row) => !concluded(row)).length;
-  const pages = Math.max(1, Math.ceil(rows.length / pageSize));
-  const activePage = Math.min(page, pages);
-  const pageNumbers = [
-    ...new Set([1, activePage - 1, activePage, activePage + 1, pages]),
-  ]
-    .filter((number) => number >= 1 && number <= pages)
-    .sort((a, b) => a - b);
-  const visible = rows.slice(
-    (activePage - 1) * pageSize,
-    activePage * pageSize,
-  );
+  const {q: search, category_id: category, status, sort, analysable_only: analysableOnly, limit: pageSize} = query;
+  const change = (patch: Partial<CatalogQuery>) => { setSelected([]); changeQuery(patch); };
+  const setSearch = (q: string) => change({q});
+  const setCategory = (category_id: string) => change({category_id});
+  const setStatus = (status: string) => change({status});
+  const setSort = (sort: string) => change({sort: sort as CatalogQuery["sort"]});
+  const setAnalysableOnly = (analysable_only: boolean) => change({analysable_only});
+  const setPage = (page: number) => change({page});
+  const setPageSize = (limit: number) => change({limit});
+  const undecidedCount = summary.undecided_count;
+  const total = pagination.total;
+  const pages = Math.max(1, Math.ceil(total / pageSize));
+  const activePage = loading ? query.page : pagination.page;
+  const pageNumbers = [...new Set([1,activePage-1,activePage,activePage+1,pages])]
+    .filter(number => number>=1 && number<=pages).sort((a,b)=>a-b);
+  const visible = loading ? [] : data.products;
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -221,7 +195,7 @@ export function LiveCatalog({
           >
             <option value="">Trạng thái: Tất cả</option>
             <option value="no_analysis">Chưa có phân tích</option>
-            {[...new Set(data.analyses.map((row) => row.status))]
+            {facets.statuses
               .filter(
                 (key) =>
                   !(key in mlAnalysisLabels) &&
@@ -243,9 +217,14 @@ export function LiveCatalog({
               </option>
             ))}
           </select>
+          <select aria-label="Loại sản phẩm ML" value={query.type} onChange={event => change({type: event.currentTarget.value})}>
+            <option value="">Loại sản phẩm: Tất cả</option>
+            {facets.types.map(type => <option key={type} value={type}>{type}</option>)}
+          </select>
           <button
             className="button subtle"
             onClick={() => {
+              change({type: ""});
               setSearch("");
               setCategory("");
               setStatus("");
@@ -442,19 +421,19 @@ export function LiveCatalog({
             </tbody>
           </table>
         </div>
-        {!visible.length && <Empty />}
+        {!loading && !visible.length && <Empty />}
         <div className="table-footer">
           <span>
             Hiển thị{" "}
             {visible.length
-              ? `${(activePage - 1) * pageSize + 1}–${Math.min(activePage * pageSize, rows.length)}`
+              ? `${(activePage - 1) * pageSize + 1}–${Math.min(activePage * pageSize, total)}`
               : "0"}{" "}
-            / {rows.length} sản phẩm
+            / {total} sản phẩm
           </span>
           <div className="pagination">
             <button
               aria-label="Trang trước"
-              disabled={activePage <= 1}
+              disabled={loading || activePage <= 1}
               onClick={() => setPage(activePage - 1)}
             >
               ‹
@@ -465,6 +444,7 @@ export function LiveCatalog({
                   <span aria-hidden="true">…</span>
                 )}
                 <button
+                  disabled={loading}
                   aria-label={`Trang ${number}`}
                   aria-current={activePage === number ? "page" : undefined}
                   className={activePage === number ? "active" : undefined}
@@ -476,7 +456,7 @@ export function LiveCatalog({
             ))}
             <button
               aria-label="Trang sau"
-              disabled={activePage >= pages}
+              disabled={loading || activePage >= pages}
               onClick={() => setPage(activePage + 1)}
             >
               ›

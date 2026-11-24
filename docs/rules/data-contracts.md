@@ -315,3 +315,82 @@ technical `versions`. `analysis_requests` and `running_requests` are null until
 job tracking exists. Detailed customer product/category/analysis/action routes
 return 403 for Admin. Correct-password suspended login returns
 `403 ACCOUNT_SUSPENDED`; wrong credentials remain 401.
+
+
+## Offline ML import bundle (2026-11-17)
+
+The sellens-ml-import-v1 local bundle is an ingestion contract, not a new HTTP DTO.
+prepare-ml-import.py validates snapshot identity, numerical fields, versions,
+timestamps and immutable recommendation text against the two CSVs. manifest.json
+records input and record hashes/counts. records.ndjson stores frozen product input,
+ML analysis, source-peer comparison and original hypotheses. These outputs stay
+under ignored data/processed. Seller-to-store mapping is explicit and recorded in
+analysis_runs.manifest_json; source seller metadata confers no ownership.
+
+New analyses remain ineligible/needs-review with quality_acceptance=false and
+prediction_origin=unavailable until prediction provenance is independently supplied.
+Invalid-model and ambiguous-source flags stay in the frozen input. Reused analyses
+retain their original run and actions; the new manifest records reused IDs.
+Same source identities in a different store, changed same-run input, ambiguous
+existing analyses or divergent hypotheses stop ingestion. No existing record is
+overwritten. New product category_id remains null until category mapping is agreed.
+Peer source IDs stay in comparison_json; peer-detail endpoints are not added.
+
+
+## Catalog page API (2026-11-17)
+
+GET /api/v1/products/catalog is a store-owner-only listing view. It is declared
+in server/api.ts, retaining existing /products consumers and Admin privacy rules.
+Strict query fields: page(1..1000000),limit(1..100;default20),q(max200),category_id,
+store,status(existing legacy/ML statuses or no_analysis),type(max150),sort(empty,
+price,sales),analysable_only(true,false). Other-store requests return404.
+
+Response: data(Product list summaries),pagination(page,limit,filtered total),
+categories(owner-store category facets),analyses(latest page analysis ID/product ID/
+status/type/time),actions(page latest-analysis action ID/analysis ID/title),store,
+facets(statuses/types from the complete owned store),summary(total,undecided_count,
+proposed_actions for the complete owned store). List description is null; large
+source/evidence/snapshot/audit payloads remain on existing detail endpoints.
+IDs and SQL numeric product listing values remain strings. Nulls stay null.
+
+Latest means analyzed_at DESC,id DESC. Default product order puts conclusions
+ahead of no-analysis/insufficient_data; price ascending and sales descending put
+nulls last; every order ends with product ID. The analysable-only filter preserves
+the existing UI definition: has analysis and status is not insufficient_data.
+It is not an ML quality/eligibility gate. Peer evidence, action originals, statuses
+and analysis eligibility are never recomputed by the catalog API.
+
+Frontend /user/products requests only page data. Export explicitly covers the
+current page. Other screens and full exports are outside this scoped change.
+
+
+## Bounded User workspace APIs (2026-11-17)
+
+All routes below are GET, guarded centrally, owner-only and read-only. Admin uses
+existing aggregate-only admin APIs, not customer detail. Store is resolved from
+the active authenticated owner; arbitrary owner/store fields are not accepted.
+
+- /api/v1/stores/me/summary: store, summary(global latest-result metrics,
+  status_counts,category counts,sidebar global_proposed,last_analysis_at),
+  data(bounded priority/current-work previews and associated product summaries).
+  Current-result action metrics count only latest results; global_proposed counts
+  all owned work, preserving the sidebar's existing meaning.
+- /api/v1/products/options and /api/v1/analyses/options: q(max200),page,limit
+  (default20,max100). Return data/pagination with product or analysis choices.
+- /api/v1/analyses/workspace: optional product_id,analysis_id,history_page,
+  actions_page (positive bounded page numbers). Return store,proposed_actions,
+  data(one product,at most one full frozen analysis,up to20 linked actions,category),
+  history(up to20 result summaries),history_pagination,actions_pagination.
+  Explicit invalid pair or foreign record returns404. Default prefers the first
+  product with a saved ml_v2 result; latest is analyzed_at DESC,id DESC.
+- /api/v1/actions/workspace: q(max200),status,type,analysis_id,page,limit(default12,
+  max100). Return store,data(page of full work records with summary associations),
+  pagination(filtered total),summary(global total/states),facets(types),
+  filtered_states(Kanban totals for matching filters). Order updated_at DESC,id DESC.
+
+IDs/numerics keep their existing string/null contracts. q uses literal substring
+matching. Historical analysis inputs, references, evidence, origins and hypothesis
+text are never recomputed by these read APIs. The frontend audit requests existing
+/actions/:id/history with page/limit20; PATCH/create still use existing validators
+and expected_updated_at/rejection-reason rules. Kanban is a paged view. Exports
+cover only labelled aggregate/profile/page scope, not unbounded collections.
