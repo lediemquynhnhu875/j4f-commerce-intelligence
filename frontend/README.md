@@ -2,9 +2,8 @@
 
 Current ownership: each User has one store. The header uses `/stores` data;
 User1 sees J4F store's catalog, User2 sees empty catalog/analyses/suggestions.
-Admin store view shows persisted owners and product counts. See
-[store contract](../specs/store-ownership.md). Store reassignment and live ML
-inference remain unavailable; old pending-ownership text below is superseded.
+Admin store view shows persisted owners and product counts. See the
+[store contract](../specs/store-ownership.md).
 
 
 Next.js / React / TypeScript connected to the separate PostgreSQL-backed API.
@@ -30,9 +29,9 @@ variables. Sessions use the existing HttpOnly cookie proxy at /api/backend/*.
 - Admin: /admin/overview, /admin/stores, /admin/accounts, /admin/monitor,
   and /admin/configuration.
 - /preview/*, /admin/products and /admin/categories return 404.
-- Store ownership is enforced by the API. Configuration is read-only and live
-  inference remains pending. Product import/write requests use the signed-in
-  User's store. Saved analysis data is loaded from PostgreSQL.
+- Store ownership is enforced by the API. System configuration is read-only.
+  Product imports use the signed-in User's store. The Analysis screen can request
+  a new saved result through the backend when FastAPI is configured.
 
 The Next.js route `src/app/[role]/[page]/page.tsx` maps public URLs to screens:
 

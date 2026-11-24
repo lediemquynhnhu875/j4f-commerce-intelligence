@@ -10,6 +10,17 @@ Serve a trusted frozen ML bundle and persist authenticated, store-scoped analysi
 
 Follow [research](research.md), [data model](data-model.md) and [interface contracts](contracts/interfaces.md). This is a documentation-only plan; package installation, runtime initialization and application changes are future tasks.
 
+## November 24 implementation amendment
+
+The user requested a pilot for importing product data and triggering real ML
+inference. The service implementation lives in `ml/src/serving/`, the
+integration and persistence in `backend/src/server/`, and the trigger in the
+User analysis view. See [ADR 0012](../../docs/decisions/0012-live-model-a-pilot.md)
+and the [Render walkthrough](../../docs/ml/trien-khai-ml-render.md).
+The synchronous pilot reuses saved-result tables. Durable processing states,
+cloud acceptance on the team's artifact and the original evaluation gates remain
+open.
+
 ## Technical Context
 
 **Language/Version**: TypeScript for web; Python >=3.11 for ML/service. Existing test attempt used Python3.12.4. Pin compatible Node LTS/library versions at setup.

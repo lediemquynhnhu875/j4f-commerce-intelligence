@@ -18,6 +18,7 @@ import {
   analysisTime,
 } from "@/components/analysis/analysis-timeline";
 import { ProductIdentity } from "@/components/products/product-identity";
+import { RunAnalysisButton } from "@/components/analysis/run-analysis-button";
 import {
   InsufficientReason,
   ObservableSummary,
@@ -54,6 +55,7 @@ export default function UserAnalysis() {
         productId={params.get("product")}
         analysisId={params.get("analysis")}
         refreshVersion={refreshVersion}
+        onAnalyzed={refresh}
       />
     </WorkspaceLayout>
   );
@@ -109,10 +111,12 @@ function AnalysisEvidence({
   productId,
   analysisId,
   refreshVersion,
+  onAnalyzed,
 }: {
   productId: string | null;
   analysisId: string | null;
   refreshVersion: number;
+  onAnalyzed: () => void;
 }) {
   const range = useAnalysisDateRange();
   const lookupId = productId ?? analysisId;
@@ -272,6 +276,20 @@ function AnalysisEvidence({
           )}
         </div>
         <div className="analysis-product-actions">
+          {current && (
+            <RunAnalysisButton
+              key={product.id}
+              productId={product.id}
+              onAnalyzed={() => {
+                const url = new URL(window.location.href);
+                url.searchParams.set("product", product.id);
+                url.searchParams.delete("analysis");
+                window.history.replaceState(null, "", url);
+                range.reset();
+                onAnalyzed();
+              }}
+            />
+          )}
           <Link className="button subtle" href={"/user/products"}>
             Chọn sản phẩm khác
           </Link>

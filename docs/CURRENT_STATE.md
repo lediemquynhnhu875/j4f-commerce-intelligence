@@ -1,6 +1,44 @@
 # Project State and Handoff
 
-Updated: 2026-11-19 (Asia/Saigon).
+Updated: 2026-11-24 (Asia/Saigon).
+
+## GitHub Release bundle for the ML pilot
+
+The F004 deployment pilot on `refactor` now supports storing the verified model
+archive as a Release asset in a dedicated private GitHub repository. The new
+`fetch-github` command downloads the asset by tag/name and checks the pinned
+SHA-256 before extraction. Use the updated [Render guide](ml/trien-khai-ml-render.md).
+The local deployment archive `ml/artifacts/sellens-ml-v2.zip` is ready for the
+private `v2` Release. It was packed with Python 3.13.13 and scikit-learn 1.9.1
+(the version recorded in the model), with the other supplied versions kept.
+SHA-256: `572c89b57561465a716c61232544042137b05989d6428f4aacfc418bcf3b4de8`.
+The actual bundle passed checksum extraction and local FastAPI readiness and
+inference checks. All 41 ML tests passed on Python 3.13.13. Dependency
+resolution succeeded for x86-64 Linux. Release publication remains pending.
+
+The Python suite passed all 41 tests. New mocked checks cover asset selection,
+checksum mismatch and keeping the credential off the HTTPS redirect. A real
+private GitHub download and cloud deploy are pending.
+
+## Live Model A deployment pilot
+
+The F004 pilot on `refactor` connects store-owned products to a separate CPU
+FastAPI service. Import still updates the catalog. A User can then request an
+analysis, which saves the input snapshot, output, and new recommendations in
+one transaction. Migration 006 reconciles product media columns for fresh
+databases. See the [Render guide](ml/trien-khai-ml-render.md) and
+[ADR 0012](decisions/0012-live-model-a-pilot.md).
+
+Verified locally with a synthetic trained bundle and isolated PostgreSQL
+(PGlite). Edge uploaded a CSV through the real frontend proxy, triggered the
+live FastAPI call and displayed saved evidence. Direct API tests covered import
+media, owner isolation, idempotent replay, frozen snapshots after reimport,
+recommendation audit entries, and service outage preserving history.
+The backend build, type check and 18 unit tests passed. Frontend production
+build, lint, test type check and 22 Edge tests passed. The Python suite ran
+38 tests including model service scenarios. The team's model bundle and corpus
+were unavailable in this checkout. Render, R2, Vercel and Neon production
+verification remain pending. No existing cloud data was modified.
 
 ## Playwright TypeScript configuration
 
@@ -319,6 +357,7 @@ session started clean, fetched remote refs and branched from `origin/main`.
 
 | Feature / task ID | Owner | Branch | Status | Dependencies / notes |
 | --- | --- | --- | --- | --- |
+| F004/T003, T006–T012 deployment-testing amendment | Requesting contributor, Codex-assisted | refactor | Pilot implemented and verified locally | Deploy with the team's trusted artifact and run acceptance on Render, Vercel and Neon |
 | F005 overview and F007 Admin ranking statistics | Requesting contributor, Codex-assisted | remove_demo | Neon migration applied and application verified locally | Deploy both applications and measure end-to-end latency |
 | F007/T004, T007 and T009–T011 Admin page queries | Requesting contributor, Codex-assisted | remove_demo | Implemented and verified locally | Deploy both applications and measure navigation latency |
 | F005/T009–T011 and F002/T014 scoped query optimization | Requesting contributor, Codex-assisted | remove_demo | Implemented and locally verified | Deploy both components and measure end-to-end latency on a larger store |

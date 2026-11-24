@@ -24,6 +24,16 @@ Tasks are displayed and numbered in a dependency-valid recommended order. Choose
 
 Task IDs were revised at the user's request before any task was claimed or completed. Use the [ID migration](../../docs/decisions/0003-ui-preview-first-task-order.md) when referring to the older checklist. Do not renumber once execution starts.
 
+## Deployment-testing amendment
+
+- Pilot implementations cover pieces of T003, T006–T012. FastAPI loads a
+  trusted fixed bundle, an owning User can request and save one new result
+  with a repeat-safe key, and the UI refreshes saved evidence after success.
+- The pilot has local test evidence with a synthetic trained bundle and an
+  isolated database. T013 still needs deployment with the team's actual model,
+  and the original full acceptance criteria stay unchecked. See
+  [current state](../../docs/CURRENT_STATE.md#live-model-a-deployment-pilot).
+
 ## Phase 1: User Story 3: mock analysis result UI
 
 **Goal**: Produce an inspectable synthetic preview without waiting for a real service.

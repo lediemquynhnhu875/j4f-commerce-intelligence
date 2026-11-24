@@ -36,8 +36,9 @@ The system provides decision-support hypotheses. It does not claim causal effect
 
 The Next.js application in `frontend/` uses authenticated PostgreSQL-backed
 APIs served by the separate `backend/` application. Each User has one store.
-Imported ML snapshots supply the saved analysis results and suggestions.
-Python/FastAPI serving remains pending.
+Imported ML snapshots supply historical results and suggestions. The User can also
+run live Model A inference for an owned product after a FastAPI service is configured.
+See the [Vietnamese deployment and import test guide](docs/ml/trien-khai-ml-render.md).
 
 The API home page lists registered endpoints and links to health/readiness checks.
 See [backend setup](backend/README.md) and
