@@ -1,6 +1,39 @@
 # Project State and Handoff
 
-Updated: 2026-11-24 (Asia/Saigon).
+Updated: 2026-11-25 (Asia/Saigon).
+
+## Mai full-data integration merge (2026-11-25)
+
+Scope: resolve `main` at 8256c0b with `mai/full-data-integration`, preserving
+current frontend structure and live-model pilot while adding Mai's offline
+ingestion/maintenance tools and protected compatibility reads. The merge remains
+pending on the contributor's machine; no remote push or cloud mutation occurred.
+
+- Keep `page/user/{overview,product,analysis,suggestion}.tsx`, shared Auth and
+  WorkspaceLayout, saved projections and live inference. Retire the old
+  LivePage/PagedCatalog/UserWorkspace composition instead of restoring removed UI.
+- Keep additive `/products/catalog`, `/products/options`, `/analyses/options`,
+  `/analyses/workspace`, `/actions/workspace` and `/stores/me/summary` for the
+  existing ownership CLI suite. Main's workspace/catalog/card/model APIs remain
+  active. Static compatibility names precede dynamic ID routes.
+- Retain every supplied SQL migration byte-for-byte. The runner identifies
+  versions by complete filename, not numeric prefix; both 005 and both 006
+  entries are distinct. Never rename, renormalize or reset applied SQL.
+- Keep full-source import, provisioning, transfer and enrichment scripts.
+  Historical ownership transfer is completed per contributor logs; do not rerun
+  that maintenance on the statistics schema without reviewing projection triggers.
+- Contributor-reported Neon checks: 41,576 source products, 3,807 seller shops,
+  no duplicate source products/mixed sellers, 125 older-source analyses retained.
+  Three populated shops passed 410 HTTP reads/rejected-write probes with six
+  ownership directions. These were not rerun against Neon for this merge.
+  Media coverage is partial and URL-only.
+- Frontend lockfile repaired missing optional emnapi package records; declared
+  package versions remain unchanged.
+- See [merge verification](verification/main-mai-merge.md). Pending: apply patch,
+  local smoke checks, merge commit, normal push and deployment. Full image
+  coverage, cloud verification and backup remain open.
+
+
 
 ## GitHub Release bundle for the ML pilot
 

@@ -50,3 +50,8 @@ tmp/
 
 .vercel
 j4f-commerce-intelligence 23.25.32/
+
+# Local integration/source archives
+/code_hien_tai.zip
+/ml_data.zip
+/sellens_source.zip
