@@ -1,0 +1,36 @@
+{
+  "taxonomy": "ml/config/taxonomy_v3.yml",
+  "taxonomy_sha256": "210d69d97a684f37e5d277ad7d44d23303d4ea715cbb7ab41125a8ba9c67fe27",
+  "workbook_sha256": "ba64bcb7ff3b141235fac99ad73bd762d66eb1250de1d199604094a4a5a382c4",
+  "rows": 300,
+  "accuracy": 0.7433,
+  "correct": 223,
+  "gate": 0.85,
+  "gate_passed": false,
+  "by_source": {
+    "category_rule": {
+      "rows": 17,
+      "accuracy": 0.471
+    },
+    "description_rule": {
+      "rows": 3,
+      "accuracy": 1.0
+    },
+    "name_context_rule": {
+      "rows": 7,
+      "accuracy": 1.0
+    },
+    "name_gender_rule": {
+      "rows": 83,
+      "accuracy": 0.819
+    },
+    "name_rule": {
+      "rows": 161,
+      "accuracy": 0.795
+    },
+    "unmatched_default": {
+      "rows": 29,
+      "accuracy": 0.31
+    }
+  }
+}

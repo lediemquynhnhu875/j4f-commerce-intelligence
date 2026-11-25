@@ -73,3 +73,20 @@ class GitHubReleaseAssetsTest(unittest.TestCase):
             handler.redirect_request(
                 request, None, 302, "Found", {}, "http://release-assets.githubusercontent.com/asset",
             )
+
+
+class PackTaxonomyTest(unittest.TestCase):
+    def test_pack_bundles_the_requested_taxonomy(self):
+        with TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / "reference_models.joblib").write_bytes(b"model")
+            (root / "model_metrics.json").write_text(json.dumps({
+                "model_version": "test", "model_a_actionable": {"estimator_backend": "sklearn_hist_gradient_boosting"},
+            }), encoding="utf-8")
+            corpus = root / "clean_products.csv"
+            corpus.write_text(",".join(assets.CORPUS_COLUMNS) + "\n" + ",".join(["1"] * len(assets.CORPUS_COLUMNS)) + "\n",
+                              encoding="utf-8")
+            output = root / "bundle.zip"
+            assets.pack(root, corpus, output, Path("ml/config/taxonomy_v3.yml"))
+            with ZipFile(output) as bundle:
+                self.assertEqual(bundle.read("taxonomy.yml"), Path("ml/config/taxonomy_v3.yml").read_bytes())

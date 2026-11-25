@@ -70,6 +70,9 @@ python3 -m ml.src.cli score --baseline-only
 
 ## Taxonomy checkpoint
 
+Taxonomy v3 (`ml/config/taxonomy_v3.yml`, holdout 70.7%) is the latest candidate; see
+[docs/ml/taxonomy-v3.md](../docs/ml/taxonomy-v3.md). Regenerate it with `python3 -m ml.src.taxonomy.build_v3`.
+
 Edit the rules in `ml/config/taxonomy.yml`, run `prepare`, and manually fill `is_correct` plus `corrected_product_type` in the 200-row review sample. Then run:
 
 ```bash

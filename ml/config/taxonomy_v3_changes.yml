@@ -1,0 +1,72 @@
+# Taxonomy v3: head-noun precedence and structural fixes on top of v2.
+# Built into taxonomy_v3.yml by `python -m ml.src.taxonomy.build_v3`.
+# Developed on development labels only (see docs/ml/taxonomy-v3.md); the locked holdout was not used.
+taxonomy_version: v3-head-noun
+v3:
+  python_regex: true
+  category_gender: true
+  sandal_cue: 'quai hậu'
+  head_noun_priority: true
+  absolute_labels: [out_of_scope, giày đế xuồng]
+  gift_parenthetical: true
+  underscore_as_space: true
+  category_requires_name_noun: '\b(?:giày|dép|guốc|sục|sandal|sandals|sandan|xăng đan|boot|boots|bốt|sneaker|túi|ví|bóp|balo|ba lô|vali|cặp|clutch|bag|wallet|kính|lens|mũ|nón|khăn|găng|bao tay|tất|vớ|thắt lưng|dây lưng|dây nịt|đai|đồng hồ|nhẫn|vòng|lắc|dây chuyền|bông tai|khuyên|cà vạt|nơ|kẹp|bờm|băng đô|chun|cài|ghim|khẩu trang|hình xăm|lót|xi|móc|quai|dây|phụ kiện|shoes|hat|cap)\b'
+  # Only main-item categories need the title noun; accessory categories (belt buckles, shoe care) are reliable.
+  category_guard_labels: [giày búp bê, giày cao gót, giày đế xuồng, giày tây nam, giày lười nam, giày lười nữ, giày thể thao nam, giày thể thao nữ, giày nam, giày nữ, boots nam, boots nữ, sandal nam, sandal nữ, dép nam, dép nữ, túi xách nam, túi xách nữ, túi xách khác, túi tote, túi đeo chéo, túi bao tử, túi du lịch, túi laptop công sở, balo, vali, ví nam, ví nữ, ví khác, kính mắt, gọng kính, kính áp tròng, đồng hồ, mũ nón]
+  shoe_family_earliest: true
+  shoe_family_patterns:
+    dép: '\bdép\b(?!\s+(?:sandal|sandals|sandan|xăng đan))|\bguốc\b|\bsục\b'
+    boots: '\bboot(?:s)?\b|\bbốt\b|chelsea|chukka|\bghệt\b'
+  shoe_accessory_head: '^\W*(?:(?:combo|set|bộ|\d+|cặp|đôi)\W+)*(?:miếng|cục|gôm|chai|bình|lọ|hộp|túi|dây|nút|khoen|ghế|kệ|tủ|xi|keo|lót|đệm|bọc|móc|dung dịch|nước|xịt)\b'
+  male_extra: 'phái mạnh|đàn ông|quý ông'
+  female_extra: 'phái đẹp|bạn gái|quý cô|cho mẹ|cho bà'
+  heel_pattern: 'cao\s*gót|gót\s+(?:nhọn|trụ|vuông|xéo|cao|nhỏ)|\b(?:[4-9]|1[0-2])(?:[.,]5)?\s*(?:phân|p|cm)\b|giày\s+cưới|cô\s+dâu'
+  heel_description_pattern: 'giày cao gót|cao gót|gót cao'
+  wallet_head: '\b(?:ví|bóp)\b'
+  bag_head: '\b(?:túi|clutch|balo|ba lô|cặp|vali)\b'
+  bag_unisex: true
+  bag_gender: true
+  gender_noise: 'việt\s*nam|\bhà\s+nam\b'
+  unmatched_label: out_of_scope
+special_name_rules:
+  - {label: phụ kiện thời trang khác, pattern: '^\W*(?:\S+\s+){0,2}móc\s+kh(?:óa|oá|oa)|quai đeo khẩu trang|dây đeo khẩu trang|ống tay|ống xỏ tay|dụng cụ đeo (?:kính áp tròng|lens)|nối áo ngực|bao tay hình xăm|(?:hộp|bao|túi) đựng kính|dây đeo kính|móc kính|gài kính|khăn lau(?: kính| nano)'}
+updates:
+  out_of_scope:
+    keywords: [đồng hồ đo, đồng hồ vạn năng, ghế đi giày, khoen bấm, đai treo tay, kim khâu, kim đan, chiết mỹ phẩm, chai chiết, lọ chiết, xe đẩy hành lý]
+  ví khác:
+    keywords: [bóp, bóp ví, bóp da, bóp đựng tiền]
+  thắt lưng:
+    keywords: [dây lưng, mặt dây lưng, khóa thắt lưng]
+  phụ kiện tóc:
+    keywords: [chun buộc, bờm, kẹp mái, phồng mái]
+    name_patterns: ['\bkẹp\b.{0,12}\btóc\b', '\blô\s+(?:quấn|cuốn|uốn)']
+  khăn thời trang:
+    keywords: [khăn voan, khăn choàng, khăn quàng, khăn lụa, khăn xếp, khăn bịt mặt, khăn đa năng]
+  kính mắt:
+    keywords: [kính đi đường, kính chống nắng, kính chống tia uv, kính lúp]
+  phụ kiện vệ sinh giày:
+    keywords: [lót chân, lót gót, lót sau giày, miếng lót, cục tẩy, gôm tẩy, tẩy giày, laces, bảo vệ giày, chống thấm giày, khử mùi giày, xịt giày, nút gắn, jibbitz, đệm mũi giày, lót mũi giày, xịt chống hôi chân]
+  phụ kiện vali du lịch:
+    keywords: [túi zip, túi đựng đồ du lịch, túi mỹ phẩm, túi phân loại]
+    name_patterns: ['(?:set|bộ|combo)\s*\d*\s*túi.{0,40}(?:du lịch|phân loại|đựng đồ|mỹ phẩm)']
+  túi bao tử:
+    keywords: [bum bag, túi đeo bụng, túi đeo hông, waist bag]
+  túi laptop công sở:
+    keywords: [cặp da, cặp công sở, cặp văn phòng, cặp tap, cặp táp, cặp doanh nhân, cặp tài liệu, túi chống sốc laptop, túi chống sốc macbook]
+  balo:
+    keywords: [cặp đi học, cặp học sinh, balo dây rút]
+  phụ kiện cài áo:
+    keywords: [hoa cài, bông cài, kim băng]
+  hình xăm tạm thời:
+    keywords: [xăm dán]
+  trang sức:
+    keywords: [chain thắt eo, xích eo, dây xích eo]
+# Labelling conventions agreed by the contributor on 2026-11-25; written into taxonomy_label_guide_v3.yml.
+guide_conventions:
+  - 'Giới tính lấy theo thứ tự: tên sản phẩm, rồi mô tả, rồi danh mục gốc của người bán. Không bao giờ lấy từ file nguồn.'
+  - 'Tên ghi "nam nữ", "nam và nữ", "nam lẫn nữ" hoặc "unisex": dùng nhãn unisex nếu có (sandal/dép/giày lười/boots/giày unisex), nếu không có thì dùng nhãn "khác" (giày thể thao khác, ví khác, túi xách khác).'
+  - 'Không có giới tính ở tên, mô tả lẫn danh mục: dùng nhãn "khác".'
+  - 'Dép có quai hậu là sandal.'
+  - 'Đế xuồng luôn được ưu tiên: "Dép ... đế xuồng" và "Giày búp bê đế xuồng" đều là giày đế xuồng.'
+  - 'Danh từ chính ở đầu tên quyết định loại sản phẩm: "Mũ len kèm găng tay" là mũ nón, "Móc khoá ... phụ kiện túi xách" là phụ kiện thời trang khác.'
+  - '"Việt Nam", "Hà Nam" là địa danh/thương hiệu, không phải giới tính.'
