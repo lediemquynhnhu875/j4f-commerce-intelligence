@@ -155,3 +155,6 @@ artifacts in `ml/artifacts/taxonomy_v2_run/`. Use new `--output-dir` and
 holdout accuracy is 63%, below 85%; the old 200-row development review is 81%.
 The full pipeline ran experimentally, not as an acceptance/release pass.
 See `docs/ml/taxonomy-v2-rerun.md` for schema and evaluation limitations.
+
+Automated retraining (scheduled job, gates, candidate release): see
+[docs/ml/retrain-automation.md](../docs/ml/retrain-automation.md) and `python3 -m ml.src.retrain.run --help`.

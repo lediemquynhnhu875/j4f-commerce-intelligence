@@ -149,7 +149,13 @@ def _fit_oof_configuration(
     numeric: list[str],
     categorical: list[str],
     config: PipelineConfig,
+    weights: np.ndarray | None = None,
 ) -> tuple[pd.DataFrame, dict[str, Any], dict[str, Pipeline]]:
+    """Weights change how the estimators learn; every reported metric stays unweighted."""
+
+    def fit_params(index: np.ndarray) -> dict[str, np.ndarray]:
+        return {} if weights is None else {"estimator__sample_weight": weights[index]}
+
     features = _prepare_features(frame, numeric, categorical)
     sales = pd.to_numeric(frame["quantity_sold"], errors="coerce").fillna(0).to_numpy(float)
     sold = (sales > 0).astype(int)
@@ -167,7 +173,7 @@ def _fit_oof_configuration(
         if np.unique(sold[train_index]).size < 2:
             probability[validation_index] = float(sold[train_index].mean())
         else:
-            classifier.fit(features.iloc[train_index], sold[train_index])
+            classifier.fit(features.iloc[train_index], sold[train_index], **fit_params(train_index))
             probability[validation_index] = classifier.predict_proba(
                 features.iloc[validation_index]
             )[:, 1]
@@ -178,7 +184,9 @@ def _fit_oof_configuration(
             conditional_log_sales[validation_index] = fallback
         else:
             regressor = _build_estimator(numeric, categorical, "regression", config.random_state)
-            regressor.fit(features.iloc[positive_train], np.log1p(sales[positive_train]))
+            regressor.fit(
+                features.iloc[positive_train], np.log1p(sales[positive_train]), **fit_params(positive_train)
+            )
             conditional_log_sales[validation_index] = regressor.predict(
                 features.iloc[validation_index]
             )
@@ -241,9 +249,11 @@ def _fit_oof_configuration(
     }
 
     final_classifier = _build_estimator(numeric, categorical, "classification", config.random_state)
-    final_classifier.fit(features, sold)
+    final_classifier.fit(features, sold, **fit_params(np.arange(len(frame))))
     final_regressor = _build_estimator(numeric, categorical, "regression", config.random_state)
-    final_regressor.fit(features.loc[positive_mask], np.log1p(sales[positive_mask]))
+    final_regressor.fit(
+        features.loc[positive_mask], np.log1p(sales[positive_mask]), **fit_params(np.flatnonzero(positive_mask))
+    )
     return prediction, metrics, {
         "classifier": final_classifier,
         "regressor": final_regressor,
@@ -253,6 +263,16 @@ def _fit_oof_configuration(
 def _finite_or_none(value: Any) -> float | None:
     number = float(value)
     return number if np.isfinite(number) else None
+
+
+def _sample_weights(training_products: pd.DataFrame) -> np.ndarray | None:
+    """Optional per-row training weights from a `sample_weight` column (retraining with store data)."""
+    if "sample_weight" not in training_products:
+        return None
+    weights = pd.to_numeric(training_products["sample_weight"], errors="coerce").to_numpy(float)
+    if not np.isfinite(weights).all() or (weights <= 0).any() or (weights > 1).any():
+        raise ValueError("sample_weight must be finite and in (0, 1]")
+    return None if (weights == 1).all() else weights
 
 
 def train_reference_models(
@@ -271,12 +291,13 @@ def train_reference_models(
         raise ValueError("At least 10 products with positive sales are required for regression")
     if training_products["quantity_sold"].eq(0).sum() < 2:
         raise ValueError("Both zero-sale and positive-sale products are required")
+    weights = _sample_weights(training_products)
 
     prediction_a, metrics_a, models_a = _fit_oof_configuration(
-        training_products, MODEL_A_NUMERIC, MODEL_A_CATEGORICAL, config
+        training_products, MODEL_A_NUMERIC, MODEL_A_CATEGORICAL, config, weights
     )
     prediction_b, metrics_b, models_b = _fit_oof_configuration(
-        training_products, MODEL_B_NUMERIC, MODEL_B_CATEGORICAL, config
+        training_products, MODEL_B_NUMERIC, MODEL_B_CATEGORICAL, config, weights
     )
     prediction_b = prediction_b.add_suffix("_model_b")
     valid_predictions = pd.concat([prediction_a, prediction_b], axis=1)
@@ -331,6 +352,12 @@ def train_reference_models(
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "training_rows": int(eligibility.sum()),
         "excluded_invalid_rows": int((~eligibility).sum()),
+        "sample_weight": {
+            "applied": weights is not None,
+            "rows_below_one": 0 if weights is None else int((weights < 1).sum()),
+            "minimum": 1.0 if weights is None else float(weights.min()),
+            "metrics_weighted": False,
+        },
         "peer_baseline": baseline_metrics,
         "model_a_actionable": metrics_a,
         "model_b_with_outcome_correlated_feedback": metrics_b,

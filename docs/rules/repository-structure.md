@@ -44,6 +44,8 @@
 - `src/peers/`: comparable-product retrieval.
 - `src/models/`: baselines, training, prediction, and evaluation.
 - `src/scoring/`: status assignment, evidence, and recommendation rules.
+- `src/retrain/`: scheduled retraining job (training set A', gates, candidate packing) and the
+  GitHub Actions workflow template for the private model-asset repository.
 - `tests/`: deterministic tests for transformations and scoring.
 - `artifacts/`: generated models and vectorizers; not committed.
 
