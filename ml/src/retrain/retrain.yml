@@ -1,0 +1,138 @@
+# Template for .github/workflows/retrain.yml in the private model-asset repository (sellens-ml-assets).
+# Copy it there; it is not active in this repository. See docs/ml/retrain-automation.md for the
+# required secrets/variables and for what the backend must provide.
+#
+# The job never activates a model. A passing candidate becomes a GitHub Release in state `ready`;
+# an Admin applies it from the web app, which switches the Render variables.
+name: retrain
+
+on:
+  schedule:
+    - cron: "0 19 * * 0"          # Monday 02:00 Asia/Ho_Chi_Minh
+  workflow_dispatch:
+    inputs:
+      job_id:
+        description: "model_training_jobs.id from the backend (blank for scheduled runs)"
+        required: false
+      allow_insufficient:
+        description: "Developer runs only: train below the minimum new-data threshold"
+        type: boolean
+        default: false
+
+concurrency:
+  group: retrain
+  cancel-in-progress: false
+
+permissions:
+  contents: write                  # create the candidate release in this repository
+
+jobs:
+  retrain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RUNNING_TAG: ${{ vars.RUNNING_TAG }}          # tag the Render service runs, e.g. v3
+      RUNNING_FILE: ${{ vars.RUNNING_FILE }}        # e.g. sellens-ml-v3.zip
+      RUNNING_SHA256: ${{ vars.RUNNING_SHA256 }}
+      JOB_ID: ${{ inputs.job_id || format('scheduled-{0}', github.run_id) }}
+    steps:
+      - name: Check out the model-asset repository (base corpus, first summary)
+        uses: actions/checkout@v4
+        with:
+          path: assets
+
+      - name: Check out the application code
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.CODE_REPOSITORY }}   # owner/j4f-commerce-intelligence
+          ref: ${{ vars.CODE_REF || 'main' }}
+          token: ${{ secrets.CODE_REPOSITORY_TOKEN }} # read-only fine-grained token
+          path: code
+
+      - name: Download and verify the running model
+        run: |
+          mkdir -p work/champion
+          gh release download "$RUNNING_TAG" --pattern "$RUNNING_FILE" --dir work --repo "$GITHUB_REPOSITORY"
+          echo "$RUNNING_SHA256  work/$RUNNING_FILE" | sha256sum --check
+          unzip -q "work/$RUNNING_FILE" -d work/champion
+          # The previous release's scoring summary and training time, when it was made by this job.
+          if gh release download "$RUNNING_TAG" --pattern gate_report.json --dir work/previous --repo "$GITHUB_REPOSITORY"; then
+            jq '.scoring_summary' work/previous/gate_report.json > work/previous_summary.json
+            echo "SINCE=$(jq -r '.started_at' work/previous/gate_report.json)" >> "$GITHUB_ENV"
+          else
+            cp assets/corpus/product_scores.summary.json work/previous_summary.json
+            echo "SINCE=" >> "$GITHUB_ENV"
+          fi
+
+      - name: Use the running model's Python and library versions
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ vars.PYTHON_VERSION }}  # must equal manifest.json "python"
+      - run: |
+          python - <<'EOF'
+          import json, sys
+          expected = json.load(open("work/champion/manifest.json"))["python"]
+          actual = ".".join(map(str, sys.version_info[:3]))
+          sys.exit(0 if actual == expected else f"Python {actual} != bundle {expected}")
+          EOF
+          pip install -r work/champion/requirements-model.txt
+
+      - name: Export verified sales observations (read-only Neon role)
+        env:
+          NEON_READONLY_URL: ${{ secrets.NEON_READONLY_URL }}
+        run: |
+          psql "$NEON_READONLY_URL" -v ON_ERROR_STOP=1 -c "\copy (SELECT store_id, sku, source_product_id,
+            observed_at, verified_at, quantity_sold, currency, product_name, description, category_raw, brand,
+            fulfillment_type, price, original_price, rating_average, review_count, image_count, has_video,
+            import_batch_id FROM ml_training_observations) TO 'work/observations.csv' WITH CSV HEADER"
+
+      - name: Retrain and apply the four gates
+        working-directory: code
+        run: |
+          python -m ml.src.retrain.run \
+            --base ../assets/corpus/clean_products.csv \
+            --observations ../work/observations.csv \
+            --champion-dir ../work/champion \
+            --previous-summary ../work/previous_summary.json \
+            --output-dir ../work/job \
+            --job-id "$JOB_ID" \
+            ${SINCE:+--since "$SINCE"} \
+            ${{ inputs.allow_insufficient && '--allow-insufficient' || '' }}
+          echo "STATUS=$(jq -r .status ../work/job/gate_report.json)" >> "$GITHUB_ENV"
+
+      - name: Publish the candidate release (status ready only)
+        if: env.STATUS == 'ready'
+        run: |
+          version=$(jq -r .candidate.model_version work/job/gate_report.json)
+          archive=$(jq -r .candidate.archive work/job/gate_report.json)
+          jq '.scoring_summary' work/job/gate_report.json > work/job/product_scores.summary.json
+          gh release create "auto-$version" "work/job/$archive" work/job/gate_report.json \
+            work/job/product_scores.summary.json --repo "$GITHUB_REPOSITORY" --latest=false \
+            --title "Candidate $version (ready, not active)" \
+            --notes "Passed all gates. Not active until an Admin applies it."
+          echo "TAG=auto-$version" >> "$GITHUB_ENV"
+
+      - name: Keep the gate report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gate-report-${{ github.run_id }}
+          path: work/job/gate_report.json
+          if-no-files-found: ignore
+
+      - name: Report to the backend
+        if: always()
+        env:
+          CALLBACK_URL: ${{ secrets.RETRAIN_CALLBACK_URL }}
+          CALLBACK_TOKEN: ${{ secrets.RETRAIN_CALLBACK_TOKEN }}
+        run: |
+          [ -n "$CALLBACK_URL" ] || { echo "No callback configured"; exit 0; }
+          status="${STATUS:-failed}"
+          report=work/job/gate_report.json; [ -f "$report" ] || report=/dev/null
+          jq -n --arg job "$JOB_ID" --arg status "$status" --arg tag "${TAG:-}" \
+            --arg run "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+            --slurpfile report <(cat "$report" 2>/dev/null || echo null) \
+            '{job_id: $job, status: $status, release_tag: $tag, run_url: $run, gate_report: $report[0]}' \
+          | curl --fail --silent --show-error -X POST "$CALLBACK_URL" \
+              -H "Authorization: Bearer $CALLBACK_TOKEN" -H "Content-Type: application/json" --data-binary @-

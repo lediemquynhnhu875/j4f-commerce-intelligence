@@ -1,0 +1,9 @@
+# Thresholds for the automated retraining job (team decisions of 2026-11-25).
+# See docs/ml/retrain-automation.md. Changing a value here changes every future gate report.
+min_new_observations: 100        # verified sales observations since the last training run
+min_new_stores: 2                # distinct stores among those observations
+weight_cap_quantile: 0.99        # C = this quantile of products per seller in the base corpus
+roc_auc_tolerance: 0.01          # challenger ROC-AUC may fall at most this much below the champion
+rmsle_tolerance: 0.02            # challenger RMSLE may rise at most this much above the champion
+status_share_tolerance: 0.05     # max absolute change of any status share versus the running model
+taxonomy_min_accuracy: 0.85      # only checked when the taxonomy rules differ from the running bundle

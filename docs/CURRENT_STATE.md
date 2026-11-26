@@ -1,6 +1,23 @@
 # Project State and Handoff
 
-Updated: 2026-11-25 (Asia/Saigon).
+Updated: 2026-11-26 (Asia/Saigon).
+
+## Automated retraining, ML part (2026-11-26)
+
+Branch `feature/ml-retrain-automation` (from `origin/main` bd6f446, uncommitted; the user commits and
+pushes). Scope agreed with the user: ML job and workflow only; backend/DB (Mai) and frontend (Huy)
+are not touched. Adds `ml/src/retrain/` (training set A', four gates, job runner, workflow template
+`retrain.yml` for `sellens-ml-assets`), `ml/config/retrain.yml` (team thresholds: 100 observations from
+2 stores, 0.01 ROC-AUC, 0.02 RMSLE, 5 pp), optional `sample_weight` in `train_reference_models`
+(store rows weighted `min(1, C/n)`, C = 0.99 quantile of seller size = 138; metrics stay unweighted;
+no weights = unchanged model), the observation export contract in `docs/rules/data-contracts.md`, and
+[retrain automation](ml/retrain-automation.md). Verification: `python3 -m unittest discover -s ml/tests`
+62 tests OK (2 FastAPI tests skipped locally). Local end-to-end job on the real corpus with the v3 bundle
+as champion and 150 synthetic observations from 3 stores (scratchpad only, never released): status
+`ready`, 41,626 rows, all gates passed, largest status shift 0.68 pp, packed ZIP loaded in
+`ServingModel`; a run with no new observations returned `skipped`. Not verified: the workflow on GitHub,
+Neon export, callback, Render switch. Open: live re-analysis of corpus products is blocked by
+`AlreadyInCorpus` (see the doc); the backend must create `ml_training_observations`.
 
 ## Mai full-data integration merge (2026-11-25)
 
@@ -75,6 +92,15 @@ inference checks passed; 51 ML tests passed with serving dependencies. GitHub Re
 [taxonomy v3](ml/taxonomy-v3.md) and
 [metrics](../ml/reports/metrics/taxonomy_v3.json). All 48 ML tests passed
 (2 skipped); now 50 tests.
+
+Web snapshot v3 (2026-11-25): ignored `data/processed/web_integration/products_full_v3.json`
+(SHA-256 `f4a18668905cf09997913bc1e11d7cc1f1f83f04cbb2b9e6ae07f07aa98f3f1f`) was exported from
+`taxonomy_v3_run_sklearn` with `ml/src/export/web.py` from unmerged branch `feature/ml-media-merge`, then
+merged with the existing 100-sample media file (`verify_merge` passed). 41,576 products, 41,069 suggestions;
+versus v2, 4,206 product types and 2,996 statuses differ (100-sample: 3 and 7). Details in
+`verification_v3.json`. The original `products_full.json` is unchanged. The Neon catalog still holds v2
+analyses: `import:ml-sample`/`import:ml-batch` use fixed v2 run keys and refuse existing products, so a v3
+import needs a new run key (backend owner). Deploy the v3 bundle and the v3 import together.
 
 ## GitHub Release bundle for the ML pilot
 

@@ -526,3 +526,26 @@ cover only labelled aggregate/profile/page scope, not unbounded collections.
 Source checksum is part of saved-analysis reuse identity. Other-source analyses
 and their audited actions remain immutable historical versions. Category/media
 enrichment changes display metadata only, never frozen model inputs.
+
+## Retraining observation export (proposal, 2026-11-26)
+
+The scheduled retraining job (`ml/src/retrain/`, see [retrain automation](../ml/retrain-automation.md))
+reads verified sales observations through a read-only view `ml_training_observations`. The
+view and its source table (proposed `product_sales_observations`) are backend-owned and not yet
+created. One row per verified observation; older observations stay in the table:
+
+| Column | Meaning |
+| --- | --- |
+| `store_id`, `sku` | Application store and the store's SKU; together identify a product |
+| `source_product_id` | Corpus product ID (`SP-` prefix allowed) when the product came from the snapshot, else blank |
+| `observed_at` | When the store recorded the cumulative sales (ISO 8601, required) |
+| `verified_at` | When an Admin approved the import batch (required; unverified rows must not appear) |
+| `quantity_sold` | Cumulative sales at `observed_at`, non-negative integer |
+| `currency` | `VND`; other currencies are dropped |
+| `product_name`, `description`, `category_raw`, `brand`, `fulfillment_type`, `price`, `original_price`, `rating_average`, `review_count`, `image_count`, `has_video` | Listing state at `observed_at` |
+| `import_batch_id` | Approved import batch |
+
+The job keeps the latest observation per (`store_id`, `sku`). A product with a corpus
+`source_product_id` replaces its snapshot row and keeps the snapshot seller for seller-grouped
+evaluation; other products get `product_id = store-<store_id>-<sku>` and `seller_id = store:<store_id>`.
+No API field, column or status of the running application changes.
