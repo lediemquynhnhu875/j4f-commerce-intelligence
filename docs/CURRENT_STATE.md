@@ -16,8 +16,11 @@ no weights = unchanged model), the observation export contract in `docs/rules/da
 as champion and 150 synthetic observations from 3 stores (scratchpad only, never released): status
 `ready`, 41,626 rows, all gates passed, largest status shift 0.68 pp, packed ZIP loaded in
 `ServingModel`; a run with no new observations returned `skipped`. Not verified: the workflow on GitHub,
-Neon export, callback, Render switch. Open: live re-analysis of corpus products is blocked by
-`AlreadyInCorpus` (see the doc); the backend must create `ml_training_observations`.
+Neon export, callback, Render switch. Re-scoring after a sales update (decided: option c): bundles carry
+optional `oof_predictions.csv`; `/v1/infer` re-scores unchanged corpus products from it and returns 409
+`CORPUS_LISTING_CHANGED` otherwise. 65 ML tests pass in a venv with FastAPI (HTTP tests included); 500 real
+corpus products re-scored with ignored `ml/artifacts/sellens-ml-v3-oof.zip`: 496 match offline status.
+Deploy the serving code before that bundle. Open: the backend must create `ml_training_observations`.
 
 ## Mai full-data integration merge (2026-11-25)
 

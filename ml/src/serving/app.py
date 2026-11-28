@@ -13,7 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from starlette.concurrency import run_in_threadpool
 
 from ml.src.serving.assets import DEFAULT_DIR
-from ml.src.serving.inference import AlreadyInCorpus, SCHEMA_VERSION, ServingModel
+from ml.src.serving.inference import AlreadyInCorpus, CorpusListingChanged, SCHEMA_VERSION, ServingModel
 
 logger = logging.getLogger(__name__)
 
@@ -68,6 +68,9 @@ def analyze(app: FastAPI, product: Product):
         raise HTTPException(503, detail="INFERENCE_BUSY")
     try:
         return app.state.model.infer(product.model_dump())
+    except CorpusListingChanged as error:
+        # Model inputs changed since training: the stored out-of-fold prediction no longer applies.
+        raise HTTPException(409, detail="CORPUS_LISTING_CHANGED") from error
     except AlreadyInCorpus as error:
         raise HTTPException(409, detail="PRODUCT_IN_MODEL_CORPUS") from error
     except Exception as error:
