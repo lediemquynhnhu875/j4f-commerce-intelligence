@@ -549,3 +549,8 @@ The job keeps the latest observation per (`store_id`, `sku`). A product with a c
 `source_product_id` replaces its snapshot row and keeps the snapshot seller for seller-grouped
 evaluation; other products get `product_id = store-<store_id>-<sku>` and `seller_id = store:<store_id>`.
 No API field, column or status of the running application changes.
+
+ML inference addition (2026-11-26): `/v1/infer` may now return 200 for a corpus `source_product_id`
+when the bundle carries out-of-fold predictions and the listing inputs are unchanged (same response
+fields). A corpus product with changed listing inputs returns HTTP 409 with detail
+`CORPUS_LISTING_CHANGED`; the existing `PRODUCT_IN_MODEL_CORPUS` remains for bundles without the file.

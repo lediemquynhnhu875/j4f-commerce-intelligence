@@ -20,7 +20,7 @@ from ml.src.serving.assets import CORPUS_COLUMNS, digest, pack, unpack
 from ml.src.serving.inference import SCHEMA_VERSION
 
 
-def make_fixture(directory: Path) -> Path:
+def make_fixture(directory: Path, with_out_of_fold: bool = False) -> Path:
     taxonomy_version = yaml.safe_load(
         Path("ml/config/taxonomy_v2.yml").read_text(encoding="utf-8")
     )["taxonomy_version"]
@@ -58,12 +58,65 @@ def make_fixture(directory: Path) -> Path:
         writer.writeheader()
         writer.writerows(rows)
     archive = directory / "fixture.zip"
-    pack(directory, corpus, archive)
+    predictions = None
+    if with_out_of_fold:
+        predictions = directory / "model_predictions.csv"
+        pd.DataFrame({
+            "product_id": [row["product_id"] for row in rows], "sale_probability": 0.9,
+            "conditional_sales": 5.0, "reference_sales": 4.5, "prediction_lower": 1.0, "prediction_upper": 20.0,
+            "model_version": "test-synthetic",
+        }).to_csv(predictions, index=False)
+    pack(directory, corpus, archive, predictions=predictions)
     with unittest.TestCase().assertRaisesRegex(ValueError, "SHA-256"):
         unpack(archive, directory / "wrong", "0" * 64)
     result = directory / "extracted"
     unpack(archive, result, digest(archive))
     return result
+
+
+class CorpusRescoreTest(unittest.TestCase):
+    """Corpus products are re-scored with their stored out-of-fold prediction while the listing is unchanged."""
+
+    def setUp(self):
+        from ml.src.serving.inference import AlreadyInCorpus, CorpusListingChanged, ServingModel
+
+        self.errors = AlreadyInCorpus, CorpusListingChanged
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        self.model = ServingModel(make_fixture(Path(directory.name), with_out_of_fold=True))
+        self.product = {
+            "name": "Giày lười nam da mềm", "description": "Giày lười nam đế êm dễ mang",
+            "category": "Giày nam khác", "source_product_id": "SP-1000", "price": 220000.0,
+            "original_price": 275000.0, "quantity_sold": 0, "rating_average": 4.4, "review_count": 30,
+            "number_of_images": 6, "has_video": True,
+        }
+
+    def test_unchanged_listing_uses_out_of_fold_reference_and_new_sales(self):
+        result = self.model.infer(self.product)
+        self.assertEqual(result["reference_sold"], 4.5)
+        self.assertEqual((result["prediction_lower"], result["prediction_upper"]), (1.0, 20.0))
+        self.assertEqual(result["product_type"], "giày lười nam")
+        self.assertIn("out-of-fold", result["limitation_note"])
+        self.assertEqual(result["comparison"]["peer_count"], 25)
+        self.assertEqual(result["status"], "untapped_potential")  # zero sales, probability 0.9
+        self.product["quantity_sold"] = 8
+        self.assertEqual(self.model.infer(self.product)["status"], "performing_well")
+
+    def test_never_its_own_peer(self):
+        record, neighbors = self.model.peers(
+            {"product_type": "giày lười nam", "valid_for_model": True,
+             "product_name": "Giày lười nam da mềm", "description": "Giày lười nam đế êm dễ mang"},
+            exclude_id="1000", exclude_seller="1",
+        )
+        ids = {neighbor["product_id"] for neighbor in neighbors}
+        self.assertNotIn("1000", ids)
+        self.assertNotIn("1001", ids)  # seller "1" owns product 1001
+
+    def test_changed_listing_waits_for_retraining(self):
+        self.product["price"] = 199000.0
+        with self.assertRaises(self.errors[1]) as raised:
+            self.model.infer(self.product)
+        self.assertIn("price", raised.exception.fields)
 
 
 try:
@@ -120,6 +173,7 @@ class LiveServingTest(unittest.TestCase):
         self.payload["product"]["source_product_id"] = "SP-1000"
         result = self.client.post("/v1/infer", json=self.payload, headers=self.headers)
         self.assertEqual(result.status_code, 409)
+        self.assertEqual(result.json()["detail"], "PRODUCT_IN_MODEL_CORPUS")  # bundle without out-of-fold file
         self.payload["schema_version"] = "wrong"
         result = self.client.post("/v1/infer", json=self.payload, headers=self.headers)
         self.assertEqual(result.status_code, 422)

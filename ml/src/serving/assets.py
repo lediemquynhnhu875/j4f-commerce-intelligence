@@ -27,6 +27,12 @@ FILES = {
     "reference_models.joblib", "model_metrics.json", "corpus.csv", "pipeline.yml",
     "taxonomy.yml", "requirements-model.txt", "manifest.json",
 }
+# Optional so bundles packed before it existed (v2, v3) still unpack unchanged.
+OPTIONAL_FILES = {"oof_predictions.csv"}
+OOF_COLUMNS = (
+    "product_id", "sale_probability", "conditional_sales", "reference_sales",
+    "prediction_lower", "prediction_upper",
+)
 MAX_BYTES = 1024 ** 3
 
 
@@ -35,7 +41,28 @@ def digest(path: Path) -> str:
         return hashlib.file_digest(stream, "sha256").hexdigest()
 
 
-def pack(artifact_dir: Path, corpus: Path, output: Path, taxonomy: Path = Path("ml/config/taxonomy_v2.yml")) -> None:
+def _compact_predictions(predictions: Path, target: Path, corpus_ids: set[str]) -> None:
+    """Out-of-fold Model A predictions, used to re-score corpus products whose listing is unchanged."""
+    with predictions.open(encoding="utf-8-sig", newline="") as source, target.open(
+        "w", encoding="utf-8", newline=""
+    ) as output:
+        reader = csv.DictReader(source)
+        if not set(OOF_COLUMNS).issubset(reader.fieldnames or []):
+            raise ValueError("Use model_predictions.csv from the run that trained this bundle")
+        writer = csv.DictWriter(output, OOF_COLUMNS)
+        writer.writeheader()
+        for row in reader:
+            if row["sale_probability"] == "":
+                continue
+            if row["product_id"] not in corpus_ids:
+                raise ValueError("Out-of-fold predictions contain a product outside the corpus")
+            writer.writerow({name: row[name] for name in OOF_COLUMNS})
+
+
+def pack(
+    artifact_dir: Path, corpus: Path, output: Path, taxonomy: Path = Path("ml/config/taxonomy_v2.yml"),
+    predictions: Path | None = None,
+) -> None:
     metrics = artifact_dir / "model_metrics.json"
     report = json.loads(metrics.read_text(encoding="utf-8"))
     packages = ["joblib", "numpy", "pandas", "PyYAML", "scikit-learn", "scipy", "threadpoolctl"]
@@ -55,13 +82,20 @@ def pack(artifact_dir: Path, corpus: Path, output: Path, taxonomy: Path = Path("
                 raise ValueError("Use clean_products.csv from the taxonomy run that trained this bundle")
             writer = csv.DictWriter(target, CORPUS_COLUMNS)
             writer.writeheader()
-            writer.writerows({name: row[name] for name in CORPUS_COLUMNS} for row in reader)
+            corpus_ids = set()
+            for row in reader:
+                corpus_ids.add(row["product_id"])
+                writer.writerow({name: row[name] for name in CORPUS_COLUMNS})
+        if predictions is not None:
+            _compact_predictions(predictions, Path(directory) / "oof_predictions.csv", corpus_ids)
         with ZipFile(output, "x", compression=ZIP_DEFLATED) as archive:
             archive.write(artifact_dir / "reference_models.joblib", "reference_models.joblib")
             archive.write(metrics, "model_metrics.json")
             archive.write(compact, "corpus.csv")
             archive.write("ml/config/pipeline.yml", "pipeline.yml")
             archive.write(taxonomy, "taxonomy.yml")
+            if predictions is not None:
+                archive.write(Path(directory) / "oof_predictions.csv", "oof_predictions.csv")
             archive.writestr("requirements-model.txt", requirements)
             archive.writestr("manifest.json", json.dumps({
                 "model_version": report["model_version"],
@@ -76,7 +110,8 @@ def unpack(archive: Path, output: Path, expected_hash: str) -> None:
         raise ValueError("Serving archive SHA-256 does not match ML_ASSET_SHA256")
     with ZipFile(archive) as source:
         entries = source.infolist()
-        if (len(entries) != len(FILES) or {entry.filename for entry in entries} != FILES
+        names = {entry.filename for entry in entries}
+        if (len(entries) != len(names) or not FILES <= names or not names <= FILES | OPTIONAL_FILES
                 or sum(entry.file_size for entry in entries) > MAX_BYTES):
             raise ValueError("Serving archive has unexpected files or exceeds the size limit")
         output.mkdir(parents=True, exist_ok=True)
@@ -187,6 +222,7 @@ def main() -> None:
     package.add_argument("--corpus", type=Path, required=True)
     package.add_argument("--output", type=Path, required=True)
     package.add_argument("--taxonomy", type=Path, default=Path("ml/config/taxonomy_v2.yml"))
+    package.add_argument("--predictions", type=Path, help="model_predictions.csv of the same run (optional)")
     extract = commands.add_parser("unpack")
     extract.add_argument("--archive", type=Path, required=True)
     extract.add_argument("--sha256", required=True)
@@ -194,7 +230,7 @@ def main() -> None:
         command.add_argument("--output", type=Path, default=DEFAULT_DIR)
     args = parser.parse_args()
     if args.command == "pack":
-        pack(args.artifact_dir, args.corpus, args.output, args.taxonomy)
+        pack(args.artifact_dir, args.corpus, args.output, args.taxonomy, args.predictions)
     elif args.command == "unpack":
         unpack(args.archive, args.output, args.sha256)
     elif args.command == "fetch-github":

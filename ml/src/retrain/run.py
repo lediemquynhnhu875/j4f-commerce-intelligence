@@ -160,7 +160,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     report["model_metrics"] = metrics
 
     archive = output / f"sellens-ml-{metrics['model_version']}.zip"
-    assets.pack(output / "challenger" / "artifacts", processed / "clean_products.csv", archive, args.taxonomy)
+    assets.pack(output / "challenger" / "artifacts", processed / "clean_products.csv", archive, args.taxonomy,
+                processed / "model_predictions.csv")
     try:
         loaded = _package_loads(archive)
     except Exception as error:  # Any load failure must block the release, with its reason recorded.

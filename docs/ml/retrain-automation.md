@@ -85,17 +85,36 @@ The template is not yet run on GitHub; the job itself was run locally (below).
   workflow with `job_id`), the callback endpoint, and **Áp dụng**: switch Render
   `ML_ASSET_GITHUB_TAG`/`ML_ASSET_GITHUB_FILE`/`ML_ASSET_SHA256`, redeploy, check `/health/ready`,
   roll back on failure, then update the `RUNNING_*` variables above.
-- Re-analysis after an approved sales update (separate from retraining).
+- Re-analysis after an approved sales update (separate from retraining): call `/v1/infer`; on 409
+  `CORPUS_LISTING_CHANGED` show that the result waits for the next model update.
+
+## Re-scoring corpus products after a sales update (decided 2026-11-26)
+
+Live inference on a product the model was trained on is in-sample. Measured on the v3 bundle over the
+whole corpus: ROC-AUC 0.790 in-sample versus 0.695 out-of-fold, RMSLE 1.230 versus 1.364, and 25.1%
+versus 31.2% of zero-sale products flagged as high-probability. Live peers also included the product
+itself. So corpus products are not scored in-sample:
+
+- Bundles may carry `oof_predictions.csv` (`assets pack --predictions model_predictions.csv`; the job
+  always adds it). Model A uses listing inputs only, so a product's out-of-fold reference stays valid
+  while those inputs are unchanged.
+- `/v1/infer` with a corpus `source_product_id`: if the bundle has its out-of-fold row and price,
+  discount, name length, description length, image count and video are unchanged, the response is a
+  normal result built from the stored reference, the new sales/rating/reviews and live peers that
+  exclude the product and its seller; `limitation_note` says so. Response fields are unchanged.
+- Changed listing inputs: HTTP 409 `CORPUS_LISTING_CHANGED`; the product waits for the next release.
+  Bundles without the file keep HTTP 409 `PRODUCT_IN_MODEL_CORPUS`.
+- Check on real data: the v3 model repacked with its out-of-fold file
+  (`ml/artifacts/sellens-ml-v3-oof.zip`, SHA-256
+  `ebd7196fa651ea6ef005a61e743a2b22a1c0f707549531c58930d15de8f2e793`, same `model_version`
+  `j4f-20261124T183412Z`) re-scored 500 random corpus products with their own data: 496 match the
+  offline status, 4 differ through live peer selection, none was refused.
+- Deploy order: the serving code must be deployed before this bundle (older code rejects the extra file).
 
 ## Known limitations
 
-- `ServingModel.infer` refuses products whose `source_product_id` is in the bundle corpus
-  (`AlreadyInCorpus`), because their predictions would be in-sample. All imported demo products come
-  from the corpus, so "re-analyse after a sales update" cannot use live inference for them. Options:
-  take their status from the job's out-of-fold `product_scores.csv` after an Admin applies a
-  release, or accept in-sample live scoring with a visible note. Undecided.
 - Store-only products enter the corpus after a release; the backend must send their
-  `store-<store_id>-<sku>` ID as `source_product_id` so the same guard applies.
+  `store-<store_id>-<sku>` ID as `source_product_id` so the same handling applies.
 - Sales in the 2023 corpus have no capture date, so no period sales are computed against them.
 - The protected-ID list and taxonomy labels are local files; the workflow passes neither yet.
 EOF
